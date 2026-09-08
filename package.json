@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrasi.ts",
-    "db:seed": "tsx src/db/seed/index.ts",
+    "db:seed": "tsx src/db/seed/jalankan.ts",
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
     "test:watch": "vitest"
