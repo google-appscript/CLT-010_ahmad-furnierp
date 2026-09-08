@@ -30,3 +30,13 @@ export const resetUrutanEnum = pgEnum('reset_urutan', ['tidak_pernah', 'tahunan'
 export const aksiAuditEnum = pgEnum('aksi_audit', [
   'buat', 'ubah', 'hapus', 'posting', 'balik', 'masuk',
 ])
+
+/**
+ * Ketiga status tidak saling menggantikan:
+ *   draft      — sedang disusun, belum bernomor, belum masuk laporan
+ *   diposting  — resmi, bernomor, masuk laporan, tidak dapat diubah
+ *   dibatalkan — draft yang dibatalkan namun sengaja disimpan sebagai jejak
+ * Status 'dibatalkan' hanya dapat dicapai dari 'draft'; entri terposting
+ * dikoreksi lewat entri pembalik, bukan dengan pembatalan.
+ */
+export const statusEntriEnum = pgEnum('status_entri', ['draft', 'diposting', 'dibatalkan'])
