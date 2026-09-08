@@ -32,6 +32,9 @@ Server Action tidak boleh mengimpor repositori atau klien basis data secara
 langsung. Modul non-akuntansi tidak boleh menulis ke tabel jurnal; satu-satunya
 kanal adalah layanan akuntansi.
 
+**Entri terposting tidak pernah diubah.** Koreksi hanya lewat entri pembalik.
+Nomor diberikan saat posting, bukan saat draft dibuat.
+
 **Tipe akun adalah dasar pelaporan.** Laporan diturunkan dari `tipe_akun`,
 bukan dari hierarki kode akun. Menambah akun baru otomatis muncul di baris
 laporan yang benar tanpa konfigurasi tambahan.
@@ -62,9 +65,14 @@ nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
 ## Status
 
-Fase 1A selesai: autentikasi, RBAC, navigasi, dan seluruh master data akuntansi.
+Fase 1A dan 1B selesai. Sistem sudah dapat mencatat transaksi keuangan lengkap
+dan menghasilkan laporan yang benar.
 
-Fase 1B berikutnya: tabel `journal_entries` dan `journal_items` beserta seluruh
-invarian, alur draft → diposting, pembalikan entri, tutup buku, dan delapan
-laporan (Laba Rugi, Neraca, Arus Kas, Neraca Saldo, Buku Besar, Buku Besar
-Pembantu, Umur Piutang & Utang, Laporan Pajak).
+Fase 2 berikutnya: Produk & Gudang — produk, satuan, gudang dan lokasi,
+pergerakan stok dengan valuasi rata-rata bergerak, penerimaan barang, stock
+opname, barang rusak, dan packing list.
+
+**Kanal integrasi.** Modul berikutnya memposting jurnal lewat
+`AkuntansiService.postingJurnal()` di `src/modules/akuntansi/layanan/entri.ts`
+dengan menyebutkan `sumberTipe` dan `sumberId` dokumen asalnya. Tidak ada modul
+yang menulis ke tabel jurnal secara langsung.
