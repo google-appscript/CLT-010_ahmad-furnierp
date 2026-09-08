@@ -57,8 +57,7 @@ dengan ejaan lengkap. Nama tabel tetap bahasa Inggris.
 `src/lib/navigasi.ts` adalah sumber tunggal struktur menu sembilan grup beserta
 kode izin untuk seluruh tujuh fase. Menu difilter di server berdasarkan izin
 sesi dan nomor fase; naikkan `FASE_AKTIF` hanya setelah menu fase itu benar-benar
-berfungsi. Fase 1 adalah fondasi dan master data; fase 1,5 adalah mesin jurnal
-dan laporan.
+berfungsi.
 
 Saat ini hanya peran `superuser` (wildcard `*`) yang dipakai. Memecah peran
 nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
