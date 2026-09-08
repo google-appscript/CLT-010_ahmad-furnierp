@@ -54,8 +54,14 @@ dengan ejaan lengkap. Nama tabel tetap bahasa Inggris.
 
 ## Navigasi dan Izin
 
-`src/lib/navigasi.ts` adalah sumber tunggal struktur menu sembilan grup beserta
-kode izin untuk seluruh tujuh fase. Menu difilter di server berdasarkan izin
+`src/lib/navigasi.ts` adalah sumber tunggal struktur menu beserta kode izin
+untuk seluruh tujuh fase. Strukturnya tiga tingkat: **grup → seksi → halaman**.
+Sidebar hanya menampilkan dua tingkat teratas; halaman di dalam sebuah seksi
+muncul sebagai bilah menu mendatar di atas isi halaman, sehingga sidebar tetap
+pendek. Grup yang halamannya sedikit boleh langsung memuat halaman tanpa seksi.
+
+Seksi hanya wadah — tidak punya rute maupun izin; visibilitasnya diturunkan
+dari halaman di dalamnya. Menu difilter di server berdasarkan izin
 sesi dan nomor fase; naikkan `FASE_AKTIF` hanya setelah menu fase itu benar-benar
 berfungsi.
 

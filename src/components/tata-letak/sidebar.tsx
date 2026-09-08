@@ -6,7 +6,7 @@ import { useState } from 'react'
 import * as Ikon from 'lucide-react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ItemMenu } from '@/lib/navigasi'
+import { halamanPertama, temukanJalurAktif, type ItemMenu } from '@/lib/navigasi'
 
 function IkonDinamis({ nama, className }: { nama?: string; className?: string }) {
   if (!nama) return null
@@ -15,24 +15,22 @@ function IkonDinamis({ nama, className }: { nama?: string; className?: string })
   return Komponen ? <Komponen className={className} /> : null
 }
 
-function grupYangMemuat(item: ItemMenu[], jalur: string): string | null {
-  for (const grup of item) {
-    if (grup.rute === jalur) return grup.label
-    if (grup.anak?.some((a) => a.rute && jalur.startsWith(a.rute))) return grup.label
-  }
-  return null
-}
-
+/**
+ * Sidebar hanya menampilkan dua tingkat: grup dan isinya. Halaman di dalam
+ * sebuah seksi tidak muncul di sini melainkan di bilah menu mendatar, supaya
+ * sidebar tetap pendek meski jumlah halaman banyak.
+ */
 export function Sidebar({ item }: { item: ItemMenu[] }) {
   const jalur = usePathname()
+  const aktif = temukanJalurAktif(item, jalur)
   // Hanya satu grup terbuka pada satu waktu; grup yang memuat halaman aktif
   // terbuka otomatis saat pertama dirender.
-  const [terbuka, setTerbuka] = useState<string | null>(() => grupYangMemuat(item, jalur))
+  const [terbuka, setTerbuka] = useState<string | null>(aktif.grup?.label ?? null)
 
   return (
     <nav
       aria-label="Navigasi utama"
-      className="flex h-full w-64 shrink-0 flex-col border-r bg-background"
+      className="flex h-full w-60 shrink-0 flex-col border-r bg-background"
     >
       <div className="flex h-14 items-center gap-2 border-b px-4">
         <Ikon.Armchair className="h-5 w-5 text-primary" />
@@ -48,7 +46,7 @@ export function Sidebar({ item }: { item: ItemMenu[] }) {
                 href={grup.rute!}
                 className={cn(
                   'mb-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                  jalur === grup.rute
+                  aktif.grup?.label === grup.label
                     ? 'bg-accent font-medium text-accent-foreground'
                     : 'hover:bg-accent/50',
                 )}
@@ -59,38 +57,50 @@ export function Sidebar({ item }: { item: ItemMenu[] }) {
             )
           }
 
-          const aktif = grup.label === terbuka
+          const dibuka = grup.label === terbuka
 
           return (
             <div key={grup.label} className="mb-1">
               <button
                 type="button"
-                aria-expanded={aktif}
-                onClick={() => setTerbuka(aktif ? null : grup.label)}
-                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent/50"
+                aria-expanded={dibuka}
+                onClick={() => setTerbuka(dibuka ? null : grup.label)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent/50',
+                  aktif.grup?.label === grup.label && 'font-medium',
+                )}
               >
                 <IkonDinamis nama={grup.ikon} className="h-4 w-4" />
                 <span className="flex-1 text-left">{grup.label}</span>
-                <ChevronDown className={cn('h-4 w-4 transition-transform', aktif && 'rotate-180')} />
+                <ChevronDown className={cn('h-4 w-4 transition-transform', dibuka && 'rotate-180')} />
               </button>
 
-              {aktif && (
+              {dibuka && (
                 <ul className="ml-4 mt-1 space-y-0.5 border-l pl-4">
-                  {grup.anak.map((anak) => (
-                    <li key={anak.rute}>
-                      <Link
-                        href={anak.rute!}
-                        className={cn(
-                          'block rounded-md px-3 py-1.5 text-sm transition-colors',
-                          jalur === anak.rute
-                            ? 'bg-accent font-medium text-accent-foreground'
-                            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                        )}
-                      >
-                        {anak.label}
-                      </Link>
-                    </li>
-                  ))}
+                  {grup.anak.map((anak) => {
+                    const rute = halamanPertama(anak)
+                    if (!rute) return null
+                    // Seksi disorot bila salah satu halamannya sedang dibuka.
+                    const sedangAktif = anak.anak
+                      ? aktif.seksi?.label === anak.label && aktif.grup?.label === grup.label
+                      : aktif.halaman?.rute === anak.rute
+
+                    return (
+                      <li key={anak.label}>
+                        <Link
+                          href={rute}
+                          className={cn(
+                            'block rounded-md px-3 py-1.5 text-sm transition-colors',
+                            sedangAktif
+                              ? 'bg-accent font-medium text-accent-foreground'
+                              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                          )}
+                        >
+                          {anak.label}
+                        </Link>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </div>

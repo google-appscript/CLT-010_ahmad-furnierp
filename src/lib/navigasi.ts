@@ -6,15 +6,22 @@ export type ItemMenu = {
   ikon?: string
   izin?: string
   fase: number
+  /** Grup memuat seksi; seksi memuat halaman. Halaman tidak punya anak. */
   anak?: ItemMenu[]
 }
 
-/**
- * Fase tertinggi yang sudah dibangun. Naikkan saat fase berikutnya selesai.
- * Fase 1 adalah fondasi dan master data; fase 1,5 adalah mesin jurnal dan laporan.
- */
+/** Fase tertinggi yang sudah dibangun. Naikkan saat fase berikutnya selesai. */
 export const FASE_AKTIF = 1
 
+/**
+ * Navigasi tiga tingkat: grup → seksi → halaman.
+ *
+ * Sidebar hanya menampilkan dua tingkat teratas. Halaman-halaman di dalam
+ * sebuah seksi muncul sebagai bilah menu mendatar di atas isi halaman,
+ * sehingga sidebar tetap pendek meski jumlah halaman banyak.
+ *
+ * Grup yang halamannya sedikit boleh langsung memuat halaman tanpa seksi.
+ */
 export const NAVIGASI: ItemMenu[] = [
   {
     label: 'Dasbor', rute: '/dasbor', ikon: 'LayoutDashboard',
@@ -47,19 +54,39 @@ export const NAVIGASI: ItemMenu[] = [
   {
     label: 'Gudang', ikon: 'Warehouse', fase: 2,
     anak: [
-      { label: 'Penerimaan Barang', rute: '/gudang/operasi/penerimaan', izin: 'gudang.penerimaan.kelola', fase: 2 },
-      { label: 'Pengiriman', rute: '/gudang/operasi/pengiriman', izin: 'gudang.pengiriman.kelola', fase: 2 },
-      { label: 'Packing List', rute: '/gudang/operasi/packing-list', izin: 'gudang.packing.kelola', fase: 2 },
-      { label: 'Transfer Internal', rute: '/gudang/operasi/transfer', izin: 'gudang.transfer.kelola', fase: 2 },
-      { label: 'Barang Rusak', rute: '/gudang/operasi/barang-rusak', izin: 'gudang.scrap.kelola', fase: 2 },
-      { label: 'Stock Opname', rute: '/gudang/operasi/opname', izin: 'gudang.opname.kelola', fase: 2 },
-      { label: 'Produk', rute: '/gudang/produk', izin: 'gudang.produk.lihat', fase: 2 },
-      { label: 'Kategori Produk', rute: '/gudang/produk/kategori', izin: 'gudang.kategori.kelola', fase: 2 },
-      { label: 'Satuan', rute: '/gudang/produk/satuan', izin: 'gudang.satuan.kelola', fase: 2 },
-      { label: 'Kartu Stok', rute: '/gudang/laporan/kartu-stok', izin: 'gudang.laporan.kartu-stok', fase: 2 },
-      { label: 'Stok Tersedia', rute: '/gudang/laporan/stok-tersedia', izin: 'gudang.laporan.stok', fase: 2 },
-      { label: 'Valuasi Persediaan', rute: '/gudang/laporan/valuasi', izin: 'gudang.laporan.valuasi', fase: 2 },
-      { label: 'Gudang & Lokasi', rute: '/gudang/konfigurasi/lokasi', izin: 'gudang.lokasi.kelola', fase: 2 },
+      {
+        label: 'Operasi', fase: 2,
+        anak: [
+          { label: 'Penerimaan Barang', rute: '/gudang/operasi/penerimaan', izin: 'gudang.penerimaan.kelola', fase: 2 },
+          { label: 'Pengiriman', rute: '/gudang/operasi/pengiriman', izin: 'gudang.pengiriman.kelola', fase: 2 },
+          { label: 'Packing List', rute: '/gudang/operasi/packing-list', izin: 'gudang.packing.kelola', fase: 2 },
+          { label: 'Transfer Internal', rute: '/gudang/operasi/transfer', izin: 'gudang.transfer.kelola', fase: 2 },
+          { label: 'Barang Rusak', rute: '/gudang/operasi/barang-rusak', izin: 'gudang.scrap.kelola', fase: 2 },
+          { label: 'Stock Opname', rute: '/gudang/operasi/opname', izin: 'gudang.opname.kelola', fase: 2 },
+        ],
+      },
+      {
+        label: 'Produk', fase: 2,
+        anak: [
+          { label: 'Daftar Produk', rute: '/gudang/produk', izin: 'gudang.produk.lihat', fase: 2 },
+          { label: 'Kategori Produk', rute: '/gudang/produk/kategori', izin: 'gudang.kategori.kelola', fase: 2 },
+          { label: 'Satuan', rute: '/gudang/produk/satuan', izin: 'gudang.satuan.kelola', fase: 2 },
+        ],
+      },
+      {
+        label: 'Laporan', fase: 2,
+        anak: [
+          { label: 'Kartu Stok', rute: '/gudang/laporan/kartu-stok', izin: 'gudang.laporan.kartu-stok', fase: 2 },
+          { label: 'Stok Tersedia', rute: '/gudang/laporan/stok-tersedia', izin: 'gudang.laporan.stok', fase: 2 },
+          { label: 'Valuasi Persediaan', rute: '/gudang/laporan/valuasi', izin: 'gudang.laporan.valuasi', fase: 2 },
+        ],
+      },
+      {
+        label: 'Konfigurasi', fase: 2,
+        anak: [
+          { label: 'Gudang & Lokasi', rute: '/gudang/konfigurasi/lokasi', izin: 'gudang.lokasi.kelola', fase: 2 },
+        ],
+      },
     ],
   },
   {
@@ -74,37 +101,67 @@ export const NAVIGASI: ItemMenu[] = [
     label: 'Akuntansi', ikon: 'BookOpen', fase: 1,
     anak: [
       { label: 'Dasbor Akuntansi', rute: '/akuntansi', izin: 'akuntansi.dasbor.lihat', fase: 1 },
-      { label: 'Faktur Penjualan', rute: '/akuntansi/pelanggan/faktur', izin: 'akuntansi.faktur.lihat', fase: 4 },
-      { label: 'Nota Kredit', rute: '/akuntansi/pelanggan/nota-kredit', izin: 'akuntansi.nota-kredit.lihat', fase: 4 },
-      { label: 'Pembayaran Masuk', rute: '/akuntansi/pelanggan/pembayaran', izin: 'akuntansi.pembayaran-masuk.lihat', fase: 4 },
-      { label: 'Tagihan Pembelian', rute: '/akuntansi/pemasok/tagihan', izin: 'akuntansi.tagihan.lihat', fase: 3 },
-      { label: 'Nota Debit', rute: '/akuntansi/pemasok/nota-debit', izin: 'akuntansi.nota-debit.lihat', fase: 3 },
-      { label: 'Pembayaran Keluar', rute: '/akuntansi/pemasok/pembayaran', izin: 'akuntansi.pembayaran-keluar.lihat', fase: 3 },
-      { label: 'Entri Jurnal', rute: '/akuntansi/jurnal/entri', izin: 'akuntansi.jurnal.lihat', fase: 1 },
-      { label: 'Item Jurnal', rute: '/akuntansi/jurnal/item', izin: 'akuntansi.jurnal.lihat', fase: 1 },
-      { label: 'Rekonsiliasi', rute: '/akuntansi/jurnal/rekonsiliasi', izin: 'akuntansi.rekonsiliasi.kelola', fase: 3 },
-      { label: 'Daftar Aset', rute: '/akuntansi/aset', izin: 'akuntansi.aset.lihat', fase: 6 },
-      { label: 'Jadwal Depresiasi', rute: '/akuntansi/aset/depresiasi', izin: 'akuntansi.depresiasi.lihat', fase: 6 },
-      { label: 'Laba Rugi', rute: '/akuntansi/laporan/laba-rugi', izin: 'akuntansi.laporan.laba-rugi', fase: 1 },
-      { label: 'Neraca', rute: '/akuntansi/laporan/neraca', izin: 'akuntansi.laporan.neraca', fase: 1 },
-      { label: 'Arus Kas', rute: '/akuntansi/laporan/arus-kas', izin: 'akuntansi.laporan.arus-kas', fase: 1 },
-      { label: 'Buku Besar', rute: '/akuntansi/laporan/buku-besar', izin: 'akuntansi.laporan.buku-besar', fase: 1 },
-      { label: 'Neraca Saldo', rute: '/akuntansi/laporan/neraca-saldo', izin: 'akuntansi.laporan.neraca-saldo', fase: 1 },
-      { label: 'Buku Besar Pembantu', rute: '/akuntansi/laporan/buku-pembantu', izin: 'akuntansi.laporan.buku-pembantu', fase: 1 },
-      { label: 'Umur Piutang & Utang', rute: '/akuntansi/laporan/umur', izin: 'akuntansi.laporan.umur', fase: 1 },
-      { label: 'Laporan Pajak', rute: '/akuntansi/laporan/pajak', izin: 'akuntansi.laporan.pajak', fase: 1 },
-      { label: 'Bagan Akun', rute: '/akuntansi/konfigurasi/bagan-akun', izin: 'akuntansi.coa.kelola', fase: 1 },
-      { label: 'Jurnal', rute: '/akuntansi/konfigurasi/jurnal', izin: 'akuntansi.jurnal-master.kelola', fase: 1 },
-      { label: 'Pajak', rute: '/akuntansi/konfigurasi/pajak', izin: 'akuntansi.pajak.kelola', fase: 1 },
-      { label: 'Mata Uang & Kurs', rute: '/akuntansi/konfigurasi/mata-uang', izin: 'akuntansi.mata-uang.kelola', fase: 1 },
-      { label: 'Syarat Pembayaran', rute: '/akuntansi/konfigurasi/syarat-pembayaran', izin: 'akuntansi.syarat-bayar.kelola', fase: 1 },
-      { label: 'Tahun Buku & Penguncian', rute: '/akuntansi/konfigurasi/tahun-buku', izin: 'akuntansi.tahun-buku.kelola', fase: 1 },
+      {
+        label: 'Pelanggan', fase: 4,
+        anak: [
+          { label: 'Faktur Penjualan', rute: '/akuntansi/pelanggan/faktur', izin: 'akuntansi.faktur.lihat', fase: 4 },
+          { label: 'Nota Kredit', rute: '/akuntansi/pelanggan/nota-kredit', izin: 'akuntansi.nota-kredit.lihat', fase: 4 },
+          { label: 'Pembayaran Masuk', rute: '/akuntansi/pelanggan/pembayaran', izin: 'akuntansi.pembayaran-masuk.lihat', fase: 4 },
+        ],
+      },
+      {
+        label: 'Pemasok', fase: 3,
+        anak: [
+          { label: 'Tagihan Pembelian', rute: '/akuntansi/pemasok/tagihan', izin: 'akuntansi.tagihan.lihat', fase: 3 },
+          { label: 'Nota Debit', rute: '/akuntansi/pemasok/nota-debit', izin: 'akuntansi.nota-debit.lihat', fase: 3 },
+          { label: 'Pembayaran Keluar', rute: '/akuntansi/pemasok/pembayaran', izin: 'akuntansi.pembayaran-keluar.lihat', fase: 3 },
+        ],
+      },
+      {
+        label: 'Jurnal', fase: 1,
+        anak: [
+          { label: 'Entri Jurnal', rute: '/akuntansi/jurnal/entri', izin: 'akuntansi.jurnal.lihat', fase: 1 },
+          { label: 'Item Jurnal', rute: '/akuntansi/jurnal/item', izin: 'akuntansi.jurnal.lihat', fase: 1 },
+          { label: 'Rekonsiliasi', rute: '/akuntansi/jurnal/rekonsiliasi', izin: 'akuntansi.rekonsiliasi.kelola', fase: 3 },
+        ],
+      },
+      {
+        label: 'Aset Tetap', fase: 6,
+        anak: [
+          { label: 'Daftar Aset', rute: '/akuntansi/aset', izin: 'akuntansi.aset.lihat', fase: 6 },
+          { label: 'Jadwal Depresiasi', rute: '/akuntansi/aset/depresiasi', izin: 'akuntansi.depresiasi.lihat', fase: 6 },
+        ],
+      },
+      {
+        label: 'Laporan', fase: 1,
+        anak: [
+          { label: 'Laba Rugi', rute: '/akuntansi/laporan/laba-rugi', izin: 'akuntansi.laporan.laba-rugi', fase: 1 },
+          { label: 'Neraca', rute: '/akuntansi/laporan/neraca', izin: 'akuntansi.laporan.neraca', fase: 1 },
+          { label: 'Arus Kas', rute: '/akuntansi/laporan/arus-kas', izin: 'akuntansi.laporan.arus-kas', fase: 1 },
+          { label: 'Buku Besar', rute: '/akuntansi/laporan/buku-besar', izin: 'akuntansi.laporan.buku-besar', fase: 1 },
+          { label: 'Neraca Saldo', rute: '/akuntansi/laporan/neraca-saldo', izin: 'akuntansi.laporan.neraca-saldo', fase: 1 },
+          { label: 'Buku Besar Pembantu', rute: '/akuntansi/laporan/buku-pembantu', izin: 'akuntansi.laporan.buku-pembantu', fase: 1 },
+          { label: 'Umur Piutang & Utang', rute: '/akuntansi/laporan/umur', izin: 'akuntansi.laporan.umur', fase: 1 },
+          { label: 'Laporan Pajak', rute: '/akuntansi/laporan/pajak', izin: 'akuntansi.laporan.pajak', fase: 1 },
+        ],
+      },
+      {
+        label: 'Konfigurasi', fase: 1,
+        anak: [
+          { label: 'Bagan Akun', rute: '/akuntansi/konfigurasi/bagan-akun', izin: 'akuntansi.coa.kelola', fase: 1 },
+          { label: 'Jurnal', rute: '/akuntansi/konfigurasi/jurnal', izin: 'akuntansi.jurnal-master.kelola', fase: 1 },
+          { label: 'Pajak', rute: '/akuntansi/konfigurasi/pajak', izin: 'akuntansi.pajak.kelola', fase: 1 },
+          { label: 'Mata Uang & Kurs', rute: '/akuntansi/konfigurasi/mata-uang', izin: 'akuntansi.mata-uang.kelola', fase: 1 },
+          { label: 'Syarat Pembayaran', rute: '/akuntansi/konfigurasi/syarat-pembayaran', izin: 'akuntansi.syarat-bayar.kelola', fase: 1 },
+          { label: 'Tahun Buku & Penguncian', rute: '/akuntansi/konfigurasi/tahun-buku', izin: 'akuntansi.tahun-buku.kelola', fase: 1 },
+        ],
+      },
     ],
   },
   {
     label: 'Proyek', ikon: 'FolderKanban', fase: 7,
     anak: [
-      { label: 'Proyek', rute: '/proyek', izin: 'proyek.proyek.kelola', fase: 7 },
+      { label: 'Daftar Proyek', rute: '/proyek', izin: 'proyek.proyek.kelola', fase: 7 },
       { label: 'Tugas', rute: '/proyek/tugas', izin: 'proyek.tugas.kelola', fase: 7 },
       { label: 'Timesheet', rute: '/proyek/timesheet', izin: 'proyek.timesheet.kelola', fase: 7 },
       { label: 'Profitabilitas Proyek', rute: '/proyek/laporan/profitabilitas', izin: 'proyek.laporan.profitabilitas', fase: 7 },
@@ -122,8 +179,13 @@ export const NAVIGASI: ItemMenu[] = [
   },
 ]
 
-function ratakan(item: ItemMenu[]): ItemMenu[] {
+export function ratakan(item: ItemMenu[]): ItemMenu[] {
   return item.flatMap((i) => [i, ...(i.anak ? ratakan(i.anak) : [])])
+}
+
+/** Seluruh halaman berujung, tanpa grup maupun seksi. */
+export function daftarHalaman(item: ItemMenu[] = NAVIGASI): ItemMenu[] {
+  return ratakan(item).filter((i) => !i.anak)
 }
 
 /**
@@ -145,6 +207,7 @@ export function navigasiTerlihat(
       if (item.fase > faseAktif) return hasil
       if (item.anak) {
         const anak = saring(item.anak)
+        // Grup maupun seksi yang seluruh isinya tersembunyi ikut hilang.
         if (anak.length > 0) hasil.push({ ...item, anak })
         return hasil
       }
@@ -153,4 +216,50 @@ export function navigasiTerlihat(
     }, [])
   }
   return saring(NAVIGASI)
+}
+
+/** Halaman pertama yang dapat dibuka di dalam sebuah grup atau seksi. */
+export function halamanPertama(item: ItemMenu): string | undefined {
+  if (item.rute) return item.rute
+  return item.anak ? daftarHalaman(item.anak)[0]?.rute : undefined
+}
+
+export type JalurAktif = {
+  grup?: ItemMenu
+  seksi?: ItemMenu
+  halaman?: ItemMenu
+}
+
+/**
+ * Menentukan grup, seksi, dan halaman yang sedang aktif dari sebuah jalur URL.
+ *
+ * Pencocokan memilih rute terpanjang yang cocok, bukan yang pertama ditemukan.
+ * Tanpa itu `/akuntansi` akan mengklaim `/akuntansi/laporan/neraca` karena
+ * berawalan sama. Awalan tetap dicocokkan agar halaman rincian seperti
+ * `/akuntansi/jurnal/entri/<id>` menyorot menu induknya.
+ */
+export function temukanJalurAktif(menu: ItemMenu[], jalur: string): JalurAktif {
+  let terbaik: JalurAktif = {}
+  let panjangTerbaik = -1
+
+  for (const grup of menu) {
+    const anakGrup = grup.anak ?? [grup]
+    for (const anak of anakGrup) {
+      const kandidat = anak.anak
+        ? anak.anak.map((h) => ({ seksi: anak, halaman: h }))
+        : [{ seksi: undefined as ItemMenu | undefined, halaman: anak }]
+
+      for (const { seksi, halaman } of kandidat) {
+        const rute = halaman.rute
+        if (!rute) continue
+        if (jalur !== rute && !jalur.startsWith(`${rute}/`)) continue
+        if (rute.length > panjangTerbaik) {
+          panjangTerbaik = rute.length
+          terbaik = { grup, seksi, halaman }
+        }
+      }
+    }
+  }
+
+  return terbaik
 }
