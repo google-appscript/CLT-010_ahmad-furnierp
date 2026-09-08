@@ -1,0 +1,17 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: Masuk ke ERP Furni
+      - generic [ref=e6]: Gunakan akun yang diberikan administrator.
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: Email
+        - textbox "Email" [ref=e11]
+      - generic [ref=e12]:
+        - generic [ref=e13]: Kata Sandi
+        - textbox "Kata Sandi" [ref=e14]
+      - alert [ref=e16]: Email atau kata sandi salah
+      - button "Masuk" [ref=e15]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e22] [cursor=pointer]
+  - alert [ref=e26]

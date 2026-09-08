@@ -1,0 +1,73 @@
+- generic [active] [ref=f10e1]:
+  - generic [ref=f10e2]:
+    - navigation "Navigasi utama" [ref=f10e3]:
+      - generic [ref=f10e4]: ERP Furni
+      - generic [ref=f10e9]:
+        - link "Dasbor" [ref=f10e10] [cursor=pointer]:
+          - /url: /dasbor
+        - button "Kontak" [ref=f10e17]
+        - button "Akuntansi" [ref=f10e27]
+        - generic [ref=f10e33]:
+          - button "Pengaturan" [expanded] [ref=f10e34]
+          - list [ref=f10e41]:
+            - listitem [ref=f10e42]:
+              - link "Profil Perusahaan" [ref=f10e43] [cursor=pointer]:
+                - /url: /pengaturan/perusahaan
+            - listitem [ref=f10e44]:
+              - link "Pengguna" [ref=f10e45] [cursor=pointer]:
+                - /url: /pengaturan/pengguna
+            - listitem [ref=f10e46]:
+              - link "Peran & Hak Akses" [ref=f10e47] [cursor=pointer]:
+                - /url: /pengaturan/peran
+            - listitem [ref=f10e48]:
+              - link "Penomoran Dokumen" [ref=f10e49] [cursor=pointer]:
+                - /url: /pengaturan/penomoran
+            - listitem [ref=f10e50]:
+              - link "Log Aktivitas" [ref=f10e51] [cursor=pointer]:
+                - /url: /pengaturan/log-aktivitas
+    - generic [ref=f10e52]:
+      - banner [ref=f10e53]:
+        - paragraph [ref=f10e54]:
+          - text: Tekan
+          - generic [ref=f10e58]: Ctrl
+          - generic [ref=f10e59]: K
+          - text: untuk mencari menu
+        - button "A Administrator" [ref=f10e60]:
+          - generic [ref=f10e61]: A
+          - generic [ref=f10e62]: Administrator
+      - main [ref=f10e63]:
+        - generic [ref=f10e65]:
+          - heading "Profil Perusahaan" [level=1] [ref=f10e66]
+          - paragraph [ref=f10e67]: Identitas perusahaan yang tampil pada dokumen dan laporan.
+        - generic [ref=f10e68]:
+          - generic [ref=f10e69]:
+            - generic [ref=f10e70]: Nama Perusahaan
+            - textbox "Nama Perusahaan" [ref=f10e71]: PT Furni Nusantara
+          - generic [ref=f10e72]:
+            - generic [ref=f10e73]: NPWP
+            - textbox "NPWP" [ref=f10e74]:
+              - /placeholder: 01.234.567.8-901.000
+          - generic [ref=f10e75]:
+            - generic [ref=f10e76]: Telepon
+            - textbox "Telepon" [ref=f10e77]
+          - generic [ref=f10e78]:
+            - generic [ref=f10e79]: Alamat
+            - textbox "Alamat" [ref=f10e80]
+          - generic [ref=f10e81]:
+            - generic [ref=f10e82]: Kota
+            - textbox "Kota" [ref=f10e83]
+          - generic [ref=f10e84]:
+            - generic [ref=f10e85]: Provinsi
+            - textbox "Provinsi" [ref=f10e86]
+          - generic [ref=f10e87]:
+            - generic [ref=f10e88]: Kode Pos
+            - textbox "Kode Pos" [ref=f10e89]
+          - generic [ref=f10e90]:
+            - generic [ref=f10e91]: Email
+            - textbox "Email" [ref=f10e92]
+          - button "Simpan Perubahan" [ref=f10e94]
+    - generic [ref=f10e95]:
+      - heading "Cari Menu" [level=2] [ref=f10e96]
+      - paragraph [ref=f10e97]: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f10e103] [cursor=pointer]

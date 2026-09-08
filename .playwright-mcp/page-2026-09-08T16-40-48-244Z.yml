@@ -1,0 +1,78 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - navigation "Navigasi utama" [ref=f3e3]:
+      - generic [ref=f3e4]: ERP Furni
+      - generic [ref=f3e9]:
+        - link "Dasbor" [ref=f3e10] [cursor=pointer]:
+          - /url: /dasbor
+        - button "Kontak" [ref=f3e17]
+        - generic [ref=f3e26]:
+          - button "Akuntansi" [expanded] [ref=f3e27]
+          - list [ref=f3e33]:
+            - listitem [ref=f3e34]:
+              - link "Dasbor Akuntansi" [ref=f3e35] [cursor=pointer]:
+                - /url: /akuntansi
+            - listitem [ref=f3e36]:
+              - link "Bagan Akun" [ref=f3e37] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/bagan-akun
+            - listitem [ref=f3e38]:
+              - link "Jurnal" [ref=f3e39] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/jurnal
+            - listitem [ref=f3e40]:
+              - link "Pajak" [ref=f3e41] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/pajak
+            - listitem [ref=f3e42]:
+              - link "Mata Uang & Kurs" [ref=f3e43] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/mata-uang
+            - listitem [ref=f3e44]:
+              - link "Syarat Pembayaran" [ref=f3e45] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/syarat-pembayaran
+            - listitem [ref=f3e46]:
+              - link "Tahun Buku & Penguncian" [ref=f3e47] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/tahun-buku
+        - button "Pengaturan" [ref=f3e49]
+    - generic [ref=f3e56]:
+      - banner [ref=f3e57]:
+        - paragraph [ref=f3e58]:
+          - text: Tekan
+          - generic [ref=f3e62]: Ctrl
+          - generic [ref=f3e63]: K
+          - text: untuk mencari menu
+        - button "A Administrator" [ref=f3e64]:
+          - generic [ref=f3e65]: A
+          - generic [ref=f3e66]: Administrator
+      - main [ref=f3e67]:
+        - generic [ref=f3e68]:
+          - generic [ref=f3e69]:
+            - heading "Tahun Buku & Penguncian" [level=1] [ref=f3e70]
+            - paragraph [ref=f3e71]: Menentukan periode pelaporan dan batas perubahan data akuntansi.
+          - button "Tambah Tahun Buku" [ref=f3e72]
+        - generic [ref=f3e73]:
+          - generic [ref=f3e74]:
+            - generic [ref=f3e75]: Penguncian Periode
+            - generic [ref=f3e76]: Entri jurnal bertanggal pada atau sebelum tanggal kunci tidak dapat dibuat, diubah, maupun dihapus — termasuk oleh proses otomatis dari modul lain. Tanggal kunci hanya dapat dimajukan atau dikosongkan sepenuhnya.
+          - generic [ref=f3e78]:
+            - generic [ref=f3e79]:
+              - generic [ref=f3e80]: Tanggal Kunci Buku
+              - textbox "Tanggal Kunci Buku" [ref=f3e81]
+            - button "Simpan" [ref=f3e82]
+        - generic [ref=f3e83]:
+          - heading "Daftar Tahun Buku" [level=2] [ref=f3e84]
+          - table [ref=f3e87]:
+            - rowgroup [ref=f3e88]:
+              - row [ref=f3e89]:
+                - columnheader "Nama" [ref=f3e90]
+                - columnheader "Tanggal Mulai" [ref=f3e91]
+                - columnheader "Tanggal Selesai" [ref=f3e92]
+                - columnheader "Status" [ref=f3e93]
+            - rowgroup [ref=f3e94]:
+              - row [ref=f3e95]:
+                - cell "Tahun Buku 2026" [ref=f3e96]
+                - cell "2026-01-01" [ref=f3e97]
+                - cell "2026-12-31" [ref=f3e98]
+                - cell "Terbuka" [ref=f3e99]
+    - generic [ref=f3e101]:
+      - heading "Cari Menu" [level=2] [ref=f3e102]
+      - paragraph [ref=f3e103]: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f3e109] [cursor=pointer]

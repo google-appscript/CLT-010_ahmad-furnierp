@@ -1,0 +1,43 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - navigation "Navigasi utama" [ref=f1e3]:
+      - generic [ref=f1e4]: ERP Furni
+      - generic [ref=f1e9]:
+        - link "Dasbor" [ref=f1e10] [cursor=pointer]:
+          - /url: /dasbor
+        - generic [ref=f1e16]:
+          - button "Kontak" [expanded] [ref=f1e17]
+          - list [ref=f1e26]:
+            - listitem [ref=f1e27]:
+              - link "Semua Kontak" [ref=f1e28] [cursor=pointer]:
+                - /url: /kontak
+            - listitem [ref=f1e29]:
+              - link "Pelanggan" [ref=f1e30] [cursor=pointer]:
+                - /url: /kontak/pelanggan
+            - listitem [ref=f1e31]:
+              - link "Pemasok" [ref=f1e32] [cursor=pointer]:
+                - /url: /kontak/pemasok
+        - button "Akuntansi" [ref=f1e34]
+        - button "Pengaturan" [ref=f1e41]
+    - generic [ref=f1e48]:
+      - banner [ref=f1e49]:
+        - paragraph [ref=f1e50]:
+          - text: Tekan
+          - generic [ref=f1e54]: Ctrl
+          - generic [ref=f1e55]: K
+          - text: untuk mencari menu
+        - button "A Administrator" [ref=f1e56]:
+          - generic [ref=f1e57]: A
+          - generic [ref=f1e58]: Administrator
+      - main [ref=f1e59]:
+        - generic [ref=f1e60]:
+          - generic [ref=f1e61]:
+            - heading "Semua Kontak" [level=1] [ref=f1e62]
+            - paragraph [ref=f1e63]: Pelanggan dan pemasok tersimpan dalam satu daftar; satu mitra dapat berperan sebagai keduanya.
+          - button "Tambah Mitra" [ref=f1e64]
+        - generic [ref=f1e65]: Belum ada mitra usaha yang terdaftar.
+    - generic [ref=f1e66]:
+      - heading "Cari Menu" [level=2] [ref=f1e67]
+      - paragraph [ref=f1e68]: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f1e74] [cursor=pointer]

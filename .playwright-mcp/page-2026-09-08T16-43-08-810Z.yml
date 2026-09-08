@@ -1,0 +1,86 @@
+- generic [active] [ref=f11e1]:
+  - generic [ref=f11e2]:
+    - navigation "Navigasi utama" [ref=f11e3]:
+      - generic [ref=f11e4]: ERP Furni
+      - generic [ref=f11e9]:
+        - link "Dasbor" [ref=f11e10] [cursor=pointer]:
+          - /url: /dasbor
+        - button "Kontak" [ref=f11e17]
+        - generic [ref=f11e26]:
+          - button "Akuntansi" [expanded] [ref=f11e27]
+          - list [ref=f11e33]:
+            - listitem [ref=f11e34]:
+              - link "Dasbor Akuntansi" [ref=f11e35] [cursor=pointer]:
+                - /url: /akuntansi
+            - listitem [ref=f11e36]:
+              - link "Bagan Akun" [ref=f11e37] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/bagan-akun
+            - listitem [ref=f11e38]:
+              - link "Jurnal" [ref=f11e39] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/jurnal
+            - listitem [ref=f11e40]:
+              - link "Pajak" [ref=f11e41] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/pajak
+            - listitem [ref=f11e42]:
+              - link "Mata Uang & Kurs" [ref=f11e43] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/mata-uang
+            - listitem [ref=f11e44]:
+              - link "Syarat Pembayaran" [ref=f11e45] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/syarat-pembayaran
+            - listitem [ref=f11e46]:
+              - link "Tahun Buku & Penguncian" [ref=f11e47] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/tahun-buku
+        - button "Pengaturan" [ref=f11e49]
+    - generic [ref=f11e56]:
+      - banner [ref=f11e57]:
+        - paragraph [ref=f11e58]:
+          - text: Tekan
+          - generic [ref=f11e62]: Ctrl
+          - generic [ref=f11e63]: K
+          - text: untuk mencari menu
+        - button "A Administrator" [ref=f11e64]:
+          - generic [ref=f11e65]: A
+          - generic [ref=f11e66]: Administrator
+      - main [ref=f11e67]:
+        - generic [ref=f11e68]:
+          - generic [ref=f11e69]:
+            - heading "Syarat Pembayaran" [level=1] [ref=f11e70]
+            - paragraph [ref=f11e71]: Menentukan tanggal jatuh tempo faktur dan tagihan.
+          - button "Tambah Syarat" [ref=f11e72]
+        - table [ref=f11e75]:
+          - rowgroup [ref=f11e76]:
+            - row [ref=f11e77]:
+              - columnheader "Nama" [ref=f11e78]
+              - columnheader "Jatuh Tempo" [ref=f11e79]
+              - columnheader "Catatan" [ref=f11e80]
+              - columnheader [ref=f11e81]
+          - rowgroup [ref=f11e82]:
+            - row [ref=f11e83]:
+              - cell "Tunai" [ref=f11e84]
+              - cell "Tunai" [ref=f11e85]
+              - cell "Dibayar saat penyerahan" [ref=f11e86]
+              - cell [ref=f11e87]:
+                - button "Ubah" [ref=f11e88]
+            - row [ref=f11e89]:
+              - cell "Net 14" [ref=f11e90]
+              - cell "14 hari" [ref=f11e91]
+              - cell "—" [ref=f11e92]
+              - cell [ref=f11e93]:
+                - button "Ubah" [ref=f11e94]
+            - row [ref=f11e95]:
+              - cell "Net 30" [ref=f11e96]
+              - cell "30 hari" [ref=f11e97]
+              - cell "—" [ref=f11e98]
+              - cell [ref=f11e99]:
+                - button "Ubah" [ref=f11e100]
+            - row [ref=f11e101]:
+              - cell "Net 60" [ref=f11e102]
+              - cell "60 hari" [ref=f11e103]
+              - cell "—" [ref=f11e104]
+              - cell [ref=f11e105]:
+                - button "Ubah" [ref=f11e106]
+    - generic [ref=f11e107]:
+      - heading "Cari Menu" [level=2] [ref=f11e108]
+      - paragraph [ref=f11e109]: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f11e115] [cursor=pointer]

@@ -1,0 +1,101 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - navigation "Navigasi utama" [ref=f2e3]:
+      - generic [ref=f2e4]: ERP Furni
+      - generic [ref=f2e9]:
+        - link "Dasbor" [ref=f2e10] [cursor=pointer]:
+          - /url: /dasbor
+        - button "Kontak" [ref=f2e17]
+        - generic [ref=f2e26]:
+          - button "Akuntansi" [expanded] [ref=f2e27]
+          - list [ref=f2e33]:
+            - listitem [ref=f2e34]:
+              - link "Dasbor Akuntansi" [ref=f2e35] [cursor=pointer]:
+                - /url: /akuntansi
+            - listitem [ref=f2e36]:
+              - link "Bagan Akun" [ref=f2e37] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/bagan-akun
+            - listitem [ref=f2e38]:
+              - link "Jurnal" [ref=f2e39] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/jurnal
+            - listitem [ref=f2e40]:
+              - link "Pajak" [ref=f2e41] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/pajak
+            - listitem [ref=f2e42]:
+              - link "Mata Uang & Kurs" [ref=f2e43] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/mata-uang
+            - listitem [ref=f2e44]:
+              - link "Syarat Pembayaran" [ref=f2e45] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/syarat-pembayaran
+            - listitem [ref=f2e46]:
+              - link "Tahun Buku & Penguncian" [ref=f2e47] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/tahun-buku
+        - button "Pengaturan" [ref=f2e49]
+    - generic [ref=f2e56]:
+      - banner [ref=f2e57]:
+        - paragraph [ref=f2e58]:
+          - text: Tekan
+          - generic [ref=f2e62]: Ctrl
+          - generic [ref=f2e63]: K
+          - text: untuk mencari menu
+        - button "A Administrator" [ref=f2e64]:
+          - generic [ref=f2e65]: A
+          - generic [ref=f2e66]: Administrator
+      - main [ref=f2e67]:
+        - generic [ref=f2e68]:
+          - generic [ref=f2e69]:
+            - heading "Pajak" [level=1] [ref=f2e70]
+            - paragraph [ref=f2e71]: Tarif tersimpan di basis data dan dapat diubah tanpa penerapan ulang saat regulasi berubah.
+          - button "Tambah Pajak" [ref=f2e72]
+        - table [ref=f2e75]:
+          - rowgroup [ref=f2e76]:
+            - row [ref=f2e77]:
+              - columnheader "Kode" [ref=f2e78]
+              - columnheader "Nama" [ref=f2e79]
+              - columnheader "Ruang Lingkup" [ref=f2e80]
+              - columnheader "Tarif" [ref=f2e81]
+              - columnheader "Sifat" [ref=f2e82]
+              - columnheader "Status" [ref=f2e83]
+              - columnheader [ref=f2e84]
+          - rowgroup [ref=f2e85]:
+            - row [ref=f2e86]:
+              - cell "PPH23-2" [ref=f2e87]
+              - cell "PPh 23 Jasa 2%" [ref=f2e88]
+              - cell "Pembelian" [ref=f2e89]
+              - cell "2%" [ref=f2e90]
+              - cell "Pemotongan" [ref=f2e91]
+              - cell "Aktif" [ref=f2e94]
+              - cell [ref=f2e96]:
+                - button "Ubah" [ref=f2e97]
+            - row [ref=f2e98]:
+              - cell "PPHF-05" [ref=f2e99]
+              - cell "PPh Final 0,5%" [ref=f2e100]
+              - cell "Penjualan" [ref=f2e101]
+              - cell "0.5%" [ref=f2e102]
+              - cell "Pemotongan" [ref=f2e103]
+              - cell "Aktif" [ref=f2e106]
+              - cell [ref=f2e108]:
+                - button "Ubah" [ref=f2e109]
+            - row [ref=f2e110]:
+              - cell "PPN-K-11" [ref=f2e111]
+              - cell "PPN Keluaran 11%" [ref=f2e112]
+              - cell "Penjualan" [ref=f2e113]
+              - cell "11%" [ref=f2e114]
+              - cell [ref=f2e115]
+              - cell "Aktif" [ref=f2e116]
+              - cell [ref=f2e118]:
+                - button "Ubah" [ref=f2e119]
+            - row [ref=f2e120]:
+              - cell "PPN-M-11" [ref=f2e121]
+              - cell "PPN Masukan 11%" [ref=f2e122]
+              - cell "Pembelian" [ref=f2e123]
+              - cell "11%" [ref=f2e124]
+              - cell [ref=f2e125]
+              - cell "Aktif" [ref=f2e126]
+              - cell [ref=f2e128]:
+                - button "Ubah" [ref=f2e129]
+    - generic [ref=f2e130]:
+      - heading "Cari Menu" [level=2] [ref=f2e131]
+      - paragraph [ref=f2e132]: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f2e138] [cursor=pointer]

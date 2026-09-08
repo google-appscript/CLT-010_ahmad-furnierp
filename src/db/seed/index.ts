@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, koneksi } from '@/db/klien'
+import { db } from '@/db/klien'
 import {
   users, roles, permissions, rolePermissions, userRoles,
   companySettings, fiscalYears, currencies, currencyRates,

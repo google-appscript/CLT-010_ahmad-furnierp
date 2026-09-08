@@ -1,0 +1,66 @@
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e2]:
+    - navigation "Navigasi utama" [ref=f6e3]:
+      - generic [ref=f6e4]: ERP Furni
+      - generic [ref=f6e9]:
+        - link "Dasbor" [ref=f6e10] [cursor=pointer]:
+          - /url: /dasbor
+        - button "Kontak" [ref=f6e17]
+        - button "Akuntansi" [ref=f6e27]
+        - generic [ref=f6e33]:
+          - button "Pengaturan" [expanded] [ref=f6e34]
+          - list [ref=f6e41]:
+            - listitem [ref=f6e42]:
+              - link "Profil Perusahaan" [ref=f6e43] [cursor=pointer]:
+                - /url: /pengaturan/perusahaan
+            - listitem [ref=f6e44]:
+              - link "Pengguna" [ref=f6e45] [cursor=pointer]:
+                - /url: /pengaturan/pengguna
+            - listitem [ref=f6e46]:
+              - link "Peran & Hak Akses" [ref=f6e47] [cursor=pointer]:
+                - /url: /pengaturan/peran
+            - listitem [ref=f6e48]:
+              - link "Penomoran Dokumen" [ref=f6e49] [cursor=pointer]:
+                - /url: /pengaturan/penomoran
+            - listitem [ref=f6e50]:
+              - link "Log Aktivitas" [ref=f6e51] [cursor=pointer]:
+                - /url: /pengaturan/log-aktivitas
+    - generic [ref=f6e52]:
+      - banner [ref=f6e53]:
+        - paragraph [ref=f6e54]:
+          - text: Tekan
+          - generic [ref=f6e58]: Ctrl
+          - generic [ref=f6e59]: K
+          - text: untuk mencari menu
+        - button "A Administrator" [ref=f6e60]:
+          - generic [ref=f6e61]: A
+          - generic [ref=f6e62]: Administrator
+      - main [ref=f6e63]:
+        - generic [ref=f6e64]:
+          - generic [ref=f6e65]:
+            - heading "Pengguna" [level=1] [ref=f6e66]
+            - paragraph [ref=f6e67]: Satu pengguna memegang satu peran. Pengguna dinonaktifkan, tidak dihapus.
+          - button "Tambah Pengguna" [ref=f6e68]
+        - table [ref=f6e71]:
+          - rowgroup [ref=f6e72]:
+            - row [ref=f6e73]:
+              - columnheader "Nama" [ref=f6e74]
+              - columnheader "Email" [ref=f6e75]
+              - columnheader "Peran" [ref=f6e76]
+              - columnheader "Terakhir Masuk" [ref=f6e77]
+              - columnheader "Status" [ref=f6e78]
+              - columnheader [ref=f6e79]
+          - rowgroup [ref=f6e80]:
+            - row [ref=f6e81]:
+              - cell "Administrator" [ref=f6e82]
+              - cell "admin@furni.local" [ref=f6e83]
+              - cell "Superuser" [ref=f6e84]
+              - cell "8 Sep 2026, 23.35" [ref=f6e87]
+              - cell "Aktif" [ref=f6e88]
+              - cell [ref=f6e90]:
+                - button "Ubah" [ref=f6e91]
+    - generic [ref=f6e92]:
+      - heading "Cari Menu" [level=2] [ref=f6e93]
+      - paragraph [ref=f6e94]: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f6e100] [cursor=pointer]

@@ -1,0 +1,92 @@
+- generic [active] [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - navigation "Navigasi utama" [ref=f9e3]:
+      - generic [ref=f9e4]: ERP Furni
+      - generic [ref=f9e9]:
+        - link "Dasbor" [ref=f9e10] [cursor=pointer]:
+          - /url: /dasbor
+        - button "Kontak" [ref=f9e17]
+        - button "Akuntansi" [ref=f9e27]
+        - generic [ref=f9e33]:
+          - button "Pengaturan" [expanded] [ref=f9e34]
+          - list [ref=f9e41]:
+            - listitem [ref=f9e42]:
+              - link "Profil Perusahaan" [ref=f9e43] [cursor=pointer]:
+                - /url: /pengaturan/perusahaan
+            - listitem [ref=f9e44]:
+              - link "Pengguna" [ref=f9e45] [cursor=pointer]:
+                - /url: /pengaturan/pengguna
+            - listitem [ref=f9e46]:
+              - link "Peran & Hak Akses" [ref=f9e47] [cursor=pointer]:
+                - /url: /pengaturan/peran
+            - listitem [ref=f9e48]:
+              - link "Penomoran Dokumen" [ref=f9e49] [cursor=pointer]:
+                - /url: /pengaturan/penomoran
+            - listitem [ref=f9e50]:
+              - link "Log Aktivitas" [ref=f9e51] [cursor=pointer]:
+                - /url: /pengaturan/log-aktivitas
+    - generic [ref=f9e52]:
+      - banner [ref=f9e53]:
+        - paragraph [ref=f9e54]:
+          - text: Tekan
+          - generic [ref=f9e58]: Ctrl
+          - generic [ref=f9e59]: K
+          - text: untuk mencari menu
+        - button "A Administrator" [ref=f9e60]:
+          - generic [ref=f9e61]: A
+          - generic [ref=f9e62]: Administrator
+      - main [ref=f9e63]:
+        - generic [ref=f9e65]:
+          - heading "Penomoran Dokumen" [level=1] [ref=f9e66]
+          - paragraph [ref=f9e67]: Nomor diberikan saat dokumen diposting, bukan saat draft dibuat, sehingga tidak ada lubang nomor.
+        - table [ref=f9e70]:
+          - rowgroup [ref=f9e71]:
+            - row [ref=f9e72]:
+              - columnheader "Kode" [ref=f9e73]
+              - columnheader "Prefiks" [ref=f9e74]
+              - columnheader "Reset" [ref=f9e75]
+              - columnheader "Nomor Berikutnya" [ref=f9e76]
+              - columnheader "Contoh" [ref=f9e77]
+          - rowgroup [ref=f9e78]:
+            - row [ref=f9e79]:
+              - cell "jurnal:BNK" [ref=f9e80]
+              - cell "BB" [ref=f9e81]
+              - cell "Setiap bulan" [ref=f9e82]
+              - cell "1" [ref=f9e83]
+              - cell "BB/2026/09/0001" [ref=f9e84]
+            - row [ref=f9e85]:
+              - cell "jurnal:JPS" [ref=f9e86]
+              - cell "JPS" [ref=f9e87]
+              - cell "Setiap bulan" [ref=f9e88]
+              - cell "1" [ref=f9e89]
+              - cell "JPS/2026/09/0001" [ref=f9e90]
+            - row [ref=f9e91]:
+              - cell "jurnal:JU" [ref=f9e92]
+              - cell "JU" [ref=f9e93]
+              - cell "Setiap bulan" [ref=f9e94]
+              - cell "1" [ref=f9e95]
+              - cell "JU/2026/09/0001" [ref=f9e96]
+            - row [ref=f9e97]:
+              - cell "jurnal:KAS" [ref=f9e98]
+              - cell "BK" [ref=f9e99]
+              - cell "Setiap bulan" [ref=f9e100]
+              - cell "1" [ref=f9e101]
+              - cell "BK/2026/09/0001" [ref=f9e102]
+            - row [ref=f9e103]:
+              - cell "jurnal:PMB" [ref=f9e104]
+              - cell "FB" [ref=f9e105]
+              - cell "Setiap bulan" [ref=f9e106]
+              - cell "1" [ref=f9e107]
+              - cell "FB/2026/09/0001" [ref=f9e108]
+            - row [ref=f9e109]:
+              - cell "jurnal:PNJ" [ref=f9e110]
+              - cell "FJ" [ref=f9e111]
+              - cell "Setiap bulan" [ref=f9e112]
+              - cell "1" [ref=f9e113]
+              - cell "FJ/2026/09/0001" [ref=f9e114]
+        - paragraph [ref=f9e115]: Halaman ini hanya menampilkan. Mengubah nomor berikutnya secara manual berisiko menghasilkan nomor kembar pada dokumen yang sudah terbit.
+    - generic [ref=f9e116]:
+      - heading "Cari Menu" [level=2] [ref=f9e117]
+      - paragraph [ref=f9e118]: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f9e124] [cursor=pointer]

@@ -1,0 +1,884 @@
+- generic:
+  - generic [aria-hidden]:
+    - navigation:
+      - generic: ERP Furni
+      - generic:
+        - link:
+          - /url: /dasbor
+          - text: Dasbor
+        - generic:
+          - button:
+            - generic: Kontak
+        - generic:
+          - button [expanded]:
+            - generic: Akuntansi
+          - list:
+            - listitem:
+              - link:
+                - /url: /akuntansi
+                - text: Dasbor Akuntansi
+            - listitem:
+              - link:
+                - /url: /akuntansi/konfigurasi/bagan-akun
+                - text: Bagan Akun
+            - listitem:
+              - link:
+                - /url: /akuntansi/konfigurasi/jurnal
+                - text: Jurnal
+            - listitem:
+              - link:
+                - /url: /akuntansi/konfigurasi/pajak
+                - text: Pajak
+            - listitem:
+              - link:
+                - /url: /akuntansi/konfigurasi/mata-uang
+                - text: Mata Uang & Kurs
+            - listitem:
+              - link:
+                - /url: /akuntansi/konfigurasi/syarat-pembayaran
+                - text: Syarat Pembayaran
+            - listitem:
+              - link:
+                - /url: /akuntansi/konfigurasi/tahun-buku
+                - text: Tahun Buku & Penguncian
+        - generic:
+          - button:
+            - generic: Pengaturan
+    - generic:
+      - banner:
+        - paragraph:
+          - text: Tekan
+          - generic: Ctrl
+          - generic: K
+          - text: untuk mencari menu
+        - button:
+          - generic: A
+          - generic: Administrator
+      - main:
+        - generic:
+          - generic:
+            - heading [level=1]: Bagan Akun
+            - paragraph: Tipe akun menentukan penempatan setiap akun pada Laba Rugi dan Neraca.
+          - button [expanded]: Tambah Akun
+        - generic:
+          - generic:
+            - table:
+              - rowgroup:
+                - row:
+                  - columnheader: Kode
+                  - columnheader: Nama Akun
+                  - columnheader: Tipe Akun
+                  - columnheader: Rekonsiliasi
+                  - columnheader: Status
+                  - columnheader
+              - rowgroup:
+                - row:
+                  - cell: "1101"
+                  - cell: Kas
+                  - cell: Kas
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1102"
+                  - cell: Kas Kecil
+                  - cell: Kas
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1111"
+                  - cell: Bank BCA
+                  - cell: Bank
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1112"
+                  - cell: Bank Mandiri
+                  - cell: Bank
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1113"
+                  - cell: Bank Valas USD
+                  - cell: Bank
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1121"
+                  - cell: Piutang Usaha
+                  - cell: Piutang Usaha
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1122"
+                  - cell: Piutang Karyawan
+                  - cell: Aset Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1123"
+                  - cell: Piutang Lain-lain
+                  - cell: Aset Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1129"
+                  - cell: Cadangan Kerugian Piutang
+                  - cell: Aset Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1131"
+                  - cell: Persediaan Bahan Baku
+                  - cell: Persediaan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1132"
+                  - cell: Persediaan Bahan Penolong
+                  - cell: Persediaan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1133"
+                  - cell: Persediaan Barang Dalam Proses
+                  - cell: Persediaan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1134"
+                  - cell: Persediaan Barang Jadi
+                  - cell: Persediaan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1135"
+                  - cell: Persediaan Suku Cadang
+                  - cell: Persediaan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1141"
+                  - cell: PPN Masukan
+                  - cell: Aset Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1142"
+                  - cell: PPh 23 Dibayar di Muka
+                  - cell: Aset Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1143"
+                  - cell: PPh 25 Dibayar di Muka
+                  - cell: Aset Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1151"
+                  - cell: Uang Muka Pembelian
+                  - cell: Aset Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1152"
+                  - cell: Biaya Dibayar di Muka
+                  - cell: Aset Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1201"
+                  - cell: Tanah
+                  - cell: Aset Tetap
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1202"
+                  - cell: Bangunan
+                  - cell: Aset Tetap
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1203"
+                  - cell: Mesin Produksi
+                  - cell: Aset Tetap
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1204"
+                  - cell: Peralatan Pabrik
+                  - cell: Aset Tetap
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1205"
+                  - cell: Kendaraan
+                  - cell: Aset Tetap
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1206"
+                  - cell: Peralatan Kantor
+                  - cell: Aset Tetap
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1211"
+                  - cell: Akumulasi Depresiasi Bangunan
+                  - cell: Akumulasi Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1212"
+                  - cell: Akumulasi Depresiasi Mesin Produksi
+                  - cell: Akumulasi Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1213"
+                  - cell: Akumulasi Depresiasi Peralatan Pabrik
+                  - cell: Akumulasi Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1214"
+                  - cell: Akumulasi Depresiasi Kendaraan
+                  - cell: Akumulasi Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1215"
+                  - cell: Akumulasi Depresiasi Peralatan Kantor
+                  - cell: Akumulasi Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "1291"
+                  - cell: Aset Tidak Lancar Lainnya
+                  - cell: Aset Tidak Lancar Lainnya
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2101"
+                  - cell: Utang Usaha
+                  - cell: Utang Usaha
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2102"
+                  - cell: Utang Lain-lain
+                  - cell: Liabilitas Jangka Pendek
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2111"
+                  - cell: PPN Keluaran
+                  - cell: Utang Pajak
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2112"
+                  - cell: Utang PPh 21
+                  - cell: Utang Pajak
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2113"
+                  - cell: Utang PPh 23
+                  - cell: Utang Pajak
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2114"
+                  - cell: Utang PPh 29
+                  - cell: Utang Pajak
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2115"
+                  - cell: Utang PPh Final
+                  - cell: Utang Pajak
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2121"
+                  - cell: Utang Gaji
+                  - cell: Liabilitas Jangka Pendek
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2122"
+                  - cell: Biaya yang Masih Harus Dibayar
+                  - cell: Liabilitas Jangka Pendek
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2131"
+                  - cell: Uang Muka Penjualan
+                  - cell: Liabilitas Jangka Pendek
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2141"
+                  - cell: Utang Bank Jangka Pendek
+                  - cell: Liabilitas Jangka Pendek
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2201"
+                  - cell: Utang Bank Jangka Panjang
+                  - cell: Liabilitas Jangka Panjang
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "2202"
+                  - cell: Utang Sewa Pembiayaan
+                  - cell: Liabilitas Jangka Panjang
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "3101"
+                  - cell: Modal Disetor
+                  - cell: Modal
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "3102"
+                  - cell: Tambahan Modal Disetor
+                  - cell: Modal
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "3201"
+                  - cell: Laba Ditahan
+                  - cell: Laba Ditahan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "3202"
+                  - cell: Laba Tahun Berjalan
+                  - cell: Laba Tahun Berjalan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "3301"
+                  - cell: Prive dan Dividen
+                  - cell: Modal
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "4101"
+                  - cell: Penjualan Furnitur
+                  - cell: Pendapatan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "4102"
+                  - cell: Penjualan Jasa Custom
+                  - cell: Pendapatan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "4109"
+                  - cell: Retur Penjualan
+                  - cell: Pendapatan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "4110"
+                  - cell: Potongan Penjualan
+                  - cell: Pendapatan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "4201"
+                  - cell: Pendapatan Bunga
+                  - cell: Pendapatan Lain-lain
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "4202"
+                  - cell: Laba Selisih Kurs
+                  - cell: Pendapatan Lain-lain
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "4203"
+                  - cell: Pendapatan Lain-lain
+                  - cell: Pendapatan Lain-lain
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "5101"
+                  - cell: HPP Bahan Baku
+                  - cell: Harga Pokok Penjualan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "5102"
+                  - cell: HPP Tenaga Kerja Langsung
+                  - cell: Harga Pokok Penjualan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "5103"
+                  - cell: HPP Overhead Pabrik
+                  - cell: Harga Pokok Penjualan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "5104"
+                  - cell: HPP Barang Jadi
+                  - cell: Harga Pokok Penjualan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "5105"
+                  - cell: Selisih Persediaan
+                  - cell: Harga Pokok Penjualan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "5106"
+                  - cell: Kerugian Barang Rusak
+                  - cell: Harga Pokok Penjualan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6101"
+                  - cell: Beban Gaji dan Upah
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6102"
+                  - cell: Beban Tunjangan Karyawan
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6103"
+                  - cell: Beban BPJS
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6111"
+                  - cell: Beban Listrik dan Air
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6112"
+                  - cell: Beban Telepon dan Internet
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6113"
+                  - cell: Beban Sewa
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6114"
+                  - cell: Beban Perbaikan dan Pemeliharaan
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6121"
+                  - cell: Beban Pengiriman
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6122"
+                  - cell: Beban Pemasaran dan Promosi
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6123"
+                  - cell: Beban Perjalanan Dinas
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6131"
+                  - cell: Beban Alat Tulis Kantor
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6132"
+                  - cell: Beban Asuransi
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6133"
+                  - cell: Beban Jasa Profesional
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6141"
+                  - cell: Beban Administrasi Bank
+                  - cell: Beban Operasional
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6151"
+                  - cell: Beban Depresiasi Bangunan
+                  - cell: Beban Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6152"
+                  - cell: Beban Depresiasi Mesin Produksi
+                  - cell: Beban Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6153"
+                  - cell: Beban Depresiasi Peralatan Pabrik
+                  - cell: Beban Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6154"
+                  - cell: Beban Depresiasi Kendaraan
+                  - cell: Beban Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "6155"
+                  - cell: Beban Depresiasi Peralatan Kantor
+                  - cell: Beban Depresiasi
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "7101"
+                  - cell: Beban Bunga
+                  - cell: Beban Lain-lain
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "7102"
+                  - cell: Rugi Selisih Kurs
+                  - cell: Beban Lain-lain
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "7103"
+                  - cell: Beban Lain-lain
+                  - cell: Beban Lain-lain
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "7104"
+                  - cell: Selisih Pembulatan
+                  - cell: Beban Lain-lain
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+                - row:
+                  - cell: "8101"
+                  - cell: Beban Pajak Penghasilan
+                  - cell: Beban Pajak Penghasilan
+                  - cell: —
+                  - cell:
+                    - generic: Aktif
+                  - cell:
+                    - button: Ubah
+    - generic:
+      - heading [level=2]: Cari Menu
+      - paragraph: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e22] [cursor=pointer]
+  - alert: Bagan Akun
+  - dialog [ref=e905]:
+    - heading "Tambah Akun" [level=2] [ref=e907]
+    - generic [ref=e908]:
+      - generic [ref=e909]:
+        - generic [ref=e910]: Kode Akun
+        - textbox "Kode Akun" [ref=e911]:
+          - /placeholder: "1101"
+          - text: "1103"
+      - generic [ref=e912]:
+        - generic [ref=e913]: Nama Akun
+        - textbox "Nama Akun" [ref=e914]:
+          - /placeholder: Kas
+          - text: Kas Operasional Pabrik
+      - generic [ref=e915]:
+        - generic [ref=e916]: Tipe Akun
+        - combobox "Tipe Akun" [active] [ref=e917]:
+          - generic: Kas
+        - combobox [aria-hidden] [ref=e918]
+        - paragraph [ref=e919]: Tipe akun menentukan baris tempat akun ini muncul di laporan keuangan.
+      - generic [ref=e920]:
+        - checkbox "Dapat direkonsiliasi" [ref=e921]
+        - checkbox [aria-hidden]
+        - generic [ref=e922]: Dapat direkonsiliasi
+      - generic [ref=e923]:
+        - generic [ref=e924]: Catatan
+        - textbox "Catatan" [ref=e925]
+      - generic [ref=e926]:
+        - button "Batal" [ref=e927]
+        - button "Simpan" [ref=e928]
+    - button "Close" [ref=e929]

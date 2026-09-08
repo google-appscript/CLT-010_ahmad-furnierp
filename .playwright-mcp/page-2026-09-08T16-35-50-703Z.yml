@@ -1,0 +1,58 @@
+- generic [ref=e1]:
+  - generic [ref=e27]:
+    - navigation "Navigasi utama" [ref=e28]:
+      - generic [ref=e29]: ERP Furni
+      - generic [ref=e34]:
+        - link "Dasbor" [ref=e35] [cursor=pointer]:
+          - /url: /dasbor
+        - button "Kontak" [ref=e42]
+        - generic [ref=e51]:
+          - button "Akuntansi" [expanded] [active] [ref=e52]
+          - list [ref=e90]:
+            - listitem [ref=e91]:
+              - link "Dasbor Akuntansi" [ref=e92] [cursor=pointer]:
+                - /url: /akuntansi
+            - listitem [ref=e93]:
+              - link "Bagan Akun" [ref=e94] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/bagan-akun
+            - listitem [ref=e95]:
+              - link "Jurnal" [ref=e96] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/jurnal
+            - listitem [ref=e97]:
+              - link "Pajak" [ref=e98] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/pajak
+            - listitem [ref=e99]:
+              - link "Mata Uang & Kurs" [ref=e100] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/mata-uang
+            - listitem [ref=e101]:
+              - link "Syarat Pembayaran" [ref=e102] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/syarat-pembayaran
+            - listitem [ref=e103]:
+              - link "Tahun Buku & Penguncian" [ref=e104] [cursor=pointer]:
+                - /url: /akuntansi/konfigurasi/tahun-buku
+        - button "Pengaturan" [ref=e59]
+    - generic [ref=e66]:
+      - banner [ref=e67]:
+        - paragraph [ref=e68]:
+          - text: Tekan
+          - generic [ref=e72]: Ctrl
+          - generic [ref=e73]: K
+          - text: untuk mencari menu
+        - button "A Administrator" [ref=e74]:
+          - generic [ref=e75]: A
+          - generic [ref=e76]: Administrator
+      - main [ref=e77]:
+        - generic [ref=e79]:
+          - heading "Dasbor" [level=1] [ref=e80]
+          - paragraph [ref=e81]: Selamat datang kembali, Administrator.
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - generic [ref=e84]: Ringkasan Keuangan
+            - generic [ref=e85]: Angka keuangan terisi setelah mesin jurnal aktif pada Fase 1B.
+          - generic [ref=e86]: Mulailah dengan menyiapkan Bagan Akun dan Mitra Usaha melalui menu Akuntansi.
+    - generic [ref=e87]:
+      - heading "Cari Menu" [level=2] [ref=e88]
+      - paragraph [ref=e89]: Search for a command to run...
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e22] [cursor=pointer]
+  - alert [ref=e26]: Dasbor · ERP Furni
