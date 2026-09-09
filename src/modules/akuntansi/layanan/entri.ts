@@ -329,20 +329,80 @@ export async function daftarIdSudahDibalik(): Promise<Set<string>> {
   return new Set(baris.map((b) => b.id!).filter(Boolean))
 }
 
+export type MasukanPostingModul = MasukanEntri & { sumberTipe: string; sumberId: string }
+
+/**
+ * Memposting jurnal di dalam transaksi yang sedang berjalan.
+ *
+ * Modul lain memerlukan ini agar perubahan datanya sendiri dan jurnal yang
+ * menyertainya tergabung dalam satu transaksi — pergerakan stok yang tercatat
+ * tanpa jurnalnya, atau sebaliknya, akan membuat persediaan menyimpang dari
+ * buku besar. Memanggil `postingJurnal()` dari dalam transaksi lain tidak bisa
+ * dipakai untuk itu karena ia membuka transaksi baru sendiri.
+ */
+export async function postingJurnalDalamTx(
+  tx: Transaksi,
+  masukan: MasukanPostingModul,
+  olehPengguna: string,
+): Promise<{ id: string; nomor: string }> {
+  const data = urai(masukan)
+  wajibSeimbang(data.item)
+  await wajibPeriodeTerbukaDalamTx(tx, data.tanggal)
+
+  const [jurnal] = await tx.select().from(journals)
+    .where(eq(journals.id, data.journalId)).limit(1)
+  if (!jurnal) throw new ValidasiError('Jurnal tidak ditemukan')
+  if (!jurnal.isActive) throw new ValidasiError(`Jurnal ${jurnal.nama} sudah nonaktif`)
+
+  const nomor = await ambilNomorBerikut(
+    tx, kodeUrutanJurnal(jurnal.kode), keTanggal(data.tanggal),
+  )
+
+  const [entri] = await tx.insert(journalEntries).values({
+    nomor,
+    journalId: data.journalId,
+    tanggal: data.tanggal,
+    referensi: data.referensi,
+    keterangan: data.keterangan,
+    status: 'diposting',
+    mataUangId: data.mataUangId,
+    kurs: '1',
+    partnerId: data.partnerId,
+    sumberTipe: masukan.sumberTipe,
+    sumberId: masukan.sumberId,
+    dipostingPada: new Date(),
+    dipostingOleh: olehPengguna,
+    dibuatOleh: olehPengguna,
+  }).returning({ id: journalEntries.id })
+
+  await tx.insert(journalItems).values(
+    data.item.map((b, i) => ({
+      entryId: entri.id,
+      urutan: i + 1,
+      accountId: b.accountId,
+      partnerId: b.partnerId,
+      label: b.label,
+      debit: bulatkan(b.debit, DESIMAL_IDR),
+      kredit: bulatkan(b.kredit, DESIMAL_IDR),
+      taxId: b.taxId,
+      projectId: b.projectId,
+    })),
+  )
+
+  return { id: entri.id, nomor }
+}
+
 /**
  * Kanal tunggal bagi modul lain untuk memposting jurnal. Modul penjualan,
  * pembelian, gudang, dan aset memanggil ini dengan menyebutkan dokumen
  * asalnya; tidak ada modul yang menulis ke tabel jurnal secara langsung.
  */
 export async function postingJurnal(
-  masukan: MasukanEntri & { sumberTipe: string; sumberId: string },
+  masukan: MasukanPostingModul,
   olehPengguna: string,
 ): Promise<EntriLengkap> {
-  const draft = await buatEntri(masukan, olehPengguna)
-  await db.update(journalEntries)
-    .set({ sumberTipe: masukan.sumberTipe, sumberId: masukan.sumberId })
-    .where(eq(journalEntries.id, draft.id))
-  return postingEntri(draft.id, olehPengguna)
+  const { id } = await db.transaction((tx) => postingJurnalDalamTx(tx, masukan, olehPengguna))
+  return (await ambilEntri(id))!
 }
 
 export { formatTanggalIndonesia }

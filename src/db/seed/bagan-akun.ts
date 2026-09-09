@@ -47,6 +47,7 @@ export const BAGAN_AKUN_STANDAR = [
   { kode: '2122', nama: 'Biaya yang Masih Harus Dibayar', tipeAkun: 'liabilitas_jangka_pendek' },
   { kode: '2131', nama: 'Uang Muka Penjualan', tipeAkun: 'liabilitas_jangka_pendek' },
   { kode: '2141', nama: 'Utang Bank Jangka Pendek', tipeAkun: 'liabilitas_jangka_pendek' },
+  { kode: '2151', nama: 'Penerimaan Barang Belum Ditagih', tipeAkun: 'liabilitas_jangka_pendek' },
 
   // LIABILITAS JANGKA PANJANG
   { kode: '2201', nama: 'Utang Bank Jangka Panjang', tipeAkun: 'liabilitas_jangka_panjang' },
@@ -111,3 +112,4 @@ export const AKUN_LABA_DITAHAN = '3201'
 export const AKUN_SELISIH_KURS_UNTUNG = '4202'
 export const AKUN_SELISIH_KURS_RUGI = '7102'
 export const AKUN_PEMBULATAN = '7104'
+export const AKUN_PENERIMAAN_BELUM_DITAGIH = '2151'

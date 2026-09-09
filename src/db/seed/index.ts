@@ -4,13 +4,17 @@ import {
   users, roles, permissions, rolePermissions, userRoles,
   companySettings, fiscalYears, currencies, currencyRates,
   accounts, paymentTerms, taxes, journals, sequences,
+  uoms, productCategories, products, warehouses, locations,
 } from '@/db/schema'
 import { daftarKodeIzin } from '@/lib/navigasi'
 import { hashKataSandi } from '@/modules/identitas/layanan/kata-sandi'
 import {
   BAGAN_AKUN_STANDAR, AKUN_LABA_DITAHAN, AKUN_SELISIH_KURS_UNTUNG,
-  AKUN_SELISIH_KURS_RUGI, AKUN_PEMBULATAN,
+  AKUN_SELISIH_KURS_RUGI, AKUN_PEMBULATAN, AKUN_PENERIMAAN_BELUM_DITAGIH,
 } from './bagan-akun'
+import {
+  SATUAN, KATEGORI_PRODUK, GUDANG, LOKASI, URUTAN_GUDANG, PRODUK_CONTOH,
+} from './gudang'
 import { MATA_UANG, KURS_CONTOH, SYARAT_PEMBAYARAN, JURNAL_STANDAR, PAJAK_STANDAR } from './data-dasar'
 
 /**
@@ -87,7 +91,13 @@ export async function jalankanSeed(): Promise<void> {
       akunSelisihKursUntungId: akunId(AKUN_SELISIH_KURS_UNTUNG),
       akunSelisihKursRugiId: akunId(AKUN_SELISIH_KURS_RUGI),
       akunPembulatanId: akunId(AKUN_PEMBULATAN),
+      akunPenerimaanBelumDitagihId: akunId(AKUN_PENERIMAAN_BELUM_DITAGIH),
     })
+  } else if (!pengaturan.akunPenerimaanBelumDitagihId) {
+    // Basis data yang sudah di-seed sebelum Fase 2 belum punya akun ini.
+    await db.update(companySettings)
+      .set({ akunPenerimaanBelumDitagihId: akunId(AKUN_PENERIMAAN_BELUM_DITAGIH) })
+      .where(eq(companySettings.id, pengaturan.id))
   }
 
   // 7. Tahun buku
@@ -129,4 +139,60 @@ export async function jalankanSeed(): Promise<void> {
   await db.insert(userRoles).values({
     userId: pengguna.id, roleId: peranSuperuser.id,
   }).onConflictDoNothing()
+
+  // 11. Satuan
+  await db.insert(uoms).values(
+    SATUAN.map((u) => ({ ...u, kategori: u.kategori as never })),
+  ).onConflictDoNothing()
+
+  // 12. Kategori produk
+  await db.insert(productCategories).values(
+    KATEGORI_PRODUK.map((k) => ({
+      kode: k.kode,
+      nama: k.nama,
+      akunPersediaanId: akunId(k.akunPersediaan),
+      akunHppId: akunId(k.akunHpp),
+      akunSelisihId: akunId(k.akunSelisih),
+      akunBarangRusakId: akunId(k.akunBarangRusak),
+    })),
+  ).onConflictDoNothing()
+
+  // 13. Gudang dan lokasi
+  await db.insert(warehouses).values(GUDANG).onConflictDoNothing()
+  const [gudang] = await db.select().from(warehouses)
+    .where(eq(warehouses.kode, GUDANG.kode)).limit(1)
+
+  await db.insert(locations).values(
+    LOKASI.map((l) => ({
+      kode: l.kode,
+      nama: l.nama,
+      tipe: l.tipe as never,
+      warehouseId: l.diGudang ? gudang.id : null,
+    })),
+  ).onConflictDoNothing()
+
+  // 14. Urutan penomoran dokumen gudang
+  await db.insert(sequences).values(
+    URUTAN_GUDANG.map((u) => ({
+      kode: u.kode, prefix: u.prefix, panjangDigit: 4,
+      nomorBerikut: 1, reset: u.reset as never,
+    })),
+  ).onConflictDoNothing()
+
+  // 15. Produk contoh
+  const kategoriLewatKode = new Map(
+    (await db.select().from(productCategories)).map((k) => [k.kode, k.id]),
+  )
+  const satuanLewatKode = new Map((await db.select().from(uoms)).map((u) => [u.kode, u.id]))
+
+  await db.insert(products).values(
+    PRODUK_CONTOH.map((p) => ({
+      kode: p.kode,
+      nama: p.nama,
+      tipe: 'disimpan' as const,
+      kategoriId: kategoriLewatKode.get(p.kategori)!,
+      uomId: satuanLewatKode.get(p.satuan)!,
+      hargaJual: p.hargaJual,
+    })),
+  ).onConflictDoNothing()
 }

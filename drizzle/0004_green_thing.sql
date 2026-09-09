@@ -1,0 +1,4 @@
+ALTER TABLE "company_settings" ADD COLUMN "akun_penerimaan_belum_ditagih_id" uuid;--> statement-breakpoint
+ALTER TABLE "product_categories" ADD COLUMN "akun_barang_rusak_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "company_settings" ADD CONSTRAINT "company_settings_akun_penerimaan_belum_ditagih_id_accounts_id_fk" FOREIGN KEY ("akun_penerimaan_belum_ditagih_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "product_categories" ADD CONSTRAINT "product_categories_akun_barang_rusak_id_accounts_id_fk" FOREIGN KEY ("akun_barang_rusak_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;

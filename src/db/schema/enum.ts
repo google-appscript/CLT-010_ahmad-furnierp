@@ -40,3 +40,29 @@ export const aksiAuditEnum = pgEnum('aksi_audit', [
  * dikoreksi lewat entri pembalik, bukan dengan pembatalan.
  */
 export const statusEntriEnum = pgEnum('status_entri', ['draft', 'diposting', 'dibatalkan'])
+
+export const tipeProdukEnum = pgEnum('tipe_produk', ['disimpan', 'jasa', 'konsumsi'])
+
+export const kategoriUomEnum = pgEnum('kategori_uom', [
+  'satuan', 'berat', 'panjang', 'luas', 'volume', 'waktu',
+])
+
+/**
+ * Setiap pergerakan stok selalu antara dua lokasi. Lokasi virtual membuat
+ * seluruh operasi memakai satu mekanisme yang sama: penerimaan adalah
+ * pemasok → internal, pengiriman internal → pelanggan, barang rusak
+ * internal → rusak, dan stock opname penyesuaian ↔ internal.
+ */
+export const tipeLokasiEnum = pgEnum('tipe_lokasi', [
+  'internal', 'pemasok', 'pelanggan', 'penyesuaian', 'rusak', 'produksi', 'transit',
+])
+
+export const tipeOperasiEnum = pgEnum('tipe_operasi', [
+  'penerimaan', 'pengiriman', 'transfer', 'barang_rusak', 'opname',
+])
+
+/**
+ * Operasi draft belum menyentuh stok. Menyelesaikannya membuat pergerakan
+ * stok dan memposting jurnal; setelah itu isinya tidak dapat diubah.
+ */
+export const statusOperasiEnum = pgEnum('status_operasi', ['draft', 'selesai', 'dibatalkan'])

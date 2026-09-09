@@ -25,6 +25,9 @@ export const companySettings = pgTable('company_settings', {
   akunSelisihKursUntungId: uuid('akun_selisih_kurs_untung_id').references(() => accounts.id),
   akunSelisihKursRugiId: uuid('akun_selisih_kurs_rugi_id').references(() => accounts.id),
   akunPembulatanId: uuid('akun_pembulatan_id').references(() => accounts.id),
+  // Penampung sementara antara barang diterima dan tagihan pemasok terbit.
+  akunPenerimaanBelumDitagihId: uuid('akun_penerimaan_belum_ditagih_id')
+    .references(() => accounts.id),
   diubahPada: timestamp('diubah_pada', { withTimezone: true }).notNull().defaultNow(),
 })
 
