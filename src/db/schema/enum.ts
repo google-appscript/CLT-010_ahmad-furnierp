@@ -128,3 +128,16 @@ export const statusAsetEnum = pgEnum('status_aset', [
 ])
 
 export const statusDepresiasiEnum = pgEnum('status_depresiasi', ['draft', 'diposting'])
+
+/**
+ * Proyek mengikuti pesanan penjualannya: dimulai saat pekerjaan berjalan dan
+ * ditutup saat pekerjaan selesai. Menutup proyek menghentikan pencatatan
+ * timesheet baru tanpa menghapus riwayatnya.
+ */
+export const statusProyekEnum = pgEnum('status_proyek', [
+  'draft', 'berjalan', 'selesai', 'dibatalkan',
+])
+
+export const statusTugasEnum = pgEnum('status_tugas', [
+  'belum_mulai', 'berjalan', 'selesai', 'dibatalkan',
+])

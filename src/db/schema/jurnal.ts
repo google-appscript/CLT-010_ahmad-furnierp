@@ -1,12 +1,13 @@
 import {
   pgTable, uuid, text, integer, numeric, date, timestamp,
-  uniqueIndex, index, check,
+  uniqueIndex, index, check, type AnyPgColumn,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { statusEntriEnum } from './enum'
 import { accounts, partners, taxes, journals } from './akuntansi'
 import { currencies } from './mata-uang'
 import { users } from './identitas'
+import { projects } from './proyek'
 
 export const journalEntries = pgTable('journal_entries', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -56,9 +57,9 @@ export const journalItems = pgTable('journal_items', {
   nilaiMataUang: numeric('nilai_mata_uang', { precision: 18, scale: 6 }),
   mataUangId: text('mata_uang_id').references(() => currencies.kode),
   taxId: uuid('tax_id').references(() => taxes.id),
-  // Disiapkan sejak sekarang agar profitabilitas proyek pada Fase 7 dapat
-  // dihitung dari data jurnal historis tanpa migrasi.
-  projectId: uuid('project_id'),
+  // Menandai biaya ke sebuah proyek. Referensinya lazy karena skema proyek
+  // sendiri merujuk pesanan penjualan, yang merujuk kembali ke jurnal ini.
+  projectId: uuid('project_id').references((): AnyPgColumn => projects.id),
   rekonsiliasiId: uuid('rekonsiliasi_id'),
 }, (t) => [
   check(

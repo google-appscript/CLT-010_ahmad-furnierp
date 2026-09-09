@@ -16,6 +16,7 @@ import { aksiSimpanEntri } from './aksi'
 export type PilihanAkun = { id: string; kode: string; nama: string }
 export type PilihanJurnal = { id: string; kode: string; nama: string }
 export type PilihanPartner = { id: string; nama: string }
+export type PilihanProyek = { id: string; kode: string; nama: string }
 
 export type BarisFormulir = {
   accountId: string
@@ -23,10 +24,11 @@ export type BarisFormulir = {
   debit: string
   kredit: string
   partnerId: string
+  projectId: string
 }
 
 const BARIS_KOSONG: BarisFormulir = {
-  accountId: '', label: '', debit: '', kredit: '', partnerId: '',
+  accountId: '', label: '', debit: '', kredit: '', partnerId: '', projectId: '',
 }
 
 export type NilaiAwalEntri = {
@@ -45,12 +47,13 @@ function angka(v: string): string {
 }
 
 export function FormulirEntri({
-  awal, akun, jurnal, partner,
+  awal, akun, jurnal, partner, proyek,
 }: {
   awal: NilaiAwalEntri
   akun: PilihanAkun[]
   jurnal: PilihanJurnal[]
   partner: PilihanPartner[]
+  proyek: PilihanProyek[]
 }) {
   const router = useRouter()
   const [menyimpan, mulai] = useTransition()
@@ -94,7 +97,7 @@ export function FormulirEntri({
           kredit: angka(b.kredit),
           nilaiMataUang: null,
           taxId: null,
-          projectId: null,
+          projectId: b.projectId || null,
         })),
       })
 
@@ -169,6 +172,7 @@ export function FormulirEntri({
                 <th className="px-3 py-2 text-left font-medium">Akun</th>
                 <th className="px-3 py-2 text-left font-medium">Keterangan</th>
                 <th className="px-3 py-2 text-left font-medium">Mitra</th>
+                <th className="px-3 py-2 text-left font-medium">Proyek</th>
                 <th className="w-40 px-3 py-2 text-right font-medium">Debit</th>
                 <th className="w-40 px-3 py-2 text-right font-medium">Kredit</th>
                 <th className="w-12 px-3 py-2" />
@@ -211,6 +215,21 @@ export function FormulirEntri({
                       <SelectContent>
                         {partner.map((p) => (
                           <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Select
+                      value={b.projectId}
+                      onValueChange={(v) => ubahBaris(i, { projectId: v })}
+                    >
+                      <SelectTrigger className="w-full min-w-36">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {proyek.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>{p.kode} — {p.nama}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

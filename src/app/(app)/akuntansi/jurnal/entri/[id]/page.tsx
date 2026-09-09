@@ -8,6 +8,7 @@ import { ambilEntri } from '@/modules/akuntansi/layanan/entri'
 import { daftarAkun } from '@/modules/akuntansi/layanan/akun'
 import { daftarJurnal } from '@/modules/akuntansi/layanan/jurnal'
 import { daftarPartner } from '@/modules/akuntansi/layanan/partner'
+import { daftarProyek } from '@/modules/proyek/layanan/proyek'
 import { LABEL_STATUS } from '@/modules/akuntansi/validasi/entri'
 import { formatAngka, tambah } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
@@ -32,11 +33,12 @@ export default async function HalamanDetailEntri({
   const entri = await ambilEntri(id)
   if (!entri) notFound()
 
-  const [akun, jurnal, partner] = await Promise.all([
-    daftarAkun(), daftarJurnal(), daftarPartner(),
+  const [akun, jurnal, partner, proyek] = await Promise.all([
+    daftarAkun(), daftarJurnal(), daftarPartner(), daftarProyek(),
   ])
   const akunLewatId = new Map(akun.map((a) => [a.id, a]))
   const partnerLewatId = new Map(partner.map((p) => [p.id, p]))
+  const proyekLewatId = new Map(proyek.map((p) => [p.id, p]))
   const kodeJurnal = jurnal.find((j) => j.id === entri.journalId)?.kode ?? '—'
 
   const [pembalik] = await db
@@ -78,11 +80,15 @@ export default async function HalamanDetailEntri({
               debit: Number(b.debit) === 0 ? '' : String(Number(b.debit)),
               kredit: Number(b.kredit) === 0 ? '' : String(Number(b.kredit)),
               partnerId: b.partnerId ?? '',
+              projectId: b.projectId ?? '',
             })),
           }}
           akun={akun.filter((a) => a.isActive).map((a) => ({ id: a.id, kode: a.kode, nama: a.nama }))}
           jurnal={jurnal.filter((j) => j.isActive).map((j) => ({ id: j.id, kode: j.kode, nama: j.nama }))}
           partner={partner.filter((p) => p.isActive).map((p) => ({ id: p.id, nama: p.nama }))}
+          proyek={proyek
+            .filter((p) => p.status !== 'dibatalkan')
+            .map((p) => ({ id: p.id, kode: p.kode, nama: p.nama }))}
         />
       </>
     )
@@ -134,6 +140,7 @@ export default async function HalamanDetailEntri({
               <th className="px-4 py-2 text-left font-medium">Akun</th>
               <th className="px-4 py-2 text-left font-medium">Keterangan</th>
               <th className="px-4 py-2 text-left font-medium">Mitra</th>
+              <th className="px-4 py-2 text-left font-medium">Proyek</th>
               <th className="px-4 py-2 text-right font-medium">Debit</th>
               <th className="px-4 py-2 text-right font-medium">Kredit</th>
             </tr>
@@ -150,6 +157,9 @@ export default async function HalamanDetailEntri({
                   <td className="px-4 py-1.5 text-muted-foreground">
                     {b.partnerId ? partnerLewatId.get(b.partnerId)?.nama ?? '—' : '—'}
                   </td>
+                  <td className="px-4 py-1.5 text-muted-foreground">
+                    {b.projectId ? proyekLewatId.get(b.projectId)?.kode ?? '—' : '—'}
+                  </td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(b.debit)}</td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(b.kredit)}</td>
                 </tr>
@@ -158,7 +168,7 @@ export default async function HalamanDetailEntri({
           </tbody>
           <tfoot className="border-t-2 bg-muted/40 font-semibold">
             <tr>
-              <td colSpan={3} className="px-4 py-2 text-right">Total</td>
+              <td colSpan={4} className="px-4 py-2 text-right">Total</td>
               <td className="px-4 py-2 text-right tabular-nums">{formatAngka(totalDebit)}</td>
               <td className="px-4 py-2 text-right tabular-nums">{formatAngka(totalKredit)}</td>
             </tr>

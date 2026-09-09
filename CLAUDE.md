@@ -75,6 +75,17 @@ perolehan dikurangi residu, dan baris hanya diposting berurutan — melompati
 bulan yang lebih awal membuat akumulasi tercatat tidak lagi cocok dengan buku
 besar.
 
+**Satu proyek satu pesanan penjualan.** Aturan ini yang membuat profitabilitas
+proyek dapat dihitung tanpa alokasi: apa pun yang difakturkan dan dikirim atas
+pesanan itu adalah pendapatan dan harga pokok proyeknya. Penegakannya struktural
+lewat indeks unik pada `projects.so_id`.
+
+**Timesheet bukan angka buku besar.** Tanpa modul penggajian, upah yang tercatat
+di timesheet belum menjadi transaksi. Laporan profitabilitas memisahkannya:
+laba kotor murni angka akuntansi, dan laba proyek adalah pandangan manajerial di
+atasnya. Tarif dibekukan ke setiap baris saat dicatat sehingga menaikkan tarif
+tidak mengubah biaya pekerjaan yang sudah lewat.
+
 **Penampung penerimaan wajib tertutup.** Penerimaan barang mengkredit akun
 Penerimaan Barang Belum Ditagih, dan tagihan pemasok mendebitnya kembali.
 Saldo akun itu yang tidak nol berarti ada barang diterima yang belum ditagih —
@@ -116,12 +127,13 @@ nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
 ## Status
 
-Fase 1A, 1B, 2, 3, 4, 5, dan 6 selesai. Sistem mencatat transaksi keuangan
-lengkap, mengelola persediaan dengan valuasi rata-rata bergerak, menjalankan
-alur pembelian dari permintaan penawaran sampai pelunasan pemasok, alur
-penjualan dari penawaran sampai penerimaan pembayaran dengan rekonsiliasi item
-jurnal, produksi dari resep sampai barang jadi bernilai harga pokok penuh,
-serta aset tetap dari pendaftaran sampai pelepasan.
+Ketujuh fase selesai. Sistem mencatat transaksi keuangan lengkap, mengelola
+persediaan dengan valuasi rata-rata bergerak, menjalankan alur pembelian dari
+permintaan penawaran sampai pelunasan pemasok, alur penjualan dari penawaran
+sampai penerimaan pembayaran dengan rekonsiliasi item jurnal, produksi dari
+resep sampai barang jadi bernilai harga pokok penuh, aset tetap dari
+pendaftaran sampai pelepasan, serta proyek dari pembukaan sampai laporan
+profitabilitasnya.
 
 Urutan dokumen penjualan menegakkan satu aturan: yang boleh difakturkan hanya
 yang sudah dikirim. Pengiriman membebankan harga pokok rata-rata lawan
@@ -138,12 +150,13 @@ berjalan.
 
 Aset tetap menyusun seluruh jadwal depresiasinya sekaligus saat dijalankan,
 lalu membebankannya bulan demi bulan — satu per satu atau berkala untuk semua
-aset sekaligus. Kategori aset memasangkan akun aset, akumulasi, dan bebannya,
-dan kategori yang tidak disusutkan seperti tanah cukup punya akun asetnya
-saja.
+aset sekaligus. Register aset tidak memposting perolehan; Laporan Aset
+membandingkannya terhadap saldo akun agar selisih apa pun langsung terlihat.
 
-Fase 7 berikutnya: Proyek — satu proyek satu pesanan penjualan, dengan tugas,
-timesheet, dan laporan profitabilitas.
+Proyek memegang tepat satu pesanan penjualan, sehingga pendapatan dan harga
+pokoknya terbaca langsung dari dokumen penjualan tanpa alokasi. Beban lain
+ditandai lewat kolom proyek pada item jurnal, dan jam kerja dicatat di
+timesheet dengan tarif yang dibekukan saat pencatatan.
 
 **Kanal integrasi.** Modul memposting jurnal lewat `postingJurnalDalamTx()` di
 `src/modules/akuntansi/layanan/entri.ts` bila perubahan datanya perlu segabung
@@ -152,5 +165,7 @@ sendiri. Keduanya menerima `sumberTipe` dan `sumberId` dokumen asalnya.
 Modul pembelian, penjualan, dan manufaktur tidak menulis pergerakan stok
 sendiri melainkan memanggil `buatOperasi()`/`selesaikanOperasi()` milik modul
 gudang — atau varian `…DalamTx()`-nya bila seluruh langkah harus segabung
-dalam satu transaksi, seperti pada penyelesaian perintah produksi. Tidak ada
-modul yang menulis ke tabel jurnal secara langsung.
+dalam satu transaksi, seperti pada penyelesaian perintah produksi. Modul proyek
+tidak memposting jurnal sama sekali; ia membaca dokumen penjualan dan penanda
+proyek pada item jurnal. Tidak ada modul yang menulis ke tabel jurnal secara
+langsung.
