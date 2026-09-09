@@ -51,8 +51,29 @@ export const sequences = pgTable('sequences', {
   kode: text('kode').notNull(),
   prefix: text('prefix').notNull(),
   panjangDigit: integer('panjang_digit').notNull().default(4),
+  /** Nomor pertama setiap kali periode baru dimulai; hampir selalu satu. */
   nomorBerikut: integer('nomor_berikut').notNull().default(1),
   reset: resetUrutanEnum('reset').notNull().default('tahunan'),
-  tahunTerakhir: integer('tahun_terakhir'),
-  bulanTerakhir: integer('bulan_terakhir'),
 }, (t) => [uniqueIndex('sequences_kode_unik').on(t.kode)])
+
+/**
+ * Pencacah nomor disimpan per periode, bukan satu pencacah dengan penanda
+ * periode terakhir.
+ *
+ * Satu pencacah hanya benar bila dokumen selalu dinomori berurutan menurut
+ * tanggal. Begitu ada dokumen bertanggal mundur — depresiasi sembilan bulan
+ * sekaligus, misalnya — pencacah tunggal akan mengulang dari satu untuk bulan
+ * lama, lalu menerbitkan nomor yang sudah terpakai saat kembali ke bulan
+ * berjalan. Pencacah per periode tidak peduli urutan pemanggilan.
+ *
+ * Untuk reset tahunan `bulan` bernilai nol, dan untuk yang tidak pernah reset
+ * `tahun` maupun `bulan` bernilai nol.
+ */
+export const sequencePeriods = pgTable('sequence_periods', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sequenceId: uuid('sequence_id').notNull()
+    .references(() => sequences.id, { onDelete: 'cascade' }),
+  tahun: integer('tahun').notNull(),
+  bulan: integer('bulan').notNull(),
+  nomorBerikut: integer('nomor_berikut').notNull().default(1),
+}, (t) => [uniqueIndex('sequence_periods_unik').on(t.sequenceId, t.tahun, t.bulan)])

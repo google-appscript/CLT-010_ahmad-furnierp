@@ -4,7 +4,7 @@ import {
   users, roles, permissions, rolePermissions, userRoles,
   companySettings, fiscalYears, currencies, currencyRates,
   accounts, paymentTerms, taxes, journals, sequences,
-  uoms, productCategories, products, warehouses, locations,
+  uoms, productCategories, products, warehouses, locations, assetCategories,
 } from '@/db/schema'
 import { daftarKodeIzin } from '@/lib/navigasi'
 import { hashKataSandi } from '@/modules/identitas/layanan/kata-sandi'
@@ -20,6 +20,7 @@ import {
   MATA_UANG, KURS_CONTOH, SYARAT_PEMBAYARAN, JURNAL_STANDAR, PAJAK_STANDAR,
   URUTAN_PEMBELIAN, URUTAN_PENJUALAN, URUTAN_MANUFAKTUR,
 } from './data-dasar'
+import { KATEGORI_ASET } from './aset'
 
 /**
  * Seed bersifat idempoten: setiap penyisipan memakai onConflictDoNothing
@@ -215,6 +216,20 @@ export async function jalankanSeed(): Promise<void> {
       kategoriId: kategoriLewatKode.get(p.kategori)!,
       uomId: satuanLewatKode.get(p.satuan)!,
       hargaJual: p.hargaJual,
+    })),
+  ).onConflictDoNothing()
+
+  // 16. Kategori aset tetap
+  await db.insert(assetCategories).values(
+    KATEGORI_ASET.map((k) => ({
+      kode: k.kode,
+      nama: k.nama,
+      akunAsetId: akunId(k.akunAset),
+      akunAkumulasiId: k.akunAkumulasi ? akunId(k.akunAkumulasi) : null,
+      akunBebanId: k.akunBeban ? akunId(k.akunBeban) : null,
+      dapatDidepresiasi: k.dapatDidepresiasi,
+      metodeBawaan: k.metodeBawaan as never,
+      masaManfaatBulanBawaan: k.masaManfaatBulanBawaan,
     })),
   ).onConflictDoNothing()
 }

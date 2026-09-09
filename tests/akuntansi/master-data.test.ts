@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db/klien'
-import { accounts, partners, journals, sequences } from '@/db/schema'
+import { accounts, partners, journals, sequences, sequencePeriods } from '@/db/schema'
 import { buatAkun, ubahAkun, nonaktifkanAkun, daftarAkun } from '@/modules/akuntansi/layanan/akun'
 import { skemaAkun, labelTipeAkun, KELOMPOK_TIPE_AKUN } from '@/modules/akuntansi/validasi/akun'
 import {
@@ -483,7 +483,11 @@ describe('layanan jurnal', () => {
     await ubahJurnal(jurnal.id, { ...JURNAL_UMUM, kode: 'JUM' })
     const [urutan] = await db.select().from(sequences).where(eq(sequences.id, jurnal.sequenceId))
     expect(urutan.kode).toBe('jurnal:JU')
-    expect(urutan.nomorBerikut).toBe(2)
+
+    // Pencacahnya ada di periode, bukan di definisi urutan.
+    const [periode] = await db.select().from(sequencePeriods)
+      .where(eq(sequencePeriods.sequenceId, jurnal.sequenceId))
+    expect(periode.nomorBerikut).toBe(2)
   })
 
   it('menolak jurnal yang tidak ada', async () => {

@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db/klien'
-import { sequences, companySettings, currencies, currencyRates } from '@/db/schema'
+import {
+  sequences, sequencePeriods, companySettings, currencies, currencyRates,
+} from '@/db/schema'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import {
   periodeTerkunci, wajibPeriodeTerbuka, PeriodeTerkunciError,
@@ -25,7 +27,7 @@ async function buatUrutan(ubah: Partial<typeof sequences.$inferInsert> = {}) {
 const tgl = (iso: string) => new Date(`${iso}T00:00:00Z`)
 
 describe('ambilNomorBerikut — pembentukan format', () => {
-  beforeEach(async () => { await bersihkanTabel(['sequences']) })
+  beforeEach(async () => { await bersihkanTabel(['sequence_periods', 'sequences']) })
 
   it('menyusun nomor tahunan sebagai PREFIX/TAHUN/NOMOR', async () => {
     await buatUrutan()
@@ -65,7 +67,7 @@ describe('ambilNomorBerikut — pembentukan format', () => {
 })
 
 describe('ambilNomorBerikut — pencacahan dan reset', () => {
-  beforeEach(async () => { await bersihkanTabel(['sequences']) })
+  beforeEach(async () => { await bersihkanTabel(['sequence_periods', 'sequences']) })
 
   it('menaikkan nomor pada pemanggilan berikutnya', async () => {
     await buatUrutan()
@@ -95,18 +97,57 @@ describe('ambilNomorBerikut — pencacahan dan reset', () => {
     expect(baru).toBe('JU/0002')
   })
 
-  it('menyimpan kembali penanda periode ke basis data', async () => {
+  it('menyimpan pencacah per periode ke basis data', async () => {
     await buatUrutan({ reset: 'bulanan' })
     await db.transaction((tx) => ambilNomorBerikut(tx, 'jurnal_umum', tgl('2026-09-08')))
-    const [baris] = await db.select().from(sequences).where(eq(sequences.kode, 'jurnal_umum'))
-    expect(baris.tahunTerakhir).toBe(2026)
-    expect(baris.bulanTerakhir).toBe(9)
-    expect(baris.nomorBerikut).toBe(2)
+
+    const [urutan] = await db.select().from(sequences).where(eq(sequences.kode, 'jurnal_umum'))
+    const periode = await db.select().from(sequencePeriods)
+      .where(eq(sequencePeriods.sequenceId, urutan.id))
+
+    expect(periode).toHaveLength(1)
+    expect(periode[0]).toMatchObject({ tahun: 2026, bulan: 9, nomorBerikut: 2 })
+    // Definisi urutan tetap menyimpan nomor awal periode, bukan pencacahnya.
+    expect(urutan.nomorBerikut).toBe(1)
+  })
+
+  it('nomor bertanggal mundur tidak menabrak nomor bulan berjalan', async () => {
+    // Inilah yang terjadi saat depresiasi beberapa bulan diposting sekaligus:
+    // bulan berjalan sudah punya nomor, lalu bulan-bulan lama menyusul.
+    await buatUrutan({ reset: 'bulanan' })
+    const september = await db.transaction(
+      (tx) => ambilNomorBerikut(tx, 'jurnal_umum', tgl('2026-09-30')),
+    )
+    const januari = await db.transaction(
+      (tx) => ambilNomorBerikut(tx, 'jurnal_umum', tgl('2026-01-31')),
+    )
+    const septemberLagi = await db.transaction(
+      (tx) => ambilNomorBerikut(tx, 'jurnal_umum', tgl('2026-09-30')),
+    )
+
+    expect(september).toBe('JU/2026/09/0001')
+    expect(januari).toBe('JU/2026/01/0001')
+    expect(septemberLagi).toBe('JU/2026/09/0002')
+  })
+
+  it('pencacah tiap periode berdiri sendiri', async () => {
+    await buatUrutan({ reset: 'bulanan' })
+    const nomor: string[] = []
+    for (const iso of ['2026-03-31', '2026-01-31', '2026-03-15', '2026-02-28', '2026-01-01']) {
+      nomor.push(await db.transaction((tx) => ambilNomorBerikut(tx, 'jurnal_umum', tgl(iso))))
+    }
+
+    expect(nomor).toEqual([
+      'JU/2026/03/0001', 'JU/2026/01/0001', 'JU/2026/03/0002',
+      'JU/2026/02/0001', 'JU/2026/01/0002',
+    ])
+    // Tidak ada nomor kembar, apa pun urutan pemanggilannya.
+    expect(new Set(nomor).size).toBe(nomor.length)
   })
 })
 
 describe('ambilNomorBerikut — keserempakan', () => {
-  beforeEach(async () => { await bersihkanTabel(['sequences']) })
+  beforeEach(async () => { await bersihkanTabel(['sequence_periods', 'sequences']) })
 
   it('tidak menghasilkan nomor kembar saat dua puluh transaksi berjalan bersamaan', async () => {
     await buatUrutan()

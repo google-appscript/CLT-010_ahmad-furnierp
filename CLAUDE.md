@@ -63,6 +63,18 @@ dan overhead pabrik mendebit Barang Dalam Proses dan mengkredit akun bebannya,
 sehingga biaya yang sudah dicatat saat terjadi berpindah ke nilai persediaan
 dan baru menyentuh laba rugi ketika barangnya terjual.
 
+**Register aset tidak memposting perolehan.** Nilai aset sudah masuk buku
+besar lewat tagihan pembelian atau saldo awal; mencatatnya lagi saat aset
+didaftarkan akan menghitung aset yang sama dua kali. Modul aset hanya
+menyusutkan dan melepas. Laporan Aset membandingkan register terhadap saldo
+akunnya agar selisih apa pun langsung terlihat.
+
+**Jadwal depresiasi berhenti tepat di nilai residu.** Baris terakhir menyerap
+sisa pembulatan sehingga jumlah seluruh beban persis sama dengan nilai
+perolehan dikurangi residu, dan baris hanya diposting berurutan — melompati
+bulan yang lebih awal membuat akumulasi tercatat tidak lagi cocok dengan buku
+besar.
+
 **Penampung penerimaan wajib tertutup.** Penerimaan barang mengkredit akun
 Penerimaan Barang Belum Ditagih, dan tagihan pemasok mendebitnya kembali.
 Saldo akun itu yang tidak nol berarti ada barang diterima yang belum ditagih —
@@ -73,8 +85,12 @@ dapat dikreditkan; PPh adalah pajak yang dipotong dari pembayaran sehingga
 mengurangi kas tanpa mengurangi nilai tagihan pemasok.
 
 **Penomoran dokumen.** Nomor diambil lewat `ambilNomorBerikut()` yang mengunci
-baris dengan `FOR UPDATE` di dalam transaksi yang sama dengan posting. Jangan
-pernah membaca lalu menaikkan `nomor_berikut` di luar pola itu.
+baris definisi urutan dengan `FOR UPDATE` di dalam transaksi yang sama dengan
+posting. Jangan pernah membaca lalu menaikkan pencacah di luar pola itu.
+Pencacahnya disimpan per periode di `sequence_periods`, bukan satu angka
+dengan penanda periode terakhir — dokumen bertanggal mundur, seperti
+depresiasi beberapa bulan yang diposting sekaligus, tidak boleh menerbitkan
+nomor yang sudah terpakai di periode berjalan.
 
 **Kurs dibekukan.** Kurs diambil dari tanggal transaksi dan disimpan pada entri.
 Kurs bertanggal setelah tanggal transaksi tidak pernah dipakai.
@@ -100,12 +116,12 @@ nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
 ## Status
 
-Fase 1A, 1B, 2, 3, 4, dan 5 selesai. Sistem mencatat transaksi keuangan
+Fase 1A, 1B, 2, 3, 4, 5, dan 6 selesai. Sistem mencatat transaksi keuangan
 lengkap, mengelola persediaan dengan valuasi rata-rata bergerak, menjalankan
 alur pembelian dari permintaan penawaran sampai pelunasan pemasok, alur
 penjualan dari penawaran sampai penerimaan pembayaran dengan rekonsiliasi item
-jurnal, serta produksi dari resep sampai barang jadi bernilai harga pokok
-penuh.
+jurnal, produksi dari resep sampai barang jadi bernilai harga pokok penuh,
+serta aset tetap dari pendaftaran sampai pelepasan.
 
 Urutan dokumen penjualan menegakkan satu aturan: yang boleh difakturkan hanya
 yang sudah dikirim. Pengiriman membebankan harga pokok rata-rata lawan
@@ -120,8 +136,14 @@ Resep disalin ke perintah produksi saat dibuat, bukan dibaca ulang saat
 diselesaikan, sehingga mengubah resep tidak mengusik perintah yang sedang
 berjalan.
 
-Fase 6 berikutnya: Aset Tetap — daftar aset, jadwal depresiasi, dan posting
-depresiasi berkala.
+Aset tetap menyusun seluruh jadwal depresiasinya sekaligus saat dijalankan,
+lalu membebankannya bulan demi bulan — satu per satu atau berkala untuk semua
+aset sekaligus. Kategori aset memasangkan akun aset, akumulasi, dan bebannya,
+dan kategori yang tidak disusutkan seperti tanah cukup punya akun asetnya
+saja.
+
+Fase 7 berikutnya: Proyek — satu proyek satu pesanan penjualan, dengan tugas,
+timesheet, dan laporan profitabilitas.
 
 **Kanal integrasi.** Modul memposting jurnal lewat `postingJurnalDalamTx()` di
 `src/modules/akuntansi/layanan/entri.ts` bila perubahan datanya perlu segabung

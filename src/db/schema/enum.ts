@@ -106,3 +106,25 @@ export const tipeFakturEnum = pgEnum('tipe_faktur', ['faktur', 'nota_kredit'])
 export const statusPerintahProduksiEnum = pgEnum('status_perintah_produksi', [
   'draft', 'dikonfirmasi', 'selesai', 'dibatalkan',
 ])
+
+/**
+ * Garis lurus membebankan jumlah yang sama setiap bulan. Saldo menurun ganda
+ * membebankan dua kali tarif garis lurus atas nilai buku berjalan, sehingga
+ * beban besar di awal dan mengecil kemudian; keduanya berhenti tepat di nilai
+ * residu.
+ */
+export const metodeDepresiasiEnum = pgEnum('metode_depresiasi', [
+  'garis_lurus', 'saldo_menurun_ganda',
+])
+
+/**
+ * Aset draft belum punya jadwal depresiasi. Menjalankannya menyusun jadwal
+ * dan mengubah status menjadi berjalan; setelah seluruh barisnya diposting
+ * aset menjadi selesai. Aset yang dilepas berhenti disusutkan apa pun sisa
+ * masa manfaatnya.
+ */
+export const statusAsetEnum = pgEnum('status_aset', [
+  'draft', 'berjalan', 'selesai', 'dilepas',
+])
+
+export const statusDepresiasiEnum = pgEnum('status_depresiasi', ['draft', 'diposting'])

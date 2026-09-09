@@ -1,13 +1,13 @@
 import { asc } from 'drizzle-orm'
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
-import { sequences } from '@/db/schema'
+import { sequences, sequencePeriods } from '@/db/schema'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
 
 export const metadata = { title: 'Penomoran Dokumen' }
 
-type BarisUrutan = typeof sequences.$inferSelect
+type BarisUrutan = typeof sequences.$inferSelect & { berikut: number }
 
 const LABEL_RESET: Record<string, string> = {
   tidak_pernah: 'Tidak pernah',
@@ -16,7 +16,7 @@ const LABEL_RESET: Record<string, string> = {
 }
 
 function contohNomor(u: BarisUrutan): string {
-  const nomor = String(u.nomorBerikut).padStart(u.panjangDigit, '0')
+  const nomor = String(u.berikut).padStart(u.panjangDigit, '0')
   if (u.reset === 'bulanan') return `${u.prefix}/2026/09/${nomor}`
   if (u.reset === 'tahunan') return `${u.prefix}/2026/${nomor}`
   return `${u.prefix}/${nomor}`
@@ -31,7 +31,7 @@ const kolom: Kolom<BarisUrutan>[] = [
   { kunci: 'reset', judul: 'Reset', lebar: '150px', render: (u) => LABEL_RESET[u.reset] ?? u.reset },
   {
     kunci: 'berikut', judul: 'Nomor Berikutnya', lebar: '160px', rataKanan: true,
-    render: (u) => u.nomorBerikut,
+    render: (u) => u.berikut,
   },
   {
     kunci: 'contoh', judul: 'Contoh',
@@ -41,7 +41,27 @@ const kolom: Kolom<BarisUrutan>[] = [
 
 export default async function HalamanPenomoran() {
   await wajibIzin('pengaturan.penomoran.kelola')
-  const urutan = await db.select().from(sequences).orderBy(asc(sequences.kode))
+
+  // Pencacah disimpan per periode, jadi yang ditampilkan adalah pencacah
+  // periode berjalan — bukan satu angka yang berlaku untuk semua bulan.
+  const kini = new Date()
+  const tahun = kini.getUTCFullYear()
+  const bulan = kini.getUTCMonth() + 1
+
+  const [daftar, periode] = await Promise.all([
+    db.select().from(sequences).orderBy(asc(sequences.kode)),
+    db.select().from(sequencePeriods),
+  ])
+
+  function pencacah(u: typeof sequences.$inferSelect): number {
+    const cocok = periode.find((p) =>
+      p.sequenceId === u.id &&
+      p.tahun === (u.reset === 'tidak_pernah' ? 0 : tahun) &&
+      p.bulan === (u.reset === 'bulanan' ? bulan : 0))
+    return cocok?.nomorBerikut ?? u.nomorBerikut
+  }
+
+  const urutan: BarisUrutan[] = daftar.map((u) => ({ ...u, berikut: pencacah(u) }))
 
   return (
     <>
@@ -56,8 +76,9 @@ export default async function HalamanPenomoran() {
         pesanKosong="Belum ada urutan penomoran."
       />
       <p className="mt-4 text-xs text-muted-foreground">
-        Halaman ini hanya menampilkan. Mengubah nomor berikutnya secara manual berisiko
-        menghasilkan nomor kembar pada dokumen yang sudah terbit.
+        Halaman ini hanya menampilkan, dan angkanya berlaku untuk periode berjalan. Setiap
+        periode punya pencacahnya sendiri sehingga dokumen bertanggal mundur tidak pernah
+        menabrak nomor yang sudah terbit.
       </p>
     </>
   )

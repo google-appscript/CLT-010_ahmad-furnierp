@@ -11,7 +11,7 @@ export type ItemMenu = {
 }
 
 /** Fase tertinggi yang sudah dibangun. Naikkan saat fase berikutnya selesai. */
-export const FASE_AKTIF = 5
+export const FASE_AKTIF = 6
 
 /**
  * Navigasi tiga tingkat: grup → seksi → halaman.
@@ -130,6 +130,7 @@ export const NAVIGASI: ItemMenu[] = [
         anak: [
           { label: 'Daftar Aset', rute: '/akuntansi/aset', izin: 'akuntansi.aset.lihat', fase: 6 },
           { label: 'Jadwal Depresiasi', rute: '/akuntansi/aset/depresiasi', izin: 'akuntansi.depresiasi.lihat', fase: 6 },
+          { label: 'Laporan Aset', rute: '/akuntansi/aset/laporan', izin: 'akuntansi.aset.laporan', fase: 6 },
         ],
       },
       {
@@ -154,6 +155,7 @@ export const NAVIGASI: ItemMenu[] = [
           { label: 'Mata Uang & Kurs', rute: '/akuntansi/konfigurasi/mata-uang', izin: 'akuntansi.mata-uang.kelola', fase: 1 },
           { label: 'Syarat Pembayaran', rute: '/akuntansi/konfigurasi/syarat-pembayaran', izin: 'akuntansi.syarat-bayar.kelola', fase: 1 },
           { label: 'Tahun Buku & Penguncian', rute: '/akuntansi/konfigurasi/tahun-buku', izin: 'akuntansi.tahun-buku.kelola', fase: 1 },
+          { label: 'Kategori Aset', rute: '/akuntansi/konfigurasi/kategori-aset', izin: 'akuntansi.kategori-aset.kelola', fase: 6 },
         ],
       },
     ],
