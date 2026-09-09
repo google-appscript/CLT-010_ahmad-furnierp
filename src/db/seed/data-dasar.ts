@@ -48,3 +48,10 @@ export const PAJAK_STANDAR = [
     tarif: '0.5', hargaTermasukPajak: false, isPemotongan: true, kodeAkun: '2115',
   },
 ] as const
+
+export const URUTAN_PEMBELIAN = [
+  { kode: 'pembelian:pesanan', prefix: 'PO', reset: 'bulanan' },
+  { kode: 'pembelian:tagihan', prefix: 'FB', reset: 'bulanan' },
+  { kode: 'pembelian:nota-debit', prefix: 'ND', reset: 'bulanan' },
+  { kode: 'pembelian:pembayaran', prefix: 'BKK', reset: 'bulanan' },
+] as const

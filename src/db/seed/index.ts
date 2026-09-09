@@ -15,7 +15,10 @@ import {
 import {
   SATUAN, KATEGORI_PRODUK, GUDANG, LOKASI, URUTAN_GUDANG, PRODUK_CONTOH,
 } from './gudang'
-import { MATA_UANG, KURS_CONTOH, SYARAT_PEMBAYARAN, JURNAL_STANDAR, PAJAK_STANDAR } from './data-dasar'
+import {
+  MATA_UANG, KURS_CONTOH, SYARAT_PEMBAYARAN, JURNAL_STANDAR, PAJAK_STANDAR,
+  URUTAN_PEMBELIAN,
+} from './data-dasar'
 
 /**
  * Seed bersifat idempoten: setiap penyisipan memakai onConflictDoNothing
@@ -173,7 +176,7 @@ export async function jalankanSeed(): Promise<void> {
 
   // 14. Urutan penomoran dokumen gudang
   await db.insert(sequences).values(
-    URUTAN_GUDANG.map((u) => ({
+    [...URUTAN_GUDANG, ...URUTAN_PEMBELIAN].map((u) => ({
       kode: u.kode, prefix: u.prefix, panjangDigit: 4,
       nomorBerikut: 1, reset: u.reset as never,
     })),

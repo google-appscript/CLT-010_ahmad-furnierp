@@ -66,3 +66,19 @@ export const tipeOperasiEnum = pgEnum('tipe_operasi', [
  * stok dan memposting jurnal; setelah itu isinya tidak dapat diubah.
  */
 export const statusOperasiEnum = pgEnum('status_operasi', ['draft', 'selesai', 'dibatalkan'])
+
+/**
+ * Permintaan penawaran dan pesanan pembelian adalah dokumen yang sama pada
+ * tahap berbeda, persis seperti di Odoo. Mengonfirmasi permintaan mengubahnya
+ * menjadi pesanan dan memberinya nomor.
+ */
+export const statusPembelianEnum = pgEnum('status_pembelian', [
+  'permintaan', 'dikonfirmasi', 'selesai', 'dibatalkan',
+])
+
+export const statusTagihanEnum = pgEnum('status_tagihan', ['draft', 'diposting', 'dibatalkan'])
+
+/** Nota debit membalik arah tagihan, dipakai untuk retur atau koreksi. */
+export const tipeTagihanEnum = pgEnum('tipe_tagihan', ['tagihan', 'nota_debit'])
+
+export const statusPembayaranEnum = pgEnum('status_pembayaran', ['draft', 'diposting', 'dibatalkan'])
