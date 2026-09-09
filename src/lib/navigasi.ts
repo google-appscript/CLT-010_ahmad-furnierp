@@ -11,7 +11,7 @@ export type ItemMenu = {
 }
 
 /** Fase tertinggi yang sudah dibangun. Naikkan saat fase berikutnya selesai. */
-export const FASE_AKTIF = 2
+export const FASE_AKTIF = 3
 
 /**
  * Navigasi tiga tingkat: grup → seksi → halaman.
@@ -122,7 +122,7 @@ export const NAVIGASI: ItemMenu[] = [
         anak: [
           { label: 'Entri Jurnal', rute: '/akuntansi/jurnal/entri', izin: 'akuntansi.jurnal.lihat', fase: 1 },
           { label: 'Item Jurnal', rute: '/akuntansi/jurnal/item', izin: 'akuntansi.jurnal.lihat', fase: 1 },
-          { label: 'Rekonsiliasi', rute: '/akuntansi/jurnal/rekonsiliasi', izin: 'akuntansi.rekonsiliasi.kelola', fase: 3 },
+          { label: 'Rekonsiliasi', rute: '/akuntansi/jurnal/rekonsiliasi', izin: 'akuntansi.rekonsiliasi.kelola', fase: 4 },
         ],
       },
       {
