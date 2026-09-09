@@ -26,6 +26,9 @@ const IZIN: Record<string, string> = {
   transfer: 'gudang.transfer.kelola',
   barang_rusak: 'gudang.scrap.kelola',
   opname: 'gudang.opname.kelola',
+  // Operasi produksi hanya dapat dilihat oleh yang berhak atas perintahnya.
+  konsumsi_produksi: 'manufaktur.mo.lihat',
+  hasil_produksi: 'manufaktur.mo.lihat',
 }
 
 export default async function HalamanDetailOperasi({

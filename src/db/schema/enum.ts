@@ -59,6 +59,10 @@ export const tipeLokasiEnum = pgEnum('tipe_lokasi', [
 
 export const tipeOperasiEnum = pgEnum('tipe_operasi', [
   'penerimaan', 'pengiriman', 'transfer', 'barang_rusak', 'opname',
+  // Produksi memakai mekanisme yang sama: bahan keluar ke lokasi virtual
+  // Produksi, barang jadi masuk kembali dari sana. Keduanya tidak dibuat
+  // manual melainkan selalu lahir dari sebuah perintah produksi.
+  'konsumsi_produksi', 'hasil_produksi',
 ])
 
 /**
@@ -93,3 +97,12 @@ export const statusPenjualanEnum = pgEnum('status_penjualan', [
 
 /** Nota kredit membalik arah faktur, dipakai untuk retur atau koreksi. */
 export const tipeFakturEnum = pgEnum('tipe_faktur', ['faktur', 'nota_kredit'])
+
+/**
+ * Perintah produksi mengikuti pola dokumen lain: draft belum bernomor dan belum
+ * menyentuh stok, konfirmasi memberi nomor dan mengunci kebutuhan bahan, dan
+ * penyelesaian mencatat konsumsi, biaya, serta hasil produksinya sekaligus.
+ */
+export const statusPerintahProduksiEnum = pgEnum('status_perintah_produksi', [
+  'draft', 'dikonfirmasi', 'selesai', 'dibatalkan',
+])

@@ -28,6 +28,11 @@ export const companySettings = pgTable('company_settings', {
   // Penampung sementara antara barang diterima dan tagihan pemasok terbit.
   akunPenerimaanBelumDitagihId: uuid('akun_penerimaan_belum_ditagih_id')
     .references(() => accounts.id),
+  // Penampung biaya produksi berjalan. Bahan yang dikonsumsi dan biaya
+  // konversi masuk ke sini, lalu keluar seluruhnya saat barang jadi diterima,
+  // sehingga saldonya hanya mencerminkan perintah produksi yang belum selesai.
+  akunBarangDalamProsesId: uuid('akun_barang_dalam_proses_id')
+    .references(() => accounts.id),
   diubahPada: timestamp('diubah_pada', { withTimezone: true }).notNull().defaultNow(),
 })
 

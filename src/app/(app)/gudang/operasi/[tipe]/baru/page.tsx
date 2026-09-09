@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { wajibIzin } from '@/lib/sesi'
 import {
-  SLUG_KE_TIPE, labelTipeOperasi, ARAH_BAWAAN,
+  SLUG_KE_TIPE, labelTipeOperasi, ARAH_BAWAAN, dapatDibuatManual,
 } from '@/modules/gudang/validasi/operasi'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { FormulirOperasi } from '../../formulir-operasi'
@@ -13,6 +13,9 @@ const IZIN: Record<string, string> = {
   transfer: 'gudang.transfer.kelola',
   barang_rusak: 'gudang.scrap.kelola',
   opname: 'gudang.opname.kelola',
+  // Operasi produksi hanya dapat dilihat oleh yang berhak atas perintahnya.
+  konsumsi_produksi: 'manufaktur.mo.lihat',
+  hasil_produksi: 'manufaktur.mo.lihat',
 }
 
 export default async function HalamanOperasiBaru({
@@ -22,7 +25,10 @@ export default async function HalamanOperasiBaru({
 }) {
   const { tipe: slug } = await params
   const tipe = SLUG_KE_TIPE[slug]
-  if (!tipe) notFound()
+  // Konsumsi dan hasil produksi selalu lahir berpasangan dari perintah
+  // produksi; membuat salah satunya sendiri akan meninggalkan saldo Barang
+  // Dalam Proses yang tidak pernah tertutup.
+  if (!tipe || !dapatDibuatManual(tipe)) notFound()
 
   await wajibIzin(IZIN[tipe])
   const { daftarProduk, daftarLokasi, daftarSatuan, daftarMitra } = await ambilDataPilihan()

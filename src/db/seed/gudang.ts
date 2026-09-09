@@ -67,6 +67,8 @@ export const URUTAN_GUDANG = [
   { kode: 'gudang:barang-rusak', prefix: 'SCR', reset: 'bulanan' },
   { kode: 'gudang:opname', prefix: 'OPN', reset: 'bulanan' },
   { kode: 'gudang:packing-list', prefix: 'PL', reset: 'bulanan' },
+  { kode: 'gudang:konsumsi-produksi', prefix: 'KSP', reset: 'bulanan' },
+  { kode: 'gudang:hasil-produksi', prefix: 'HSP', reset: 'bulanan' },
 ] as const
 
 /** Produk contoh untuk manufaktur furnitur. */

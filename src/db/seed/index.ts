@@ -11,13 +11,14 @@ import { hashKataSandi } from '@/modules/identitas/layanan/kata-sandi'
 import {
   BAGAN_AKUN_STANDAR, AKUN_LABA_DITAHAN, AKUN_SELISIH_KURS_UNTUNG,
   AKUN_SELISIH_KURS_RUGI, AKUN_PEMBULATAN, AKUN_PENERIMAAN_BELUM_DITAGIH,
+  AKUN_BARANG_DALAM_PROSES,
 } from './bagan-akun'
 import {
   SATUAN, KATEGORI_PRODUK, GUDANG, LOKASI, URUTAN_GUDANG, PRODUK_CONTOH,
 } from './gudang'
 import {
   MATA_UANG, KURS_CONTOH, SYARAT_PEMBAYARAN, JURNAL_STANDAR, PAJAK_STANDAR,
-  URUTAN_PEMBELIAN, URUTAN_PENJUALAN,
+  URUTAN_PEMBELIAN, URUTAN_PENJUALAN, URUTAN_MANUFAKTUR,
 } from './data-dasar'
 
 /**
@@ -101,12 +102,22 @@ export async function jalankanSeed(): Promise<void> {
       akunSelisihKursRugiId: akunId(AKUN_SELISIH_KURS_RUGI),
       akunPembulatanId: akunId(AKUN_PEMBULATAN),
       akunPenerimaanBelumDitagihId: akunId(AKUN_PENERIMAAN_BELUM_DITAGIH),
+      akunBarangDalamProsesId: akunId(AKUN_BARANG_DALAM_PROSES),
     })
-  } else if (!pengaturan.akunPenerimaanBelumDitagihId) {
-    // Basis data yang sudah di-seed sebelum Fase 2 belum punya akun ini.
-    await db.update(companySettings)
-      .set({ akunPenerimaanBelumDitagihId: akunId(AKUN_PENERIMAAN_BELUM_DITAGIH) })
-      .where(eq(companySettings.id, pengaturan.id))
+  } else {
+    // Basis data yang sudah di-seed sebelum fase berikutnya belum punya
+    // penampung yang diperkenalkan fase itu; isi yang masih kosong saja.
+    const tambahan: Record<string, string> = {}
+    if (!pengaturan.akunPenerimaanBelumDitagihId) {
+      tambahan.akunPenerimaanBelumDitagihId = akunId(AKUN_PENERIMAAN_BELUM_DITAGIH)
+    }
+    if (!pengaturan.akunBarangDalamProsesId) {
+      tambahan.akunBarangDalamProsesId = akunId(AKUN_BARANG_DALAM_PROSES)
+    }
+    if (Object.keys(tambahan).length > 0) {
+      await db.update(companySettings).set(tambahan)
+        .where(eq(companySettings.id, pengaturan.id))
+    }
   }
 
   // 7. Tahun buku
@@ -182,7 +193,9 @@ export async function jalankanSeed(): Promise<void> {
 
   // 14. Urutan penomoran dokumen gudang
   await db.insert(sequences).values(
-    [...URUTAN_GUDANG, ...URUTAN_PEMBELIAN, ...URUTAN_PENJUALAN].map((u) => ({
+    [
+      ...URUTAN_GUDANG, ...URUTAN_PEMBELIAN, ...URUTAN_PENJUALAN, ...URUTAN_MANUFAKTUR,
+    ].map((u) => ({
       kode: u.kode, prefix: u.prefix, panjangDigit: 4,
       nomorBerikut: 1, reset: u.reset as never,
     })),

@@ -8,6 +8,7 @@ import { locations, partners } from '@/db/schema'
 import { daftarOperasi } from '@/modules/gudang/layanan/operasi'
 import {
   SLUG_KE_TIPE, labelTipeOperasi, LABEL_STATUS_OPERASI, DESKRIPSI_TIPE,
+  dapatDibuatManual,
 } from '@/modules/gudang/validasi/operasi'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +24,9 @@ const IZIN: Record<string, string> = {
   transfer: 'gudang.transfer.kelola',
   barang_rusak: 'gudang.scrap.kelola',
   opname: 'gudang.opname.kelola',
+  // Operasi produksi hanya dapat dilihat oleh yang berhak atas perintahnya.
+  konsumsi_produksi: 'manufaktur.mo.lihat',
+  hasil_produksi: 'manufaktur.mo.lihat',
 }
 
 export default async function HalamanDaftarOperasi({
@@ -49,13 +53,13 @@ export default async function HalamanDaftarOperasi({
       <KepalaHalaman
         judul={labelTipeOperasi(tipe)}
         deskripsi={DESKRIPSI_TIPE[tipe]}
-        aksi={
+        aksi={dapatDibuatManual(tipe) ? (
           <Button asChild>
             <Link href={`/gudang/operasi/${slug}/baru`}>
               <Plus className="mr-2 h-4 w-4" />Buat {labelTipeOperasi(tipe)}
             </Link>
           </Button>
-        }
+        ) : undefined}
       />
 
       {operasi.length === 0 ? (

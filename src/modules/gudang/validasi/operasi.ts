@@ -19,7 +19,22 @@ export const skemaBarisOperasi = z.object({
 
 export const DAFTAR_TIPE_OPERASI = [
   'penerimaan', 'pengiriman', 'transfer', 'barang_rusak', 'opname',
+  'konsumsi_produksi', 'hasil_produksi',
 ] as const
+
+/**
+ * Tipe yang boleh dibuat langsung dari menu gudang. Konsumsi dan hasil
+ * produksi sengaja tidak ada di sini: keduanya selalu lahir berpasangan dari
+ * sebuah perintah produksi, dan membuat salah satunya sendiri akan meninggalkan
+ * saldo Barang Dalam Proses yang tidak pernah tertutup.
+ */
+export const TIPE_OPERASI_MANUAL = [
+  'penerimaan', 'pengiriman', 'transfer', 'barang_rusak', 'opname',
+] as const
+
+export function dapatDibuatManual(tipe: string): boolean {
+  return (TIPE_OPERASI_MANUAL as readonly string[]).includes(tipe)
+}
 
 const LABEL_TIPE: Record<string, string> = {
   penerimaan: 'Penerimaan Barang',
@@ -27,6 +42,8 @@ const LABEL_TIPE: Record<string, string> = {
   transfer: 'Transfer Internal',
   barang_rusak: 'Barang Rusak',
   opname: 'Stock Opname',
+  konsumsi_produksi: 'Konsumsi Produksi',
+  hasil_produksi: 'Hasil Produksi',
 }
 
 export function labelTipeOperasi(tipe: string): string {
@@ -85,6 +102,8 @@ export const SLUG_KE_TIPE: Record<string, (typeof DAFTAR_TIPE_OPERASI)[number]> 
   'transfer': 'transfer',
   'barang-rusak': 'barang_rusak',
   'opname': 'opname',
+  'konsumsi-produksi': 'konsumsi_produksi',
+  'hasil-produksi': 'hasil_produksi',
 }
 
 export const TIPE_KE_SLUG: Record<string, string> = Object.fromEntries(
@@ -98,6 +117,8 @@ export const ARAH_BAWAAN: Record<string, { asal: string; tujuan: string }> = {
   transfer: { asal: 'internal', tujuan: 'internal' },
   barang_rusak: { asal: 'internal', tujuan: 'rusak' },
   opname: { asal: 'penyesuaian', tujuan: 'internal' },
+  konsumsi_produksi: { asal: 'internal', tujuan: 'produksi' },
+  hasil_produksi: { asal: 'produksi', tujuan: 'internal' },
 }
 
 export const DESKRIPSI_TIPE: Record<string, string> = {
@@ -106,4 +127,6 @@ export const DESKRIPSI_TIPE: Record<string, string> = {
   transfer: 'Perpindahan antar lokasi internal. Stok perusahaan tidak berubah sehingga tidak menghasilkan jurnal.',
   barang_rusak: 'Barang dikeluarkan dari gudang dan dibebankan sebagai kerugian barang rusak.',
   opname: 'Masukkan hasil hitung fisik. Sistem membukukan selisihnya terhadap stok tercatat.',
+  konsumsi_produksi: 'Bahan keluar dari gudang menuju lokasi virtual Produksi dan menambah saldo Barang Dalam Proses. Dokumen ini dibuat oleh perintah produksi.',
+  hasil_produksi: 'Barang jadi masuk dari lokasi virtual Produksi ke gudang dan mengosongkan saldo Barang Dalam Proses perintah produksinya.',
 }

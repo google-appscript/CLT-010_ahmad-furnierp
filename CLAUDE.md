@@ -51,6 +51,18 @@ membuat seluruh jenis operasi memakai satu mekanisme yang sama.
 **Operasi gudang selesai tidak pernah diubah.** Pergerakan stok dan jurnalnya
 dicatat dalam satu transaksi; koreksi dilakukan lewat operasi baru.
 
+**Produksi menutup penampungnya sendiri.** Konsumsi bahan, penyerapan biaya
+konversi, dan penerimaan barang jadi terjadi dalam satu transaksi, sehingga
+akun Barang Dalam Proses selalu kembali nol begitu perintah produksi selesai.
+Saldo akun itu yang tidak nol berarti ada produksi yang belum tuntas. Operasi
+`konsumsi_produksi` dan `hasil_produksi` tidak boleh dibuat manual dari menu
+gudang karena akan meninggalkan saldo yang tidak pernah tertutup.
+
+**Biaya konversi diserap, bukan dibebankan dua kali.** Tenaga kerja langsung
+dan overhead pabrik mendebit Barang Dalam Proses dan mengkredit akun bebannya,
+sehingga biaya yang sudah dicatat saat terjadi berpindah ke nilai persediaan
+dan baru menyentuh laba rugi ketika barangnya terjual.
+
 **Penampung penerimaan wajib tertutup.** Penerimaan barang mengkredit akun
 Penerimaan Barang Belum Ditagih, dan tagihan pemasok mendebitnya kembali.
 Saldo akun itu yang tidak nol berarti ada barang diterima yang belum ditagih —
@@ -88,11 +100,12 @@ nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
 ## Status
 
-Fase 1A, 1B, 2, 3, dan 4 selesai. Sistem mencatat transaksi keuangan lengkap,
-mengelola persediaan dengan valuasi rata-rata bergerak, menjalankan alur
-pembelian dari permintaan penawaran sampai pelunasan pemasok, serta alur
+Fase 1A, 1B, 2, 3, 4, dan 5 selesai. Sistem mencatat transaksi keuangan
+lengkap, mengelola persediaan dengan valuasi rata-rata bergerak, menjalankan
+alur pembelian dari permintaan penawaran sampai pelunasan pemasok, alur
 penjualan dari penawaran sampai penerimaan pembayaran dengan rekonsiliasi item
-jurnal.
+jurnal, serta produksi dari resep sampai barang jadi bernilai harga pokok
+penuh.
 
 Urutan dokumen penjualan menegakkan satu aturan: yang boleh difakturkan hanya
 yang sudah dikirim. Pengiriman membebankan harga pokok rata-rata lawan
@@ -100,13 +113,22 @@ persediaan; faktur baru mencatat pendapatan, PPN Keluaran, dan piutang.
 Pembayaran yang melunasi seluruh piutang seorang pelanggan memicu rekonsiliasi
 otomatis; pelunasan sebagian sengaja dibiarkan terbuka agar sisanya terlihat.
 
-Fase 5 berikutnya: Manufaktur — bill of material, perintah kerja, dan
-konsumsi bahan lewat lokasi virtual Produksi.
+Manufaktur memakai mekanisme pergerakan stok yang sama seperti modul lain:
+bahan keluar gudang menuju lokasi virtual Produksi, biaya konversi diserap ke
+Barang Dalam Proses, lalu barang jadi masuk gudang senilai seluruh biaya itu.
+Resep disalin ke perintah produksi saat dibuat, bukan dibaca ulang saat
+diselesaikan, sehingga mengubah resep tidak mengusik perintah yang sedang
+berjalan.
+
+Fase 6 berikutnya: Aset Tetap — daftar aset, jadwal depresiasi, dan posting
+depresiasi berkala.
 
 **Kanal integrasi.** Modul memposting jurnal lewat `postingJurnalDalamTx()` di
 `src/modules/akuntansi/layanan/entri.ts` bila perubahan datanya perlu segabung
 dalam satu transaksi dengan jurnalnya, atau `postingJurnal()` bila berdiri
 sendiri. Keduanya menerima `sumberTipe` dan `sumberId` dokumen asalnya.
-Modul pembelian dan penjualan tidak menulis pergerakan stok sendiri melainkan
-memanggil `buatOperasi()` dan `selesaikanOperasi()` milik modul gudang. Tidak
-ada modul yang menulis ke tabel jurnal secara langsung.
+Modul pembelian, penjualan, dan manufaktur tidak menulis pergerakan stok
+sendiri melainkan memanggil `buatOperasi()`/`selesaikanOperasi()` milik modul
+gudang — atau varian `…DalamTx()`-nya bila seluruh langkah harus segabung
+dalam satu transaksi, seperti pada penyelesaian perintah produksi. Tidak ada
+modul yang menulis ke tabel jurnal secara langsung.

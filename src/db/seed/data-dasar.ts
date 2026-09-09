@@ -56,6 +56,10 @@ export const URUTAN_PEMBELIAN = [
   { kode: 'pembelian:pembayaran', prefix: 'BKK', reset: 'bulanan' },
 ] as const
 
+export const URUTAN_MANUFAKTUR = [
+  { kode: 'manufaktur:perintah-produksi', prefix: 'PK', reset: 'bulanan' },
+] as const
+
 export const URUTAN_PENJUALAN = [
   { kode: 'penjualan:pesanan', prefix: 'SO', reset: 'bulanan' },
   { kode: 'penjualan:faktur', prefix: 'FJ', reset: 'bulanan' },
