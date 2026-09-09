@@ -11,7 +11,7 @@ export type ItemMenu = {
 }
 
 /** Fase tertinggi yang sudah dibangun. Naikkan saat fase berikutnya selesai. */
-export const FASE_AKTIF = 1
+export const FASE_AKTIF = 2
 
 /**
  * Navigasi tiga tingkat: grup → seksi → halaman.

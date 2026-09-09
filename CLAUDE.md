@@ -39,8 +39,17 @@ Nomor diberikan saat posting, bukan saat draft dibuat.
 bukan dari hierarki kode akun. Menambah akun baru otomatis muncul di baris
 laporan yang benar tanpa konfigurasi tambahan.
 
-**Master data dinonaktifkan, tidak dihapus.** Akun, mitra, pajak, dan jurnal
-dapat sudah dirujuk dokumen lain.
+**Master data dinonaktifkan, tidak dihapus.** Akun, mitra, pajak, jurnal, dan
+produk dapat sudah dirujuk dokumen lain.
+
+**Stok dihitung dari pergerakan.** Saldo stok tidak pernah disimpan sebagai
+angka tersendiri melainkan dijumlahkan dari `stock_moves`, sehingga tidak bisa
+menyimpang dari kartu stoknya. Setiap pergerakan selalu antara dua lokasi;
+lokasi virtual (Pemasok, Pelanggan, Penyesuaian, Barang Rusak, Produksi)
+membuat seluruh jenis operasi memakai satu mekanisme yang sama.
+
+**Operasi gudang selesai tidak pernah diubah.** Pergerakan stok dan jurnalnya
+dicatat dalam satu transaksi; koreksi dilakukan lewat operasi baru.
 
 **Penomoran dokumen.** Nomor diambil lewat `ambilNomorBerikut()` yang mengunci
 baris dengan `FOR UPDATE` di dalam transaksi yang sama dengan posting. Jangan
@@ -70,14 +79,17 @@ nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
 ## Status
 
-Fase 1A dan 1B selesai. Sistem sudah dapat mencatat transaksi keuangan lengkap
-dan menghasilkan laporan yang benar.
+Fase 1A, 1B, dan 2 selesai. Sistem mencatat transaksi keuangan lengkap,
+menghasilkan laporan yang benar, dan mengelola persediaan dengan valuasi
+rata-rata bergerak yang terhubung ke buku besar.
 
-Fase 2 berikutnya: Produk & Gudang — produk, satuan, gudang dan lokasi,
-pergerakan stok dengan valuasi rata-rata bergerak, penerimaan barang, stock
-opname, barang rusak, dan packing list.
+Fase 3 berikutnya: Pembelian — permintaan penawaran, pesanan pembelian,
+penerimaan barang yang merujuk pesanan, dan tagihan pembelian yang menutup
+akun Penerimaan Barang Belum Ditagih.
 
 **Kanal integrasi.** Modul berikutnya memposting jurnal lewat
-`AkuntansiService.postingJurnal()` di `src/modules/akuntansi/layanan/entri.ts`
-dengan menyebutkan `sumberTipe` dan `sumberId` dokumen asalnya. Tidak ada modul
-yang menulis ke tabel jurnal secara langsung.
+`postingJurnalDalamTx()` di `src/modules/akuntansi/layanan/entri.ts` bila
+perubahan datanya perlu segabung dalam satu transaksi dengan jurnalnya, atau
+`postingJurnal()` bila berdiri sendiri. Keduanya menerima `sumberTipe` dan
+`sumberId` dokumen asalnya. Tidak ada modul yang menulis ke tabel jurnal
+secara langsung.

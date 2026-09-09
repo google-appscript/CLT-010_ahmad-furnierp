@@ -74,3 +74,36 @@ export const skemaPackingList = z.object({
 })
 
 export type MasukanPackingList = z.input<typeof skemaPackingList>
+
+/**
+ * Peta antara segmen URL dan nilai enum. Rute memakai tanda hubung agar enak
+ * dibaca, sementara basis data memakai garis bawah.
+ */
+export const SLUG_KE_TIPE: Record<string, (typeof DAFTAR_TIPE_OPERASI)[number]> = {
+  'penerimaan': 'penerimaan',
+  'pengiriman': 'pengiriman',
+  'transfer': 'transfer',
+  'barang-rusak': 'barang_rusak',
+  'opname': 'opname',
+}
+
+export const TIPE_KE_SLUG: Record<string, string> = Object.fromEntries(
+  Object.entries(SLUG_KE_TIPE).map(([slug, tipe]) => [tipe, slug]),
+)
+
+/** Lokasi asal dan tujuan bawaan untuk setiap tipe operasi. */
+export const ARAH_BAWAAN: Record<string, { asal: string; tujuan: string }> = {
+  penerimaan: { asal: 'pemasok', tujuan: 'internal' },
+  pengiriman: { asal: 'internal', tujuan: 'pelanggan' },
+  transfer: { asal: 'internal', tujuan: 'internal' },
+  barang_rusak: { asal: 'internal', tujuan: 'rusak' },
+  opname: { asal: 'penyesuaian', tujuan: 'internal' },
+}
+
+export const DESKRIPSI_TIPE: Record<string, string> = {
+  penerimaan: 'Barang masuk dari pemasok ke gudang. Harga satuan yang dimasukkan memperbarui harga pokok rata-rata.',
+  pengiriman: 'Barang keluar dari gudang ke pelanggan, dibebankan pada harga pokok rata-rata yang berlaku.',
+  transfer: 'Perpindahan antar lokasi internal. Stok perusahaan tidak berubah sehingga tidak menghasilkan jurnal.',
+  barang_rusak: 'Barang dikeluarkan dari gudang dan dibebankan sebagai kerugian barang rusak.',
+  opname: 'Masukkan hasil hitung fisik. Sistem membukukan selisihnya terhadap stok tercatat.',
+}

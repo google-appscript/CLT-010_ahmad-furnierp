@@ -1,0 +1,59 @@
+import { notFound } from 'next/navigation'
+import { wajibIzin } from '@/lib/sesi'
+import {
+  SLUG_KE_TIPE, labelTipeOperasi, ARAH_BAWAAN,
+} from '@/modules/gudang/validasi/operasi'
+import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { FormulirOperasi } from '../../formulir-operasi'
+import { ambilDataPilihan, lokasiBawaan } from '../../data-pilihan'
+
+const IZIN: Record<string, string> = {
+  penerimaan: 'gudang.penerimaan.kelola',
+  pengiriman: 'gudang.pengiriman.kelola',
+  transfer: 'gudang.transfer.kelola',
+  barang_rusak: 'gudang.scrap.kelola',
+  opname: 'gudang.opname.kelola',
+}
+
+export default async function HalamanOperasiBaru({
+  params,
+}: {
+  params: Promise<{ tipe: string }>
+}) {
+  const { tipe: slug } = await params
+  const tipe = SLUG_KE_TIPE[slug]
+  if (!tipe) notFound()
+
+  await wajibIzin(IZIN[tipe])
+  const { daftarProduk, daftarLokasi, daftarSatuan, daftarMitra } = await ambilDataPilihan()
+  const arah = ARAH_BAWAAN[tipe]
+
+  // Transfer berawal dan berakhir di lokasi internal, jadi tujuannya diisi
+  // lokasi internal kedua agar tidak sama dengan asalnya.
+  const internal = daftarLokasi.filter((l) => l.tipe === 'internal')
+  const tujuanBawaan = tipe === 'transfer'
+    ? internal[1]?.id ?? ''
+    : lokasiBawaan(daftarLokasi, arah.tujuan)
+
+  return (
+    <>
+      <KepalaHalaman
+        judul={`${labelTipeOperasi(tipe)} Baru`}
+        deskripsi="Dokumen disimpan sebagai draft dan belum menyentuh stok sampai diselesaikan."
+      />
+      <FormulirOperasi
+        awal={{
+          tipe,
+          tanggal: new Date().toISOString().slice(0, 10),
+          lokasiAsalId: lokasiBawaan(daftarLokasi, arah.asal),
+          lokasiTujuanId: tujuanBawaan,
+          partnerId: '', referensi: '', catatan: '', baris: [],
+        }}
+        produk={daftarProduk}
+        lokasi={daftarLokasi}
+        satuan={daftarSatuan}
+        mitra={daftarMitra}
+      />
+    </>
+  )
+}
