@@ -11,11 +11,11 @@ export function BilahAtas({ nama, email }: { nama: string; email: string }) {
   const inisial = nama.split(' ').map((k) => k[0]).slice(0, 2).join('').toUpperCase()
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-chrome-border bg-chrome-background px-4 text-chrome-foreground">
+      <p className="flex items-center gap-2 text-sm text-chrome-muted-foreground">
         <Search className="h-4 w-4" />
-        Tekan <kbd className="rounded border bg-muted px-1.5 py-0.5 text-xs">Ctrl</kbd>
-        <kbd className="rounded border bg-muted px-1.5 py-0.5 text-xs">K</kbd> untuk mencari menu
+        Tekan <kbd className="rounded border bg-chrome-active px-1.5 py-0.5 text-xs text-chrome-foreground">Ctrl</kbd>
+        <kbd className="rounded border bg-chrome-active px-1.5 py-0.5 text-xs text-chrome-foreground">K</kbd> untuk mencari menu
       </p>
 
       <div className="flex items-center gap-1">
