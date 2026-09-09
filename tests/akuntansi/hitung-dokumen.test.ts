@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hitungBaris, hitungTotal, sisaKuantitas } from '@/modules/pembelian/layanan/hitung'
+import { hitungBaris, hitungTotal, sisaKuantitas } from '@/modules/akuntansi/layanan/hitung-dokumen'
 
 const PPN = { tarif: '11', hargaTermasukPajak: false, isPemotongan: false }
 const PPN_TERMASUK = { tarif: '11', hargaTermasukPajak: true, isPemotongan: false }

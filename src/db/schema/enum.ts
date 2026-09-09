@@ -82,3 +82,14 @@ export const statusTagihanEnum = pgEnum('status_tagihan', ['draft', 'diposting',
 export const tipeTagihanEnum = pgEnum('tipe_tagihan', ['tagihan', 'nota_debit'])
 
 export const statusPembayaranEnum = pgEnum('status_pembayaran', ['draft', 'diposting', 'dibatalkan'])
+
+/**
+ * Penawaran dan pesanan penjualan adalah dokumen yang sama pada tahap
+ * berbeda, sama seperti permintaan penawaran dan pesanan pembelian.
+ */
+export const statusPenjualanEnum = pgEnum('status_penjualan', [
+  'penawaran', 'dikonfirmasi', 'selesai', 'dibatalkan',
+])
+
+/** Nota kredit membalik arah faktur, dipakai untuk retur atau koreksi. */
+export const tipeFakturEnum = pgEnum('tipe_faktur', ['faktur', 'nota_kredit'])

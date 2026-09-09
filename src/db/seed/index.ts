@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '@/db/klien'
 import {
   users, roles, permissions, rolePermissions, userRoles,
@@ -17,7 +17,7 @@ import {
 } from './gudang'
 import {
   MATA_UANG, KURS_CONTOH, SYARAT_PEMBAYARAN, JURNAL_STANDAR, PAJAK_STANDAR,
-  URUTAN_PEMBELIAN,
+  URUTAN_PEMBELIAN, URUTAN_PENJUALAN,
 } from './data-dasar'
 
 /**
@@ -38,6 +38,12 @@ export async function jalankanSeed(): Promise<void> {
   await db.insert(accounts).values(
     BAGAN_AKUN_STANDAR.map((a) => ({ ...a, tipeAkun: a.tipeAkun as never })),
   ).onConflictDoNothing()
+
+  // Piutang dan utang usaha ditandai dapat direkonsiliasi agar pelunasannya
+  // dapat ditutup terhadap fakturnya.
+  await db.update(accounts)
+    .set({ dapatDirekonsiliasi: true })
+    .where(inArray(accounts.tipeAkun, ['aset_piutang', 'liabilitas_utang_usaha']))
 
   const akunLewatKode = new Map((await db.select().from(accounts)).map((a) => [a.kode, a.id]))
   function akunId(kode: string): string {
@@ -176,7 +182,7 @@ export async function jalankanSeed(): Promise<void> {
 
   // 14. Urutan penomoran dokumen gudang
   await db.insert(sequences).values(
-    [...URUTAN_GUDANG, ...URUTAN_PEMBELIAN].map((u) => ({
+    [...URUTAN_GUDANG, ...URUTAN_PEMBELIAN, ...URUTAN_PENJUALAN].map((u) => ({
       kode: u.kode, prefix: u.prefix, panjangDigit: 4,
       nomorBerikut: 1, reset: u.reset as never,
     })),

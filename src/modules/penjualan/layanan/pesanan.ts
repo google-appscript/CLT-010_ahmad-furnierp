@@ -1,18 +1,18 @@
 import { and, asc, desc, eq } from 'drizzle-orm'
 import { db } from '@/db/klien'
-import {
-  purchaseOrders, purchaseOrderLines, taxes, products, uoms, locations,
-} from '@/db/schema'
+import { salesOrders, salesOrderLines, taxes, products, uoms, locations } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
+import {
+  hitungTotal, sisaKuantitas, type BarisHitung, type HasilTotal,
+} from '@/modules/akuntansi/layanan/hitung-dokumen'
 import { skemaPesanan, type MasukanPesanan } from '../validasi/pesanan'
-import { hitungTotal, sisaKuantitas, type BarisHitung, type HasilTotal } from '@/modules/akuntansi/layanan/hitung-dokumen'
 
-export type Pesanan = typeof purchaseOrders.$inferSelect
-export type BarisPesanan = typeof purchaseOrderLines.$inferSelect
+export type Pesanan = typeof salesOrders.$inferSelect
+export type BarisPesanan = typeof salesOrderLines.$inferSelect
 export type PesananLengkap = Pesanan & { baris: BarisPesanan[] }
 
-const KODE_URUTAN = 'pembelian:pesanan'
+const KODE_URUTAN = 'penjualan:pesanan'
 
 function urai(masukan: MasukanPesanan) {
   const hasil = skemaPesanan.safeParse(masukan)
@@ -25,35 +25,24 @@ function urai(masukan: MasukanPesanan) {
 export async function daftarPesanan(
   saring: { status?: Pesanan['status'] } = {},
 ): Promise<Pesanan[]> {
-  const kueri = db.select().from(purchaseOrders)
-    .orderBy(desc(purchaseOrders.tanggal), desc(purchaseOrders.dibuatPada))
-  return saring.status ? kueri.where(eq(purchaseOrders.status, saring.status)) : kueri
+  const kueri = db.select().from(salesOrders)
+    .orderBy(desc(salesOrders.tanggal), desc(salesOrders.dibuatPada))
+  return saring.status ? kueri.where(eq(salesOrders.status, saring.status)) : kueri
 }
 
 export async function ambilPesanan(id: string): Promise<PesananLengkap | null> {
-  const [pesanan] = await db.select().from(purchaseOrders)
-    .where(eq(purchaseOrders.id, id)).limit(1)
+  const [pesanan] = await db.select().from(salesOrders).where(eq(salesOrders.id, id)).limit(1)
   if (!pesanan) return null
-  const baris = await db.select().from(purchaseOrderLines)
-    .where(eq(purchaseOrderLines.poId, id))
-    .orderBy(asc(purchaseOrderLines.urutan))
+  const baris = await db.select().from(salesOrderLines)
+    .where(eq(salesOrderLines.soId, id))
+    .orderBy(asc(salesOrderLines.urutan))
   return { ...pesanan, baris }
-}
-
-/** Menghitung total pesanan berikut pajaknya dari baris yang tersimpan. */
-export async function totalPesanan(id: string): Promise<HasilTotal> {
-  const pesanan = await ambilPesanan(id)
-  if (!pesanan) throw new ValidasiError('Pesanan tidak ditemukan')
-  return hitungTotalDariBaris(pesanan.baris)
 }
 
 export async function hitungTotalDariBaris(
   baris: { kuantitas: string; hargaSatuan: string; taxId: string | null }[],
 ): Promise<HasilTotal> {
-  const idPajak = [...new Set(baris.map((b) => b.taxId).filter((t): t is string => Boolean(t)))]
-  const daftarPajak = idPajak.length > 0
-    ? await db.select().from(taxes)
-    : []
+  const daftarPajak = await db.select().from(taxes)
   const pajakLewatId = new Map(daftarPajak.map((p) => [p.id, p]))
 
   const masukan: BarisHitung[] = baris.map((b) => {
@@ -66,48 +55,53 @@ export async function hitungTotalDariBaris(
         : null,
     }
   })
-
   return hitungTotal(masukan)
+}
+
+export async function totalPesanan(id: string): Promise<HasilTotal> {
+  const pesanan = await ambilPesanan(id)
+  if (!pesanan) throw new ValidasiError('Pesanan tidak ditemukan')
+  return hitungTotalDariBaris(pesanan.baris)
 }
 
 // ── Penulisan ────────────────────────────────────────────────────────────────
 
 async function wajibLokasiInternal(lokasiId: string): Promise<void> {
   const [lokasi] = await db.select().from(locations).where(eq(locations.id, lokasiId)).limit(1)
-  if (!lokasi) throw new ValidasiError('Lokasi tujuan tidak ditemukan')
+  if (!lokasi) throw new ValidasiError('Gudang asal tidak ditemukan')
   if (lokasi.tipe !== 'internal') {
-    throw new ValidasiError('Lokasi tujuan penerimaan harus lokasi internal')
+    throw new ValidasiError('Gudang asal pengiriman harus lokasi internal')
   }
 }
 
 /**
- * Membuat permintaan penawaran. Dokumen ini dan pesanan pembelian adalah
- * dokumen yang sama pada tahap berbeda; mengonfirmasinya yang mengubah
- * statusnya dan memberinya nomor.
+ * Membuat penawaran. Penawaran dan pesanan penjualan adalah dokumen yang sama
+ * pada tahap berbeda; mengonfirmasinya yang memberi nomor dan menjadikannya
+ * komitmen kepada pelanggan.
  */
 export async function buatPesanan(
   masukan: MasukanPesanan, dibuatOleh: string,
 ): Promise<PesananLengkap> {
   const data = urai(masukan)
-  await wajibLokasiInternal(data.lokasiTujuanId)
+  await wajibLokasiInternal(data.lokasiAsalId)
 
   const id = await db.transaction(async (tx) => {
-    const [pesanan] = await tx.insert(purchaseOrders).values({
-      status: 'permintaan',
+    const [pesanan] = await tx.insert(salesOrders).values({
+      status: 'penawaran',
       partnerId: data.partnerId,
       tanggal: data.tanggal,
-      tanggalDiharapkan: data.tanggalDiharapkan,
-      lokasiTujuanId: data.lokasiTujuanId,
+      tanggalPengiriman: data.tanggalPengiriman,
+      lokasiAsalId: data.lokasiAsalId,
       syaratPembayaranId: data.syaratPembayaranId,
       mataUangId: data.mataUangId,
       referensi: data.referensi,
       catatan: data.catatan,
       dibuatOleh,
-    }).returning({ id: purchaseOrders.id })
+    }).returning({ id: salesOrders.id })
 
-    await tx.insert(purchaseOrderLines).values(
+    await tx.insert(salesOrderLines).values(
       data.baris.map((b, i) => ({
-        poId: pesanan.id,
+        soId: pesanan.id,
         urutan: i + 1,
         produkId: b.produkId,
         deskripsi: b.deskripsi,
@@ -124,36 +118,34 @@ export async function buatPesanan(
   return (await ambilPesanan(id))!
 }
 
-export async function ubahPesanan(
-  id: string, masukan: MasukanPesanan,
-): Promise<PesananLengkap> {
+export async function ubahPesanan(id: string, masukan: MasukanPesanan): Promise<PesananLengkap> {
   const data = urai(masukan)
   const lama = await ambilPesanan(id)
   if (!lama) throw new ValidasiError('Pesanan tidak ditemukan')
-  if (lama.status !== 'permintaan') {
+  if (lama.status !== 'penawaran') {
     throw new ValidasiError(
       'Pesanan yang sudah dikonfirmasi tidak dapat diubah. Batalkan terlebih dahulu bila perlu.',
     )
   }
-  await wajibLokasiInternal(data.lokasiTujuanId)
+  await wajibLokasiInternal(data.lokasiAsalId)
 
   await db.transaction(async (tx) => {
-    await tx.update(purchaseOrders).set({
+    await tx.update(salesOrders).set({
       partnerId: data.partnerId,
       tanggal: data.tanggal,
-      tanggalDiharapkan: data.tanggalDiharapkan,
-      lokasiTujuanId: data.lokasiTujuanId,
+      tanggalPengiriman: data.tanggalPengiriman,
+      lokasiAsalId: data.lokasiAsalId,
       syaratPembayaranId: data.syaratPembayaranId,
       mataUangId: data.mataUangId,
       referensi: data.referensi,
       catatan: data.catatan,
       diubahPada: new Date(),
-    }).where(eq(purchaseOrders.id, id))
+    }).where(eq(salesOrders.id, id))
 
-    await tx.delete(purchaseOrderLines).where(eq(purchaseOrderLines.poId, id))
-    await tx.insert(purchaseOrderLines).values(
+    await tx.delete(salesOrderLines).where(eq(salesOrderLines.soId, id))
+    await tx.insert(salesOrderLines).values(
       data.baris.map((b, i) => ({
-        poId: id,
+        soId: id,
         urutan: i + 1,
         produkId: b.produkId,
         deskripsi: b.deskripsi,
@@ -168,17 +160,12 @@ export async function ubahPesanan(
   return (await ambilPesanan(id))!
 }
 
-/**
- * Mengonfirmasi permintaan menjadi pesanan pembelian. Nomor diberikan di sini,
- * bukan saat permintaan dibuat, sehingga permintaan yang tidak jadi dipesan
- * tidak meninggalkan lubang nomor.
- */
 export async function konfirmasiPesanan(
   id: string, olehPengguna: string,
 ): Promise<PesananLengkap> {
   await db.transaction(async (tx) => {
-    const [pesanan] = await tx.select().from(purchaseOrders)
-      .where(eq(purchaseOrders.id, id)).for('update').limit(1)
+    const [pesanan] = await tx.select().from(salesOrders)
+      .where(eq(salesOrders.id, id)).for('update').limit(1)
 
     if (!pesanan) throw new ValidasiError('Pesanan tidak ditemukan')
     if (pesanan.status === 'dikonfirmasi' || pesanan.status === 'selesai') {
@@ -188,8 +175,7 @@ export async function konfirmasiPesanan(
       throw new ValidasiError('Pesanan yang dibatalkan tidak dapat dikonfirmasi')
     }
 
-    const baris = await tx.select().from(purchaseOrderLines)
-      .where(eq(purchaseOrderLines.poId, id))
+    const baris = await tx.select().from(salesOrderLines).where(eq(salesOrderLines.soId, id))
     if (baris.length === 0) {
       throw new ValidasiError('Pesanan memerlukan minimal satu baris produk')
     }
@@ -198,13 +184,13 @@ export async function konfirmasiPesanan(
       tx, KODE_URUTAN, new Date(`${pesanan.tanggal}T00:00:00Z`),
     )
 
-    await tx.update(purchaseOrders).set({
+    await tx.update(salesOrders).set({
       nomor,
       status: 'dikonfirmasi',
       dikonfirmasiPada: new Date(),
       dikonfirmasiOleh: olehPengguna,
       diubahPada: new Date(),
-    }).where(eq(purchaseOrders.id, id))
+    }).where(eq(salesOrders.id, id))
   })
 
   return (await ambilPesanan(id))!
@@ -216,77 +202,67 @@ export async function batalkanPesanan(id: string): Promise<void> {
   if (pesanan.status === 'selesai') {
     throw new ValidasiError('Pesanan yang sudah selesai tidak dapat dibatalkan')
   }
-  const sudahDiterima = pesanan.baris.some((b) => Number(b.kuantitasDiterima) > 0)
-  if (sudahDiterima) {
+  if (pesanan.baris.some((b) => Number(b.kuantitasDikirim) > 0)) {
     throw new ValidasiError(
-      'Pesanan sudah memiliki penerimaan barang sehingga tidak dapat dibatalkan.',
+      'Pesanan sudah memiliki pengiriman sehingga tidak dapat dibatalkan.',
     )
   }
-  await db.update(purchaseOrders)
+  await db.update(salesOrders)
     .set({ status: 'dibatalkan', diubahPada: new Date() })
-    .where(eq(purchaseOrders.id, id))
+    .where(eq(salesOrders.id, id))
 }
 
-export async function hapusPermintaan(id: string): Promise<void> {
+export async function hapusPenawaran(id: string): Promise<void> {
   const pesanan = await ambilPesanan(id)
   if (!pesanan) throw new ValidasiError('Pesanan tidak ditemukan')
   if (pesanan.status === 'dikonfirmasi' || pesanan.status === 'selesai') {
     throw new ValidasiError(
-      'Pesanan yang sudah dikonfirmasi tidak dapat dihapus karena sudah menjadi komitmen kepada pemasok.',
+      'Pesanan yang sudah dikonfirmasi tidak dapat dihapus karena sudah menjadi komitmen kepada pelanggan.',
     )
   }
-  await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id))
+  await db.delete(salesOrders).where(eq(salesOrders.id, id))
 }
 
 export type SisaBaris = BarisPesanan & {
-  sisaDiterima: string
-  sisaDitagih: string
+  sisaDikirim: string
+  sisaDifakturkan: string
   namaProduk: string
   namaUom: string
 }
 
-/** Baris pesanan beserta sisa yang belum diterima dan belum ditagih. */
-export async function barisDenganSisa(poId: string): Promise<SisaBaris[]> {
+/** Baris pesanan beserta sisa yang belum dikirim dan belum difakturkan. */
+export async function barisDenganSisa(soId: string): Promise<SisaBaris[]> {
   const baris = await db
-    .select({
-      baris: purchaseOrderLines,
-      namaProduk: products.nama,
-      namaUom: uoms.nama,
-    })
-    .from(purchaseOrderLines)
-    .innerJoin(products, eq(products.id, purchaseOrderLines.produkId))
-    .innerJoin(uoms, eq(uoms.id, purchaseOrderLines.uomId))
-    .where(eq(purchaseOrderLines.poId, poId))
-    .orderBy(asc(purchaseOrderLines.urutan))
+    .select({ baris: salesOrderLines, namaProduk: products.nama, namaUom: uoms.nama })
+    .from(salesOrderLines)
+    .innerJoin(products, eq(products.id, salesOrderLines.produkId))
+    .innerJoin(uoms, eq(uoms.id, salesOrderLines.uomId))
+    .where(eq(salesOrderLines.soId, soId))
+    .orderBy(asc(salesOrderLines.urutan))
 
   return baris.map((b) => ({
     ...b.baris,
     namaProduk: b.namaProduk,
     namaUom: b.namaUom,
-    sisaDiterima: sisaKuantitas(b.baris.kuantitas, b.baris.kuantitasDiterima),
-    sisaDitagih: sisaKuantitas(b.baris.kuantitasDiterima, b.baris.kuantitasDitagih),
+    sisaDikirim: sisaKuantitas(b.baris.kuantitas, b.baris.kuantitasDikirim),
+    // Yang boleh difakturkan adalah yang sudah dikirim; menagih barang yang
+    // belum keluar gudang akan mencatat pendapatan sebelum ada penyerahan.
+    sisaDifakturkan: sisaKuantitas(b.baris.kuantitasDikirim, b.baris.kuantitasDifakturkan),
   }))
 }
 
-/**
- * Menandai pesanan selesai bila seluruh barisnya sudah diterima dan ditagih
- * sepenuhnya. Dipanggil setelah penerimaan atau tagihan diselesaikan.
- */
-export async function perbaruiStatusPenyelesaian(poId: string): Promise<void> {
-  const baris = await db.select().from(purchaseOrderLines)
-    .where(eq(purchaseOrderLines.poId, poId))
+export async function perbaruiStatusPenyelesaian(soId: string): Promise<void> {
+  const baris = await db.select().from(salesOrderLines).where(eq(salesOrderLines.soId, soId))
   if (baris.length === 0) return
 
   const tuntas = baris.every((b) =>
-    Number(b.kuantitasDiterima) >= Number(b.kuantitas) &&
-    Number(b.kuantitasDitagih) >= Number(b.kuantitas),
+    Number(b.kuantitasDikirim) >= Number(b.kuantitas) &&
+    Number(b.kuantitasDifakturkan) >= Number(b.kuantitas),
   )
 
   if (tuntas) {
-    await db.update(purchaseOrders)
+    await db.update(salesOrders)
       .set({ status: 'selesai', diubahPada: new Date() })
-      .where(and(eq(purchaseOrders.id, poId), eq(purchaseOrders.status, 'dikonfirmasi')))
+      .where(and(eq(salesOrders.id, soId), eq(salesOrders.status, 'dikonfirmasi')))
   }
 }
-
-export { hitungTotal, sisaKuantitas }

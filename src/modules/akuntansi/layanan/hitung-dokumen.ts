@@ -1,5 +1,5 @@
 import { bulatkan, kali, kurang, tambah, type Uang } from '@/lib/uang'
-import { hitungPajak } from '@/modules/akuntansi/layanan/pajak'
+import { hitungPajak } from './pajak'
 
 export const DESIMAL_NILAI = 2
 
@@ -27,7 +27,7 @@ export type HasilBaris = {
 }
 
 /**
- * Menghitung satu baris pembelian.
+ * Menghitung satu baris dokumen pembelian maupun penjualan.
  *
  * PPN dan PPh diperlakukan berbeda karena memang berbeda secara ekonomi:
  * PPN Masukan menambah jumlah yang ditagihkan pemasok dan dapat dikreditkan,

@@ -43,6 +43,13 @@
       "when": 1788960033487,
       "tag": "0005_tranquil_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788973160015,
+      "tag": "0006_shiny_black_panther",
+      "breakpoints": true
     }
   ]
 }

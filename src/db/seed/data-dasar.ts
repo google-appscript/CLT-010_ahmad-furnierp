@@ -44,8 +44,8 @@ export const PAJAK_STANDAR = [
     tarif: '2', hargaTermasukPajak: false, isPemotongan: true, kodeAkun: '2113',
   },
   {
-    kode: 'PPHF-05', nama: 'PPh Final 0,5%', ruangLingkup: 'penjualan',
-    tarif: '0.5', hargaTermasukPajak: false, isPemotongan: true, kodeAkun: '2115',
+    kode: 'PPH23-DIPOTONG', nama: 'PPh 23 Dipotong Pelanggan 2%', ruangLingkup: 'penjualan',
+    tarif: '2', hargaTermasukPajak: false, isPemotongan: true, kodeAkun: '1142',
   },
 ] as const
 
@@ -54,4 +54,11 @@ export const URUTAN_PEMBELIAN = [
   { kode: 'pembelian:tagihan', prefix: 'FB', reset: 'bulanan' },
   { kode: 'pembelian:nota-debit', prefix: 'ND', reset: 'bulanan' },
   { kode: 'pembelian:pembayaran', prefix: 'BKK', reset: 'bulanan' },
+] as const
+
+export const URUTAN_PENJUALAN = [
+  { kode: 'penjualan:pesanan', prefix: 'SO', reset: 'bulanan' },
+  { kode: 'penjualan:faktur', prefix: 'FJ', reset: 'bulanan' },
+  { kode: 'penjualan:nota-kredit', prefix: 'NK', reset: 'bulanan' },
+  { kode: 'penjualan:pembayaran', prefix: 'BKM', reset: 'bulanan' },
 ] as const

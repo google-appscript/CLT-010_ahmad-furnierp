@@ -10,7 +10,7 @@ import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
 import { hitungJatuhTempo } from '@/modules/akuntansi/layanan/syarat-pembayaran'
 import { skemaTagihan, type MasukanTagihan } from '../validasi/pesanan'
-import { hitungTotal, type BarisHitung, type HasilTotal } from './hitung'
+import { hitungTotal, type BarisHitung, type HasilTotal } from '@/modules/akuntansi/layanan/hitung-dokumen'
 import { perbaruiStatusPenyelesaian } from './pesanan'
 
 export type Tagihan = typeof vendorBills.$inferSelect
