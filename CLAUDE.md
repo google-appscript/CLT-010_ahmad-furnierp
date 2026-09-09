@@ -51,6 +51,15 @@ membuat seluruh jenis operasi memakai satu mekanisme yang sama.
 **Operasi gudang selesai tidak pernah diubah.** Pergerakan stok dan jurnalnya
 dicatat dalam satu transaksi; koreksi dilakukan lewat operasi baru.
 
+**Penampung penerimaan wajib tertutup.** Penerimaan barang mengkredit akun
+Penerimaan Barang Belum Ditagih, dan tagihan pemasok mendebitnya kembali.
+Saldo akun itu yang tidak nol berarti ada barang diterima yang belum ditagih —
+bukan kesalahan, tetapi harus dapat dijelaskan.
+
+**PPN dan PPh diperlakukan berbeda.** PPN Masukan menambah nilai tagihan dan
+dapat dikreditkan; PPh adalah pajak yang dipotong dari pembayaran sehingga
+mengurangi kas tanpa mengurangi nilai tagihan pemasok.
+
 **Penomoran dokumen.** Nomor diambil lewat `ambilNomorBerikut()` yang mengunci
 baris dengan `FOR UPDATE` di dalam transaksi yang sama dengan posting. Jangan
 pernah membaca lalu menaikkan `nomor_berikut` di luar pola itu.
@@ -79,17 +88,18 @@ nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
 ## Status
 
-Fase 1A, 1B, dan 2 selesai. Sistem mencatat transaksi keuangan lengkap,
-menghasilkan laporan yang benar, dan mengelola persediaan dengan valuasi
-rata-rata bergerak yang terhubung ke buku besar.
+Fase 1A, 1B, 2, dan 3 selesai. Sistem mencatat transaksi keuangan lengkap,
+mengelola persediaan dengan valuasi rata-rata bergerak, dan menjalankan alur
+pembelian dari permintaan penawaran sampai pelunasan pemasok.
 
-Fase 3 berikutnya: Pembelian — permintaan penawaran, pesanan pembelian,
-penerimaan barang yang merujuk pesanan, dan tagihan pembelian yang menutup
-akun Penerimaan Barang Belum Ditagih.
+Fase 4 berikutnya: Penjualan — penawaran, pesanan penjualan, surat jalan yang
+merujuk pesanan, dan faktur penjualan. Rekonsiliasi item jurnal juga masuk
+fase ini.
 
-**Kanal integrasi.** Modul berikutnya memposting jurnal lewat
-`postingJurnalDalamTx()` di `src/modules/akuntansi/layanan/entri.ts` bila
-perubahan datanya perlu segabung dalam satu transaksi dengan jurnalnya, atau
-`postingJurnal()` bila berdiri sendiri. Keduanya menerima `sumberTipe` dan
-`sumberId` dokumen asalnya. Tidak ada modul yang menulis ke tabel jurnal
-secara langsung.
+**Kanal integrasi.** Modul memposting jurnal lewat `postingJurnalDalamTx()` di
+`src/modules/akuntansi/layanan/entri.ts` bila perubahan datanya perlu segabung
+dalam satu transaksi dengan jurnalnya, atau `postingJurnal()` bila berdiri
+sendiri. Keduanya menerima `sumberTipe` dan `sumberId` dokumen asalnya.
+Modul pembelian tidak menulis pergerakan stok sendiri melainkan memanggil
+`buatOperasi()` dan `selesaikanOperasi()` milik modul gudang. Tidak ada modul
+yang menulis ke tabel jurnal secara langsung.
