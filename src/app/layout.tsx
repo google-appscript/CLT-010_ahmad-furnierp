@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { PenyediaTema } from "@/components/tata-letak/penyedia-tema";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,10 +26,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       data-yd-metadata-content-site="common"
       data-yd-content-ready="true"
+      suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">
-        {children}
-        <Toaster richColors position="top-right" />
+        <PenyediaTema>
+          {children}
+          <Toaster richColors position="top-right" />
+        </PenyediaTema>
       </body>
     </html>
   );
