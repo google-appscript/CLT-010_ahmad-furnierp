@@ -88,18 +88,25 @@ nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
 ## Status
 
-Fase 1A, 1B, 2, dan 3 selesai. Sistem mencatat transaksi keuangan lengkap,
-mengelola persediaan dengan valuasi rata-rata bergerak, dan menjalankan alur
-pembelian dari permintaan penawaran sampai pelunasan pemasok.
+Fase 1A, 1B, 2, 3, dan 4 selesai. Sistem mencatat transaksi keuangan lengkap,
+mengelola persediaan dengan valuasi rata-rata bergerak, menjalankan alur
+pembelian dari permintaan penawaran sampai pelunasan pemasok, serta alur
+penjualan dari penawaran sampai penerimaan pembayaran dengan rekonsiliasi item
+jurnal.
 
-Fase 4 berikutnya: Penjualan — penawaran, pesanan penjualan, surat jalan yang
-merujuk pesanan, dan faktur penjualan. Rekonsiliasi item jurnal juga masuk
-fase ini.
+Urutan dokumen penjualan menegakkan satu aturan: yang boleh difakturkan hanya
+yang sudah dikirim. Pengiriman membebankan harga pokok rata-rata lawan
+persediaan; faktur baru mencatat pendapatan, PPN Keluaran, dan piutang.
+Pembayaran yang melunasi seluruh piutang seorang pelanggan memicu rekonsiliasi
+otomatis; pelunasan sebagian sengaja dibiarkan terbuka agar sisanya terlihat.
+
+Fase 5 berikutnya: Manufaktur — bill of material, perintah kerja, dan
+konsumsi bahan lewat lokasi virtual Produksi.
 
 **Kanal integrasi.** Modul memposting jurnal lewat `postingJurnalDalamTx()` di
 `src/modules/akuntansi/layanan/entri.ts` bila perubahan datanya perlu segabung
 dalam satu transaksi dengan jurnalnya, atau `postingJurnal()` bila berdiri
 sendiri. Keduanya menerima `sumberTipe` dan `sumberId` dokumen asalnya.
-Modul pembelian tidak menulis pergerakan stok sendiri melainkan memanggil
-`buatOperasi()` dan `selesaikanOperasi()` milik modul gudang. Tidak ada modul
-yang menulis ke tabel jurnal secara langsung.
+Modul pembelian dan penjualan tidak menulis pergerakan stok sendiri melainkan
+memanggil `buatOperasi()` dan `selesaikanOperasi()` milik modul gudang. Tidak
+ada modul yang menulis ke tabel jurnal secara langsung.
