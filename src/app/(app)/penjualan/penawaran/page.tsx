@@ -22,7 +22,7 @@ export default async function HalamanPenawaran() {
           </Button>
         }
       />
-      <DaftarPesanan status="penawaran" />
+      <DaftarPesanan param={{ halaman: 1, ukuranHalaman: 20, filter: { status: ['penawaran'] } }} />
     </>
   )
 }
