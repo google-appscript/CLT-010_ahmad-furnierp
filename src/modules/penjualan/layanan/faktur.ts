@@ -2,12 +2,15 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   customerInvoices, customerInvoiceLines, salesOrderLines,
-  taxes, accounts, partners, journals,
+  taxes, accounts, partners,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bulatkan, kurang, type Uang } from '@/lib/uang'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
+import {
+  jurnalUntukDalamTx, PEMETAAN_JURNAL,
+} from '@/modules/akuntansi/layanan/pemetaan'
 import { hitungTotal } from '@/modules/akuntansi/layanan/hitung-dokumen'
 import type { HasilTotal } from '@/modules/akuntansi/layanan/hitung-dokumen'
 import { skemaFaktur, type MasukanFaktur } from '../validasi/pesanan'
@@ -18,7 +21,6 @@ export type BarisFaktur = typeof customerInvoiceLines.$inferSelect
 export type FakturLengkap = Faktur & { baris: BarisFaktur[] }
 
 const DESIMAL = 2
-const KODE_JURNAL = 'PNJ'
 const KODE_URUTAN: Record<Faktur['tipe'], string> = {
   faktur: 'penjualan:faktur',
   nota_kredit: 'penjualan:nota-kredit',
@@ -322,20 +324,14 @@ export async function postingFaktur(
       })
     }
 
-    const [jurnal] = await tx.select().from(journals)
-      .where(eq(journals.kode, KODE_JURNAL)).limit(1)
-    if (!jurnal) {
-      throw new ValidasiError(
-        `Jurnal ${KODE_JURNAL} tidak ditemukan. Jalankan seed data awal terlebih dahulu.`,
-      )
-    }
+    const journalId = await jurnalUntukDalamTx(tx, PEMETAAN_JURNAL.FAKTUR_PENJUALAN)
 
     const nomor = await ambilNomorBerikut(
       tx, KODE_URUTAN[faktur.tipe], new Date(`${faktur.tanggal}T00:00:00Z`),
     )
 
     const hasil = await postingJurnalDalamTx(tx, {
-      journalId: jurnal.id,
+      journalId,
       tanggal: faktur.tanggal,
       referensi: faktur.referensi ?? nomor,
       keterangan: `${dibalik ? 'Nota kredit' : 'Faktur penjualan'} ${nomor}`,

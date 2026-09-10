@@ -12,12 +12,13 @@ import {
 } from '@/modules/gudang/layanan/operasi'
 import { stokSeluruhProduk, kartuStok, stokProdukPerLokasi } from '@/modules/gudang/repositori/stok'
 import { bersihkanTabel, tutupKoneksi } from '../bantuan/db'
+import { seedPemetaanJurnal } from '../bantuan/pemetaan'
 
 const TABEL = [
   'packing_list_items', 'packing_lists', 'stock_moves', 'stock_operation_lines',
   'stock_operations', 'products', 'product_categories', 'uoms',
   'locations', 'warehouses',
-  'journal_items', 'journal_entries', 'journals', 'sequences',
+  'journal_items', 'journal_entries', 'journal_mappings', 'journals', 'sequences',
   'company_settings', 'accounts', 'currency_rates', 'currencies',
   'audit_logs', 'user_roles', 'users', 'partners', 'payment_terms', 'taxes',
 ]
@@ -59,6 +60,7 @@ beforeEach(async () => {
   await db.insert(journals).values({
     kode: 'JPS', nama: 'Jurnal Penyesuaian Persediaan', tipe: 'umum', sequenceId: urutanJurnal.id,
   })
+  await seedPemetaanJurnal()
   await db.insert(sequences).values([
     { kode: 'gudang:penerimaan', prefix: 'GRN', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'gudang:pengiriman', prefix: 'DO', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },

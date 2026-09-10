@@ -2,12 +2,15 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   vendorBills, vendorBillLines,
-  purchaseOrderLines, taxes, accounts, partners, journals,
+  purchaseOrderLines, taxes, accounts, partners,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
+import {
+  jurnalUntukDalamTx, PEMETAAN_JURNAL,
+} from '@/modules/akuntansi/layanan/pemetaan'
 import { hitungJatuhTempo } from '@/modules/akuntansi/layanan/syarat-pembayaran'
 import { skemaTagihan, type MasukanTagihan } from '../validasi/pesanan'
 import { hitungTotal, type BarisHitung, type HasilTotal } from '@/modules/akuntansi/layanan/hitung-dokumen'
@@ -18,7 +21,6 @@ export type BarisTagihan = typeof vendorBillLines.$inferSelect
 export type TagihanLengkap = Tagihan & { baris: BarisTagihan[] }
 
 const DESIMAL = 2
-const KODE_JURNAL = 'PMB'
 const KODE_URUTAN: Record<Tagihan['tipe'], string> = {
   tagihan: 'pembelian:tagihan',
   nota_debit: 'pembelian:nota-debit',
@@ -328,20 +330,14 @@ export async function postingTagihan(
       })
     }
 
-    const [jurnal] = await tx.select().from(journals)
-      .where(eq(journals.kode, KODE_JURNAL)).limit(1)
-    if (!jurnal) {
-      throw new ValidasiError(
-        `Jurnal ${KODE_JURNAL} tidak ditemukan. Jalankan seed data awal terlebih dahulu.`,
-      )
-    }
+    const journalId = await jurnalUntukDalamTx(tx, PEMETAAN_JURNAL.TAGIHAN_PEMBELIAN)
 
     const nomor = await ambilNomorBerikut(
       tx, KODE_URUTAN[tagihan.tipe], new Date(`${tagihan.tanggal}T00:00:00Z`),
     )
 
     const hasil = await postingJurnalDalamTx(tx, {
-      journalId: jurnal.id,
+      journalId,
       tanggal: tagihan.tanggal,
       referensi: tagihan.referensiPemasok ?? nomor,
       keterangan: `${dibalik ? 'Nota debit' : 'Tagihan pembelian'} ${nomor}`,

@@ -15,12 +15,13 @@ import {
   ambilPerintahProduksi, biayaProduksi, operasiPerintahProduksi,
 } from '@/modules/manufaktur/layanan/perintah-produksi'
 import { bersihkanTabel, tutupKoneksi } from '../bantuan/db'
+import { seedPemetaanJurnal } from '../bantuan/pemetaan'
 
 const TABEL = [
   'work_order_lines', 'work_orders', 'bom_lines', 'bill_of_materials',
   'stock_moves', 'stock_operation_lines', 'stock_operations',
   'products', 'product_categories', 'uoms', 'locations', 'warehouses',
-  'journal_items', 'journal_entries', 'journals', 'sequences',
+  'journal_items', 'journal_entries', 'journal_mappings', 'journals', 'sequences',
   'company_settings', 'accounts', 'currency_rates', 'currencies',
   'audit_logs', 'user_roles', 'users', 'partners', 'payment_terms', 'taxes',
 ]
@@ -58,6 +59,8 @@ beforeEach(async () => {
     akunPenerimaanBelumDitagihId: akun['2151'],
     akunBarangDalamProsesId: akun['1133'],
     akunPembulatanId: akun['7104'],
+    akunTenagaKerjaLangsungId: akun['5102'],
+    akunOverheadPabrikId: akun['5103'],
   })
 
   const [pengguna] = await db.insert(users).values({
@@ -75,6 +78,7 @@ beforeEach(async () => {
     { kode: 'JPS', nama: 'Jurnal Penyesuaian Persediaan', tipe: 'umum', sequenceId: urutanJps.id },
     { kode: 'JU', nama: 'Jurnal Umum', tipe: 'umum', sequenceId: urutanJu.id },
   ])
+  await seedPemetaanJurnal()
   await db.insert(sequences).values([
     { kode: 'gudang:penerimaan', prefix: 'GRN', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'gudang:konsumsi-produksi', prefix: 'KSP', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },

@@ -82,3 +82,20 @@ export const journals = pgTable('journals', {
   mataUangId: text('mata_uang_id').references(() => currencies.kode),
   isActive: boolean('is_active').notNull().default(true),
 }, (t) => [uniqueIndex('journals_kode_unik').on(t.kode)])
+
+/**
+ * Jurnal tujuan untuk setiap jenis posting otomatis.
+ *
+ * Sebelumnya setiap modul menuliskan kode jurnalnya sendiri di dalam kode,
+ * sehingga memindahkan pergerakan stok ke jurnal lain berarti mengubah dan
+ * menerbitkan ulang aplikasi. Pemetaan ini memindahkan keputusan itu ke data,
+ * persis seperti akun yang sudah ditentukan lewat kategori produk.
+ */
+export const journalMappings = pgTable('journal_mappings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  kode: text('kode').notNull(),
+  nama: text('nama').notNull(),
+  deskripsi: text('deskripsi'),
+  journalId: uuid('journal_id').notNull().references(() => journals.id),
+  diubahPada: timestamp('diubah_pada', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('journal_mappings_kode_unik').on(t.kode)])

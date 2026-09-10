@@ -2,12 +2,15 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   workOrders, workOrderLines, billOfMaterials, products, uoms, locations,
-  stockOperations, companySettings, journals, accounts,
+  stockOperations,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bagi, bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
+import {
+  jurnalUntukDalamTx, akunOtomatisDalamTx, PEMETAAN_JURNAL,
+} from '@/modules/akuntansi/layanan/pemetaan'
 import {
   buatOperasiDalamTx, selesaikanOperasiDalamTx, nilaiOperasiDalamTx,
 } from '@/modules/gudang/layanan/operasi'
@@ -19,10 +22,6 @@ export type BarisPerintahProduksi = typeof workOrderLines.$inferSelect
 export type PerintahProduksiLengkap = PerintahProduksi & { baris: BarisPerintahProduksi[] }
 
 const KODE_URUTAN = 'manufaktur:perintah-produksi'
-const KODE_JURNAL_BIAYA = 'JU'
-/** Akun beban yang diserap ke harga pokok saat biaya konversi dibebankan. */
-const AKUN_TENAGA_KERJA = '5102'
-const AKUN_OVERHEAD = '5103'
 
 function urai(masukan: MasukanPerintahProduksi) {
   const hasil = skemaPerintahProduksi.safeParse(masukan)
@@ -259,14 +258,6 @@ export async function konfirmasiPerintahProduksi(
   return (await ambilPerintahProduksi(id))!
 }
 
-async function akunLewatKode(tx: Transaksi, kode: string): Promise<string> {
-  const [akun] = await tx.select().from(accounts).where(eq(accounts.kode, kode)).limit(1)
-  if (!akun) {
-    throw new ValidasiError(`Akun ${kode} tidak ditemukan. Jalankan seed data awal.`)
-  }
-  return akun.id
-}
-
 /**
  * Menyelesaikan perintah produksi dalam satu transaksi:
  *
@@ -338,11 +329,7 @@ export async function selesaikanPerintahProduksi(
     const nilaiBahan = await nilaiOperasiDalamTx(tx, konsumsiId)
 
     // 2. Penyerapan biaya konversi.
-    const [pengaturan] = await tx.select().from(companySettings).limit(1)
-    if (!pengaturan?.akunBarangDalamProsesId) {
-      throw new ValidasiError('Akun Barang Dalam Proses belum diatur pada Profil Perusahaan')
-    }
-    const akunBdp = pengaturan.akunBarangDalamProsesId
+    const akunBdp = await akunOtomatisDalamTx(tx, 'akunBarangDalamProsesId')
 
     const biayaKonversi = bulatkan(
       tambah(perintah.biayaTenagaKerja, perintah.biayaOverhead), DESIMAL_NILAI,
@@ -350,13 +337,7 @@ export async function selesaikanPerintahProduksi(
     let jurnalBiayaId: string | null = null
 
     if (Number(biayaKonversi) > 0) {
-      const [jurnal] = await tx.select().from(journals)
-        .where(eq(journals.kode, KODE_JURNAL_BIAYA)).limit(1)
-      if (!jurnal) {
-        throw new ValidasiError(
-          `Jurnal ${KODE_JURNAL_BIAYA} tidak ditemukan. Jalankan seed data awal.`,
-        )
-      }
+      const journalId = await jurnalUntukDalamTx(tx, PEMETAAN_JURNAL.BIAYA_PRODUKSI)
 
       const item = [
         {
@@ -368,7 +349,7 @@ export async function selesaikanPerintahProduksi(
       ]
       if (Number(perintah.biayaTenagaKerja) > 0) {
         item.push({
-          accountId: await akunLewatKode(tx, AKUN_TENAGA_KERJA), partnerId: null,
+          accountId: await akunOtomatisDalamTx(tx, 'akunTenagaKerjaLangsungId'), partnerId: null,
           label: `Tenaga kerja langsung ${perintah.nomor}`,
           debit: '0', kredit: bulatkan(perintah.biayaTenagaKerja, DESIMAL_NILAI),
           nilaiMataUang: null, taxId: null, projectId: null,
@@ -376,7 +357,7 @@ export async function selesaikanPerintahProduksi(
       }
       if (Number(perintah.biayaOverhead) > 0) {
         item.push({
-          accountId: await akunLewatKode(tx, AKUN_OVERHEAD), partnerId: null,
+          accountId: await akunOtomatisDalamTx(tx, 'akunOverheadPabrikId'), partnerId: null,
           label: `Overhead pabrik ${perintah.nomor}`,
           debit: '0', kredit: bulatkan(perintah.biayaOverhead, DESIMAL_NILAI),
           nilaiMataUang: null, taxId: null, projectId: null,
@@ -384,7 +365,7 @@ export async function selesaikanPerintahProduksi(
       }
 
       const hasil = await postingJurnalDalamTx(tx, {
-        journalId: jurnal.id,
+        journalId,
         tanggal: perintah.tanggal,
         referensi: perintah.nomor,
         keterangan: `Biaya konversi perintah produksi ${perintah.nomor}`,
@@ -442,16 +423,13 @@ export async function selesaikanPerintahProduksi(
     // Barang Dalam Proses benar-benar kembali nol.
     const selisih = bulatkan(kurang(totalBiaya, nilaiHasil), DESIMAL_NILAI)
     if (Number(selisih) !== 0) {
-      if (!pengaturan.akunPembulatanId) {
-        throw new ValidasiError('Akun Selisih Pembulatan belum diatur pada Profil Perusahaan')
-      }
-      const [jurnal] = await tx.select().from(journals)
-        .where(eq(journals.kode, KODE_JURNAL_BIAYA)).limit(1)
+      const akunPembulatanId = await akunOtomatisDalamTx(tx, 'akunPembulatanId')
+      const journalPembulatanId = await jurnalUntukDalamTx(tx, PEMETAAN_JURNAL.BIAYA_PRODUKSI)
       const positif = Number(selisih) > 0
       const nilai = bulatkan(positif ? selisih : String(-Number(selisih)), DESIMAL_NILAI)
 
       await postingJurnalDalamTx(tx, {
-        journalId: jurnal!.id,
+        journalId: journalPembulatanId,
         tanggal: perintah.tanggal,
         referensi: perintah.nomor,
         keterangan: `Pembulatan harga pokok produksi ${perintah.nomor}`,
@@ -467,7 +445,7 @@ export async function selesaikanPerintahProduksi(
             nilaiMataUang: null, taxId: null, projectId: null,
           },
           {
-            accountId: pengaturan.akunPembulatanId, partnerId: null,
+            accountId: akunPembulatanId, partnerId: null,
             label: 'Pembulatan harga pokok produksi',
             debit: positif ? nilai : '0', kredit: positif ? '0' : nilai,
             nilaiMataUang: null, taxId: null, projectId: null,

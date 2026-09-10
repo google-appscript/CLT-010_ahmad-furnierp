@@ -1,13 +1,17 @@
-import { asc, desc, eq } from 'drizzle-orm'
+import { asc, desc, eq, inArray } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   stockOperations, stockOperationLines, stockMoves,
-  products, productCategories, locations, uoms, journals, companySettings,
+  products, productCategories, accounts, locations, uoms,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
+import {
+  jurnalUntukDalamTx, akunOtomatisDalamTx, PEMETAAN_JURNAL,
+} from '@/modules/akuntansi/layanan/pemetaan'
+import { posBawaanLokasiDalamTx } from '@/modules/akuntansi/layanan/pos-biaya'
 import { stokDiLokasi } from '../repositori/stok'
 import {
   hitungDampakValuasi, konversiSatuan, DESIMAL_KUANTITAS, DESIMAL_NILAI,
@@ -19,8 +23,6 @@ export type BarisOperasi = typeof stockOperationLines.$inferSelect
 export type OperasiLengkap = Operasi & { baris: BarisOperasi[] }
 export type TipeOperasi = Operasi['tipe']
 
-/** Jurnal yang dipakai seluruh pergerakan stok. */
-const KODE_JURNAL_STOK = 'JPS'
 /** Urutan penomoran dokumen per tipe operasi. */
 const KODE_URUTAN: Record<TipeOperasi, string> = {
   penerimaan: 'gudang:penerimaan',
@@ -218,6 +220,8 @@ type PergerakanTerhitung = {
   rataRataBaru: Uang
   akunPersediaanId: string
   akunLawanId: string
+  /** Pos biaya bawaan lokasi internalnya; dipakai bila akun lawan adalah beban. */
+  costCenterId: string | null
 }
 
 /**
@@ -236,25 +240,13 @@ async function akunLawan(
   if (tipe === 'barang_rusak') return kategori.akunBarangRusakId
   if (tipe === 'opname') return kategori.akunSelisihId
 
-  const [pengaturan] = await tx.select().from(companySettings).limit(1)
-
   // Kedua sisi produksi berpasangan dengan penampung yang sama, sehingga
   // saldonya kembali nol begitu barang jadi diterima.
   if (tipe === 'konsumsi_produksi' || tipe === 'hasil_produksi') {
-    if (!pengaturan?.akunBarangDalamProsesId) {
-      throw new ValidasiError(
-        'Akun Barang Dalam Proses belum diatur pada Profil Perusahaan',
-      )
-    }
-    return pengaturan.akunBarangDalamProsesId
+    return akunOtomatisDalamTx(tx, 'akunBarangDalamProsesId')
   }
 
-  if (!pengaturan?.akunPenerimaanBelumDitagihId) {
-    throw new ValidasiError(
-      'Akun Penerimaan Barang Belum Ditagih belum diatur pada Profil Perusahaan',
-    )
-  }
-  return pengaturan.akunPenerimaanBelumDitagihId
+  return akunOtomatisDalamTx(tx, 'akunPenerimaanBelumDitagihId')
 }
 
 /**
@@ -358,6 +350,7 @@ export async function selesaikanOperasiDalamTx(
         hargaPokokSatuan: produk.hargaPokokRataRata,
         nilaiTotal: '0.00', rataRataBaru: produk.hargaPokokRataRata,
         akunPersediaanId: kategori.akunPersediaanId, akunLawanId: kategori.akunPersediaanId,
+        costCenterId: null,
       })
       continue
     }
@@ -390,6 +383,11 @@ export async function selesaikanOperasiDalamTx(
       rataRataBaru: dampak.rataRataBaru,
       akunPersediaanId: kategori.akunPersediaanId,
       akunLawanId: await akunLawan(tx, operasi.tipe, kategori),
+      // Beban yang lahir dari pergerakan ini ditanggung unit kerja tempat
+      // barangnya berada, tanpa operator perlu memilihnya satu per satu.
+      costCenterId: await posBawaanLokasiDalamTx(
+        tx, arah === 'masuk' ? lokasiTujuanGerak : lokasiAsalGerak,
+      ),
     })
   }
 
@@ -422,13 +420,7 @@ export async function selesaikanOperasiDalamTx(
   let jurnalEntryId: string | null = null
 
   if (berdampakNilai.length > 0) {
-    const [jurnal] = await tx.select().from(journals)
-      .where(eq(journals.kode, KODE_JURNAL_STOK)).limit(1)
-    if (!jurnal) {
-      throw new ValidasiError(
-        `Jurnal ${KODE_JURNAL_STOK} tidak ditemukan. Jalankan seed data awal terlebih dahulu.`,
-      )
-    }
+    const journalId = await jurnalUntukDalamTx(tx, PEMETAAN_JURNAL.STOK)
 
     const item = berdampakNilai.flatMap((p) => {
       const persediaanDebit = p.arah === 'masuk'
@@ -454,7 +446,7 @@ export async function selesaikanOperasiDalamTx(
 
     if (item.length > 0) {
       const hasil = await postingJurnalDalamTx(tx, {
-        journalId: jurnal.id,
+        journalId,
         tanggal: operasi.tanggal,
         referensi: nomor,
         keterangan: `${labelTipeOperasi(operasi.tipe)} ${nomor}`,

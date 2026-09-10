@@ -2,12 +2,15 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   vendorPayments, vendorPaymentAllocations, vendorBills,
-  accounts, partners, journals,
+  accounts, partners,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bulatkan, kurang, tambah } from '@/lib/uang'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
+import {
+  jurnalPembayaranDalamTx,
+} from '@/modules/akuntansi/layanan/pemetaan'
 import { skemaPembayaran, type MasukanPembayaran } from '../validasi/pesanan'
 import { ringkasanTagihan } from './tagihan'
 
@@ -182,25 +185,15 @@ export async function postingPembayaran(
       nilaiMataUang: null, taxId: null, projectId: null,
     })
 
-    // Jurnal kas atau bank dipilih mengikuti tipe akun yang dikredit.
-    const [akunKas] = await tx.select().from(accounts)
-      .where(eq(accounts.id, pembayaran.akunKasId)).limit(1)
-    const kodeJurnal = akunKas?.tipeAkun === 'aset_bank' ? 'BNK' : 'KAS'
-
-    const [jurnal] = await tx.select().from(journals)
-      .where(eq(journals.kode, kodeJurnal)).limit(1)
-    if (!jurnal) {
-      throw new ValidasiError(
-        `Jurnal ${kodeJurnal} tidak ditemukan. Jalankan seed data awal terlebih dahulu.`,
-      )
-    }
+    // Jurnal kas atau bank dipilih mengikuti tipe akun yang dipakai membayar.
+    const journalId = await jurnalPembayaranDalamTx(tx, pembayaran.akunKasId)
 
     const nomor = await ambilNomorBerikut(
       tx, KODE_URUTAN, new Date(`${pembayaran.tanggal}T00:00:00Z`),
     )
 
     const hasil = await postingJurnalDalamTx(tx, {
-      journalId: jurnal.id,
+      journalId,
       tanggal: pembayaran.tanggal,
       referensi: pembayaran.referensi ?? nomor,
       keterangan: `Pembayaran pemasok ${nomor}`,

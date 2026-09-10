@@ -1,11 +1,14 @@
 import { and, asc, desc, eq } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
-  fixedAssets, assetCategories, depreciationLines, journals, accounts,
+  fixedAssets, assetCategories, depreciationLines, accounts,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
+import {
+  jurnalUntukDalamTx, akunOtomatisDalamTx, PEMETAAN_JURNAL,
+} from '@/modules/akuntansi/layanan/pemetaan'
 import { susunJadwal, DESIMAL } from './jadwal'
 import {
   skemaAset, skemaPelepasan, type MasukanAset, type MasukanPelepasan,
@@ -16,10 +19,6 @@ export type KategoriAset = typeof assetCategories.$inferSelect
 export type BarisDepresiasi = typeof depreciationLines.$inferSelect
 export type AsetLengkap = Aset & { baris: BarisDepresiasi[] }
 
-const KODE_JURNAL = 'JU'
-/** Selisih antara hasil pelepasan dan nilai buku bermuara di sini. */
-const AKUN_LABA_LAIN = '4203'
-const AKUN_RUGI_LAIN = '7103'
 
 function urai(masukan: MasukanAset) {
   const hasil = skemaAset.safeParse(masukan)
@@ -213,12 +212,6 @@ export async function hapusAset(id: string): Promise<void> {
   await db.delete(fixedAssets).where(eq(fixedAssets.id, id))
 }
 
-async function akunLewatKode(tx: Transaksi, kode: string): Promise<string> {
-  const [akun] = await tx.select().from(accounts).where(eq(accounts.kode, kode)).limit(1)
-  if (!akun) throw new ValidasiError(`Akun ${kode} tidak ditemukan. Jalankan seed data awal.`)
-  return akun.id
-}
-
 /**
  * Melepas aset: mengeluarkan nilai perolehan dan akumulasinya dari neraca,
  * mencatat hasil penjualannya, dan membukukan selisihnya sebagai laba atau
@@ -256,11 +249,7 @@ export async function lepaskanAset(
     const nilaiBuku = bulatkan(kurang(aset.nilaiPerolehan, akumulasi), DESIMAL)
     const selisih = bulatkan(kurang(data.nilaiPelepasan, nilaiBuku), DESIMAL)
 
-    const [jurnal] = await tx.select().from(journals)
-      .where(eq(journals.kode, KODE_JURNAL)).limit(1)
-    if (!jurnal) {
-      throw new ValidasiError(`Jurnal ${KODE_JURNAL} tidak ditemukan. Jalankan seed data awal.`)
-    }
+    const journalId = await jurnalUntukDalamTx(tx, PEMETAAN_JURNAL.PELEPASAN_ASET)
 
     type ItemJurnal = {
       accountId: string; partnerId: string | null; label: string
@@ -294,7 +283,9 @@ export async function lepaskanAset(
       const untung = Number(selisih) > 0
       const nilai = bulatkan(untung ? selisih : String(-Number(selisih)), DESIMAL)
       item.push({
-        accountId: await akunLewatKode(tx, untung ? AKUN_LABA_LAIN : AKUN_RUGI_LAIN),
+        accountId: await akunOtomatisDalamTx(
+          tx, untung ? 'akunLabaPelepasanAsetId' : 'akunRugiPelepasanAsetId',
+        ),
         partnerId: null,
         label: untung ? `Laba pelepasan aset ${aset.kode}` : `Rugi pelepasan aset ${aset.kode}`,
         debit: untung ? '0' : nilai,
@@ -304,7 +295,7 @@ export async function lepaskanAset(
     }
 
     const posting = await postingJurnalDalamTx(tx, {
-      journalId: jurnal.id,
+      journalId,
       tanggal: data.tanggal,
       referensi: aset.kode,
       keterangan: label,

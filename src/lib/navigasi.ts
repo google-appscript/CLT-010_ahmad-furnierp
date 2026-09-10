@@ -156,6 +156,7 @@ export const NAVIGASI: ItemMenu[] = [
           { label: 'Syarat Pembayaran', rute: '/akuntansi/konfigurasi/syarat-pembayaran', izin: 'akuntansi.syarat-bayar.kelola', fase: 1 },
           { label: 'Tahun Buku & Penguncian', rute: '/akuntansi/konfigurasi/tahun-buku', izin: 'akuntansi.tahun-buku.kelola', fase: 1 },
           { label: 'Kategori Aset', rute: '/akuntansi/konfigurasi/kategori-aset', izin: 'akuntansi.kategori-aset.kelola', fase: 6 },
+          { label: 'Pemetaan Jurnal', rute: '/akuntansi/konfigurasi/pemetaan-jurnal', izin: 'akuntansi.pemetaan-jurnal.kelola', fase: 1 },
         ],
       },
     ],

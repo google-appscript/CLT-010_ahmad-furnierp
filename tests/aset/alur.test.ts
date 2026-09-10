@@ -13,10 +13,11 @@ import {
   postingBaris, postingDepresiasiSampai, daftarJadwal,
 } from '@/modules/aset/layanan/depresiasi'
 import { bersihkanTabel, tutupKoneksi } from '../bantuan/db'
+import { seedPemetaanJurnal } from '../bantuan/pemetaan'
 
 const TABEL = [
   'depreciation_lines', 'fixed_assets', 'asset_categories',
-  'journal_items', 'journal_entries', 'journals', 'sequences',
+  'journal_items', 'journal_entries', 'journal_mappings', 'journals', 'sequences',
   'company_settings', 'accounts', 'currency_rates', 'currencies',
   'audit_logs', 'user_roles', 'users', 'partners', 'payment_terms', 'taxes',
 ]
@@ -42,7 +43,11 @@ beforeEach(async () => {
   ]).returning()
   for (const a of dibuatAkun) akun[a.kode] = a.id
 
-  await db.insert(companySettings).values({ nama: 'PT Uji' })
+  await db.insert(companySettings).values({
+    nama: 'PT Uji',
+    akunLabaPelepasanAsetId: akun['4203'],
+    akunRugiPelepasanAsetId: akun['7103'],
+  })
 
   const [pengguna] = await db.insert(users).values({
     email: 'aset@uji.id', nama: 'Staf Akuntansi', passwordHash: 'x',
@@ -55,6 +60,7 @@ beforeEach(async () => {
   await db.insert(journals).values({
     kode: 'JU', nama: 'Jurnal Umum', tipe: 'umum', sequenceId: urutanJu.id,
   })
+  await seedPemetaanJurnal()
 
   const dibuatKategori = await db.insert(assetCategories).values([
     {

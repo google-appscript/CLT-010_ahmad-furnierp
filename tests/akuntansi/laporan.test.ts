@@ -8,9 +8,10 @@ import {
   laporanLabaRugi, laporanNeraca, laporanArusKas, laporanNeracaSaldo, itemPerAkun,
 } from '@/modules/akuntansi/layanan/laporan'
 import { bersihkanTabel, tutupKoneksi } from '../bantuan/db'
+import { seedPemetaanJurnal } from '../bantuan/pemetaan'
 
 const TABEL = [
-  'journal_items', 'journal_entries', 'journals', 'sequences',
+  'journal_items', 'journal_entries', 'journal_mappings', 'journals', 'sequences',
   'company_settings', 'accounts', 'currency_rates', 'currencies',
   'audit_logs', 'user_roles', 'users', 'partners', 'payment_terms', 'taxes',
 ]
@@ -59,6 +60,7 @@ beforeEach(async () => {
   const [jurnal] = await db.insert(journals).values({
     kode: 'JU', nama: 'Jurnal Umum', tipe: 'umum', sequenceId: urutan.id,
   }).returning()
+  await seedPemetaanJurnal()
   jurnalId = jurnal.id
 
   const dibuat = await db.insert(accounts).values(

@@ -5,13 +5,15 @@ import {
   companySettings, fiscalYears, currencies, currencyRates,
   accounts, paymentTerms, taxes, journals, sequences,
   uoms, productCategories, products, warehouses, locations, assetCategories,
+  journalMappings, costCenters, locationCostCenters,
 } from '@/db/schema'
 import { daftarKodeIzin } from '@/lib/navigasi'
 import { hashKataSandi } from '@/modules/identitas/layanan/kata-sandi'
 import {
   BAGAN_AKUN_STANDAR, AKUN_LABA_DITAHAN, AKUN_SELISIH_KURS_UNTUNG,
   AKUN_SELISIH_KURS_RUGI, AKUN_PEMBULATAN, AKUN_PENERIMAAN_BELUM_DITAGIH,
-  AKUN_BARANG_DALAM_PROSES,
+  AKUN_BARANG_DALAM_PROSES, AKUN_TENAGA_KERJA_LANGSUNG, AKUN_OVERHEAD_PABRIK,
+  AKUN_LABA_PELEPASAN_ASET, AKUN_RUGI_PELEPASAN_ASET,
 } from './bagan-akun'
 import {
   SATUAN, KATEGORI_PRODUK, GUDANG, LOKASI, URUTAN_GUDANG, PRODUK_CONTOH,
@@ -21,6 +23,8 @@ import {
   URUTAN_PEMBELIAN, URUTAN_PENJUALAN, URUTAN_MANUFAKTUR,
 } from './data-dasar'
 import { KATEGORI_ASET } from './aset'
+import { PEMETAAN_JURNAL_BAWAAN } from './pemetaan'
+import { POS_BIAYA, POS_BAWAAN_LOKASI } from './pos-biaya'
 
 /**
  * Seed bersifat idempoten: setiap penyisipan memakai onConflictDoNothing
@@ -104,6 +108,10 @@ export async function jalankanSeed(): Promise<void> {
       akunPembulatanId: akunId(AKUN_PEMBULATAN),
       akunPenerimaanBelumDitagihId: akunId(AKUN_PENERIMAAN_BELUM_DITAGIH),
       akunBarangDalamProsesId: akunId(AKUN_BARANG_DALAM_PROSES),
+      akunTenagaKerjaLangsungId: akunId(AKUN_TENAGA_KERJA_LANGSUNG),
+      akunOverheadPabrikId: akunId(AKUN_OVERHEAD_PABRIK),
+      akunLabaPelepasanAsetId: akunId(AKUN_LABA_PELEPASAN_ASET),
+      akunRugiPelepasanAsetId: akunId(AKUN_RUGI_PELEPASAN_ASET),
     })
   } else {
     // Basis data yang sudah di-seed sebelum fase berikutnya belum punya
@@ -114,6 +122,18 @@ export async function jalankanSeed(): Promise<void> {
     }
     if (!pengaturan.akunBarangDalamProsesId) {
       tambahan.akunBarangDalamProsesId = akunId(AKUN_BARANG_DALAM_PROSES)
+    }
+    if (!pengaturan.akunTenagaKerjaLangsungId) {
+      tambahan.akunTenagaKerjaLangsungId = akunId(AKUN_TENAGA_KERJA_LANGSUNG)
+    }
+    if (!pengaturan.akunOverheadPabrikId) {
+      tambahan.akunOverheadPabrikId = akunId(AKUN_OVERHEAD_PABRIK)
+    }
+    if (!pengaturan.akunLabaPelepasanAsetId) {
+      tambahan.akunLabaPelepasanAsetId = akunId(AKUN_LABA_PELEPASAN_ASET)
+    }
+    if (!pengaturan.akunRugiPelepasanAsetId) {
+      tambahan.akunRugiPelepasanAsetId = akunId(AKUN_RUGI_PELEPASAN_ASET)
     }
     if (Object.keys(tambahan).length > 0) {
       await db.update(companySettings).set(tambahan)
@@ -231,5 +251,38 @@ export async function jalankanSeed(): Promise<void> {
       metodeBawaan: k.metodeBawaan as never,
       masaManfaatBulanBawaan: k.masaManfaatBulanBawaan,
     })),
+  ).onConflictDoNothing()
+
+  // 17. Pemetaan jurnal untuk setiap jenis posting otomatis
+  const jurnalLewatKode = new Map(
+    (await db.select().from(journals)).map((j) => [j.kode, j.id]),
+  )
+  await db.insert(journalMappings).values(
+    PEMETAAN_JURNAL_BAWAAN
+      .filter((m) => jurnalLewatKode.has(m.jurnal))
+      .map((m) => ({
+        kode: m.kode,
+        nama: m.nama,
+        deskripsi: m.deskripsi,
+        journalId: jurnalLewatKode.get(m.jurnal)!,
+      })),
+  ).onConflictDoNothing()
+
+  // 18. Pos biaya dan pos bawaan tiap gudang
+  await db.insert(costCenters).values([...POS_BIAYA]).onConflictDoNothing()
+
+  const posLewatKode = new Map(
+    (await db.select().from(costCenters)).map((p) => [p.kode, p.id]),
+  )
+  const lokasiLewatKode = new Map(
+    (await db.select().from(locations)).map((l) => [l.kode, l.id]),
+  )
+  await db.insert(locationCostCenters).values(
+    POS_BAWAAN_LOKASI
+      .filter((b) => lokasiLewatKode.has(b.lokasi) && posLewatKode.has(b.pos))
+      .map((b) => ({
+        lokasiId: lokasiLewatKode.get(b.lokasi)!,
+        costCenterId: posLewatKode.get(b.pos)!,
+      })),
   ).onConflictDoNothing()
 }

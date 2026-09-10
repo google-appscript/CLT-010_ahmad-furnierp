@@ -1,14 +1,14 @@
 import { and, asc, eq, inArray, lte } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
-  depreciationLines, fixedAssets, assetCategories, journals,
+  depreciationLines, fixedAssets, assetCategories,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bulatkan, tambah, type Uang } from '@/lib/uang'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
+import { jurnalUntukDalamTx, PEMETAAN_JURNAL } from '@/modules/akuntansi/layanan/pemetaan'
 import { DESIMAL } from './jadwal'
 
-const KODE_JURNAL = 'JU'
 
 export type BarisJadwalLengkap = {
   id: string
@@ -110,17 +110,13 @@ export async function postingBarisDalamTx(
     )
   }
 
-  const [jurnal] = await tx.select().from(journals)
-    .where(eq(journals.kode, KODE_JURNAL)).limit(1)
-  if (!jurnal) {
-    throw new ValidasiError(`Jurnal ${KODE_JURNAL} tidak ditemukan. Jalankan seed data awal.`)
-  }
+  const journalId = await jurnalUntukDalamTx(tx, PEMETAAN_JURNAL.DEPRESIASI)
 
   const label = `Depresiasi ${aset.kode} — ${aset.nama} bulan ke-${baris.urutan}`
   const nilai = bulatkan(baris.nilai, DESIMAL)
 
   const posting = await postingJurnalDalamTx(tx, {
-    journalId: jurnal.id,
+    journalId,
     tanggal: baris.tanggal,
     referensi: aset.kode,
     keterangan: label,

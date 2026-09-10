@@ -33,6 +33,17 @@ export const companySettings = pgTable('company_settings', {
   // sehingga saldonya hanya mencerminkan perintah produksi yang belum selesai.
   akunBarangDalamProsesId: uuid('akun_barang_dalam_proses_id')
     .references(() => accounts.id),
+  // Biaya konversi yang diserap perintah produksi. Keduanya dikredit saat
+  // biaya masuk ke Barang Dalam Proses.
+  akunTenagaKerjaLangsungId: uuid('akun_tenaga_kerja_langsung_id')
+    .references(() => accounts.id),
+  akunOverheadPabrikId: uuid('akun_overhead_pabrik_id')
+    .references(() => accounts.id),
+  // Selisih antara hasil pelepasan aset dan nilai bukunya bermuara di sini.
+  akunLabaPelepasanAsetId: uuid('akun_laba_pelepasan_aset_id')
+    .references(() => accounts.id),
+  akunRugiPelepasanAsetId: uuid('akun_rugi_pelepasan_aset_id')
+    .references(() => accounts.id),
   diubahPada: timestamp('diubah_pada', { withTimezone: true }).notNull().defaultNow(),
 })
 

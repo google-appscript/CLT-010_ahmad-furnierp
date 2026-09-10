@@ -17,6 +17,7 @@ import {
 import { buatPembayaran, postingPembayaran } from '@/modules/pembelian/layanan/pembayaran'
 import { stokSeluruhProduk } from '@/modules/gudang/repositori/stok'
 import { bersihkanTabel, tutupKoneksi } from '../bantuan/db'
+import { seedPemetaanJurnal } from '../bantuan/pemetaan'
 
 const TABEL = [
   'vendor_payment_allocations', 'vendor_payments',
@@ -25,7 +26,7 @@ const TABEL = [
   'packing_list_items', 'packing_lists', 'stock_moves', 'stock_operation_lines',
   'stock_operations', 'products', 'product_categories', 'uoms',
   'locations', 'warehouses',
-  'journal_items', 'journal_entries', 'journals', 'sequences',
+  'journal_items', 'journal_entries', 'journal_mappings', 'journals', 'sequences',
   'company_settings', 'accounts', 'currency_rates', 'currencies',
   'audit_logs', 'user_roles', 'users', 'partners', 'payment_terms', 'taxes',
 ]
@@ -85,6 +86,7 @@ beforeEach(async () => {
     { kode: 'PMB', nama: 'Jurnal Pembelian', tipe: 'pembelian', sequenceId: urutanLewatKode.get('jurnal:PMB')! },
     { kode: 'BNK', nama: 'Jurnal Bank', tipe: 'bank', sequenceId: urutanLewatKode.get('jurnal:BNK')! },
   ])
+  await seedPemetaanJurnal()
 
   const [satuan] = await db.insert(uoms).values({
     kode: 'UNIT', nama: 'Unit', kategori: 'satuan', faktor: '1',
