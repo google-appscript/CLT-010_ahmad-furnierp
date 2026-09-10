@@ -30,9 +30,9 @@ export function Sidebar({ item }: { item: ItemMenu[] }) {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="flex h-full w-60 shrink-0 flex-col border-r bg-background"
+      className="flex h-full w-60 shrink-0 flex-col border-r border-chrome-border bg-chrome-background text-chrome-foreground"
     >
-      <div className="flex h-14 items-center gap-2 border-b px-4">
+      <div className="flex h-14 items-center gap-2 border-b border-chrome-border px-4">
         <Ikon.Armchair className="h-5 w-5 text-primary" />
         <span className="font-semibold tracking-tight">ERP Furni</span>
       </div>
@@ -47,8 +47,8 @@ export function Sidebar({ item }: { item: ItemMenu[] }) {
                 className={cn(
                   'mb-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                   aktif.grup?.label === grup.label
-                    ? 'bg-accent font-medium text-accent-foreground'
-                    : 'hover:bg-accent/50',
+                    ? 'bg-chrome-active font-medium text-chrome-foreground'
+                    : 'hover:bg-chrome-active/60',
                 )}
               >
                 <IkonDinamis nama={grup.ikon} className="h-4 w-4" />
@@ -66,7 +66,7 @@ export function Sidebar({ item }: { item: ItemMenu[] }) {
                 aria-expanded={dibuka}
                 onClick={() => setTerbuka(dibuka ? null : grup.label)}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent/50',
+                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-chrome-active/60',
                   aktif.grup?.label === grup.label && 'font-medium',
                 )}
               >
@@ -76,7 +76,7 @@ export function Sidebar({ item }: { item: ItemMenu[] }) {
               </button>
 
               {dibuka && (
-                <ul className="ml-4 mt-1 space-y-0.5 border-l pl-4">
+                <ul className="ml-4 mt-1 space-y-0.5 border-l border-chrome-border pl-4">
                   {grup.anak.map((anak) => {
                     const rute = halamanPertama(anak)
                     if (!rute) return null
@@ -92,8 +92,8 @@ export function Sidebar({ item }: { item: ItemMenu[] }) {
                           className={cn(
                             'block rounded-md px-3 py-1.5 text-sm transition-colors',
                             sedangAktif
-                              ? 'bg-accent font-medium text-accent-foreground'
-                              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                              ? 'bg-chrome-active font-medium text-chrome-foreground'
+                              : 'text-chrome-muted-foreground hover:bg-chrome-active/60 hover:text-chrome-foreground',
                           )}
                         >
                           {anak.label}

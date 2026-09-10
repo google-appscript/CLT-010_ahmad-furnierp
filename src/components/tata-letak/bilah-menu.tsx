@@ -21,9 +21,9 @@ export function BilahMenu({ item }: { item: ItemMenu[] }) {
   return (
     <nav
       aria-label={`Menu ${seksi.label}`}
-      className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b px-4"
+      className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b border-chrome-border bg-chrome-background px-4 text-chrome-foreground"
     >
-      <span className="mr-2 shrink-0 text-xs text-muted-foreground">
+      <span className="mr-2 shrink-0 text-xs text-chrome-muted-foreground">
         {grup?.label} · {seksi.label}
       </span>
       {seksi.anak.map((h) => (
@@ -34,8 +34,8 @@ export function BilahMenu({ item }: { item: ItemMenu[] }) {
           className={cn(
             'shrink-0 rounded-md px-3 py-1.5 text-sm transition-colors',
             halaman?.rute === h.rute
-              ? 'bg-accent font-medium text-accent-foreground'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+              ? 'border-b-2 border-primary font-medium text-chrome-foreground'
+              : 'text-chrome-muted-foreground hover:text-chrome-foreground',
           )}
         >
           {h.label}
