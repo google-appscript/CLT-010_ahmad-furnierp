@@ -1,7 +1,12 @@
-import { and, asc, desc, eq } from 'drizzle-orm'
+import {
+  and, asc, desc, eq, ilike, inArray, or, sql,
+} from 'drizzle-orm'
 import { db } from '@/db/klien'
-import { salesOrders, salesOrderLines, taxes, products, uoms, locations } from '@/db/schema'
+import {
+  salesOrders, salesOrderLines, taxes, products, uoms, locations, partners,
+} from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
+import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import {
   hitungTotal, sisaKuantitas, type BarisHitung, type HasilTotal,
@@ -22,12 +27,55 @@ function urai(masukan: MasukanPesanan) {
 
 // ── Pembacaan ────────────────────────────────────────────────────────────────
 
+function kolomUrutPesanan(kolom?: string) {
+  switch (kolom) {
+    case 'nomor': return salesOrders.nomor
+    case 'status': return salesOrders.status
+    case 'dibuatPada': return salesOrders.dibuatPada
+    case 'tanggal':
+    default:
+      return salesOrders.tanggal
+  }
+}
+
 export async function daftarPesanan(
-  saring: { status?: Pesanan['status'] } = {},
-): Promise<Pesanan[]> {
-  const kueri = db.select().from(salesOrders)
-    .orderBy(desc(salesOrders.tanggal), desc(salesOrders.dibuatPada))
-  return saring.status ? kueri.where(eq(salesOrders.status, saring.status)) : kueri
+  param: ParameterDaftar & { status?: Pesanan['status'] },
+): Promise<HasilDaftar<Pesanan>> {
+  const halaman = param.halaman || 1
+  const ukuranHalaman = param.ukuranHalaman || 20
+
+  const kondisi = []
+  if (param.cari) {
+    kondisi.push(or(
+      ilike(salesOrders.nomor, `%${param.cari}%`),
+      ilike(partners.nama, `%${param.cari}%`),
+    ))
+  }
+
+  const statusDisaring = [
+    ...(param.status ? [param.status] : []),
+    ...(param.filter?.status ?? []),
+  ] as Pesanan['status'][]
+  if (statusDisaring.length > 0) {
+    kondisi.push(inArray(salesOrders.status, statusDisaring))
+  }
+
+  const where = kondisi.length > 0 ? and(...kondisi) : undefined
+  const kolomUrut = kolomUrutPesanan(param.urutkan?.kolom)
+  const arahUrut = param.urutkan?.arah === 'asc' ? asc : desc
+
+  const baris = await db.select({ pesanan: salesOrders }).from(salesOrders)
+    .innerJoin(partners, eq(partners.id, salesOrders.partnerId))
+    .where(where)
+    .orderBy(arahUrut(kolomUrut), desc(salesOrders.dibuatPada))
+    .limit(ukuranHalaman)
+    .offset((halaman - 1) * ukuranHalaman)
+
+  const [{ jumlah }] = await db.select({ jumlah: sql<number>`count(*)::int` }).from(salesOrders)
+    .innerJoin(partners, eq(partners.id, salesOrders.partnerId))
+    .where(where)
+
+  return { data: baris.map((b) => b.pesanan), totalBaris: jumlah }
 }
 
 export async function ambilPesanan(id: string): Promise<PesananLengkap | null> {

@@ -8,7 +8,7 @@ import {
 } from '@/db/schema'
 import {
   buatPesanan, konfirmasiPesanan, batalkanPesanan, hapusPenawaran,
-  ambilPesanan, barisDenganSisa, totalPesanan,
+  ambilPesanan, barisDenganSisa, totalPesanan, daftarPesanan,
 } from '@/modules/penjualan/layanan/pesanan'
 import { kirimDariPesanan, pengirimanPesanan } from '@/modules/penjualan/layanan/pengiriman'
 import {
@@ -567,6 +567,66 @@ describe('rekonsiliasi item jurnal', () => {
 
     expect(await itemTerbuka({ akunId: akun['1121'] })).toHaveLength(2)
     expect(await daftarRekonsiliasi()).toHaveLength(0)
+  })
+})
+
+// ── Daftar pesanan (pencarian, filter, pagination) ──────────────────────────
+
+describe('daftarPesanan', () => {
+  let pelangganKeduaId: string
+
+  beforeEach(async () => {
+    const [p2] = await db.insert(partners).values({
+      kode: 'CUST-002', nama: 'CV Jati Indah', isPelanggan: true,
+    }).returning()
+    pelangganKeduaId = p2.id
+  })
+
+  it('cari menyaring berdasarkan nomor atau nama mitra', async () => {
+    const so1 = await buatPesanan(pesananDasar(), penggunaId)
+    await konfirmasiPesanan(so1.id, penggunaId)
+    const so2 = await buatPesanan(pesananDasar({ partnerId: pelangganKeduaId }), penggunaId)
+
+    const lewatNomor = await daftarPesanan({ halaman: 1, ukuranHalaman: 20, cari: 'SO/2026/06/0001' })
+    expect(lewatNomor.data.map((p) => p.id)).toEqual([so1.id])
+
+    const lewatNama = await daftarPesanan({ halaman: 1, ukuranHalaman: 20, cari: 'Jati Indah' })
+    expect(lewatNama.data.map((p) => p.id)).toEqual([so2.id])
+  })
+
+  it('filter.status menyaring status, digabung dengan status lama', async () => {
+    const so1 = await buatPesanan(pesananDasar(), penggunaId)
+    await konfirmasiPesanan(so1.id, penggunaId)
+    const so2 = await buatPesanan(pesananDasar({ partnerId: pelangganKeduaId }), penggunaId)
+
+    const hasil = await daftarPesanan({
+      halaman: 1, ukuranHalaman: 20, filter: { status: ['dikonfirmasi'] },
+    })
+    expect(hasil.data.map((p) => p.id)).toEqual([so1.id])
+
+    const hasilLama = await daftarPesanan({ halaman: 1, ukuranHalaman: 20, status: 'penawaran' })
+    expect(hasilLama.data.map((p) => p.id)).toEqual([so2.id])
+  })
+
+  it('halaman/ukuranHalaman membatasi data tapi totalBaris tetap total sesungguhnya', async () => {
+    await buatPesanan(pesananDasar(), penggunaId)
+    await buatPesanan(pesananDasar({ partnerId: pelangganKeduaId }), penggunaId)
+    await buatPesanan(pesananDasar(), penggunaId)
+
+    const halamanSatu = await daftarPesanan({ halaman: 1, ukuranHalaman: 2 })
+    expect(halamanSatu.data).toHaveLength(2)
+    expect(halamanSatu.totalBaris).toBe(3)
+
+    const halamanDua = await daftarPesanan({ halaman: 2, ukuranHalaman: 2 })
+    expect(halamanDua.data).toHaveLength(1)
+    expect(halamanDua.totalBaris).toBe(3)
+  })
+
+  it('bekerja dengan pemanggilan default tanpa cari/filter/urutkan', async () => {
+    await buatPesanan(pesananDasar(), penggunaId)
+    const hasil = await daftarPesanan({ halaman: 1, ukuranHalaman: 20 })
+    expect(hasil.data).toHaveLength(1)
+    expect(hasil.totalBaris).toBe(1)
   })
 })
 
