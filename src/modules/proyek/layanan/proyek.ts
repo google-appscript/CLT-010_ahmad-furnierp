@@ -1,9 +1,10 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   projects, projectTasks, timesheets, salesOrders, journalItems,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
+import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { skemaProyek, type MasukanProyek } from '../validasi/proyek'
 
 export type Proyek = typeof projects.$inferSelect
@@ -24,6 +25,52 @@ export async function daftarProyek(
   const kueri = db.select().from(projects)
     .orderBy(desc(projects.tanggalMulai), asc(projects.kode))
   return saring.status ? kueri.where(eq(projects.status, saring.status)) : kueri
+}
+
+function kolomUrutProyek(kolom?: string) {
+  switch (kolom) {
+    case 'nama': return projects.nama
+    case 'status': return projects.status
+    case 'tanggalMulai':
+    default:
+      return projects.tanggalMulai
+  }
+}
+
+/** Varian `daftarProyek()` dengan pencarian/filter/pagination untuk halaman daftar. */
+export async function daftarProyekBerhalaman(
+  param: ParameterDaftar = { halaman: 1, ukuranHalaman: 20 },
+): Promise<HasilDaftar<Proyek>> {
+  const halaman = param.halaman || 1
+  const ukuranHalaman = param.ukuranHalaman || 20
+
+  const kondisi = []
+  if (param.cari) {
+    kondisi.push(or(
+      ilike(projects.kode, `%${param.cari}%`),
+      ilike(projects.nama, `%${param.cari}%`),
+    ))
+  }
+
+  const statusDisaring = param.filter?.status ?? []
+  if (statusDisaring.length > 0) {
+    kondisi.push(inArray(projects.status, statusDisaring as Proyek['status'][]))
+  }
+
+  const where = kondisi.length > 0 ? and(...kondisi) : undefined
+  const kolomUrut = kolomUrutProyek(param.urutkan?.kolom)
+  const arahUrut = param.urutkan?.arah === 'asc' ? asc : desc
+
+  const [baris, [{ jumlah }]] = await Promise.all([
+    db.select().from(projects)
+      .where(where)
+      .orderBy(arahUrut(kolomUrut), asc(projects.kode))
+      .limit(ukuranHalaman)
+      .offset((halaman - 1) * ukuranHalaman),
+    db.select({ jumlah: sql<number>`count(*)::int` }).from(projects).where(where),
+  ])
+
+  return { data: baris, totalBaris: jumlah }
 }
 
 export async function ambilProyek(id: string): Promise<Proyek | null> {

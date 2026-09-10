@@ -1,42 +1,34 @@
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
-import { asc } from 'drizzle-orm'
 import { wajibIzin } from '@/lib/sesi'
-import { db } from '@/db/klien'
-import { partners, salesOrders, users } from '@/db/schema'
-import { daftarProyek } from '@/modules/proyek/layanan/proyek'
-import { profitabilitasProyek } from '@/modules/proyek/layanan/laporan'
+import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
+import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { LABEL_STATUS_PROYEK } from '@/modules/proyek/validasi/proyek'
-import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
-import { BarisKlik } from '@/components/data/tabel-data-interaktif'
+import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { DaftarProyek } from './daftar-proyek'
 
 export const metadata = { title: 'Daftar Proyek' }
 
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', terkunci: 'default',
-  draft: 'secondary', dibatalkan: 'outline',
-}
+const KUNCI_DAFTAR = 'proyek.daftar'
 
-export default async function HalamanDaftarProyek() {
-  await wajibIzin('proyek.proyek.kelola')
+export default async function HalamanDaftarProyek({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const sesi = await wajibIzin('proyek.proyek.kelola')
 
-  const [proyek, semuaMitra, semuaPesanan, semuaPengguna] = await Promise.all([
-    daftarProyek(),
-    db.select({ id: partners.id, nama: partners.nama }).from(partners),
-    db.select({ id: salesOrders.id, nomor: salesOrders.nomor }).from(salesOrders),
-    db.select({ id: users.id, nama: users.nama }).from(users).orderBy(asc(users.nama)),
-  ])
+  const sp = await searchParams
+  const params = new URLSearchParams()
+  for (const [kunci, nilai] of Object.entries(sp)) {
+    if (nilai === undefined) continue
+    for (const v of Array.isArray(nilai) ? nilai : [nilai]) params.append(kunci, v)
+  }
+  const param = uraikanParameterDaftar(params)
 
-  const mitra = new Map(semuaMitra.map((m) => [m.id, m.nama]))
-  const pesanan = new Map(semuaPesanan.map((s) => [s.id, s.nomor]))
-  const pengguna = new Map(semuaPengguna.map((u) => [u.id, u.nama]))
-
-  const dengan = await Promise.all(
-    proyek.map(async (p) => ({ p, laba: await profitabilitasProyek(p.id) })),
-  )
+  const favorit = await daftarFilter(sesi.penggunaId, KUNCI_DAFTAR)
 
   return (
     <>
@@ -49,60 +41,19 @@ export default async function HalamanDaftarProyek() {
           </Button>
         }
       />
-
-      {proyek.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-sm text-muted-foreground">
-          Belum ada proyek. Konfirmasikan sebuah pesanan penjualan lebih dulu, lalu buka
-          proyeknya di sini.
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-md border">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40">
-              <tr>
-                <th className="px-4 py-2 text-left font-medium">Kode</th>
-                <th className="px-4 py-2 text-left font-medium">Nama</th>
-                <th className="px-4 py-2 text-left font-medium">Pesanan</th>
-                <th className="px-4 py-2 text-left font-medium">Pelanggan</th>
-                <th className="px-4 py-2 text-left font-medium">Manajer</th>
-                <th className="px-4 py-2 text-left font-medium">Mulai</th>
-                <th className="px-4 py-2 text-right font-medium">Pendapatan</th>
-                <th className="px-4 py-2 text-right font-medium">Laba</th>
-                <th className="px-4 py-2 text-left font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dengan.map(({ p, laba }) => (
-                <BarisKlik key={p.id} href={`/proyek/${p.id}`}>
-                  <td className="px-4 py-1.5 font-mono text-xs">{p.kode}</td>
-                  <td className="px-4 py-1.5">{p.nama}</td>
-                  <td className="px-4 py-1.5 font-mono text-xs">
-                    <Link href={`/penjualan/pesanan/${p.soId}`} className="underline">
-                      {pesanan.get(p.soId) ?? '—'}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-1.5">{mitra.get(p.partnerId) ?? '—'}</td>
-                  <td className="px-4 py-1.5 text-muted-foreground">
-                    {p.manajerId ? pengguna.get(p.manajerId) ?? '—' : '—'}
-                  </td>
-                  <td className="px-4 py-1.5 text-muted-foreground">{p.tanggalMulai}</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatAngka(laba.pendapatan)}
-                  </td>
-                  <td className={`px-4 py-1.5 text-right font-medium tabular-nums ${
-                    Number(laba.laba) < 0 ? 'text-destructive' : ''
-                  }`}>
-                    {formatAngka(laba.laba)}
-                  </td>
-                  <td className="px-4 py-1.5">
-                    <Badge variant={VARIAN[p.status]}>{LABEL_STATUS_PROYEK[p.status]}</Badge>
-                  </td>
-                </BarisKlik>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <PanelPencarian
+        kunciDaftar={KUNCI_DAFTAR}
+        kolomFilter={[
+          {
+            kunci: 'status',
+            label: 'Status',
+            opsi: Object.entries(LABEL_STATUS_PROYEK).map(([nilai, label]) => ({ nilai, label })),
+          },
+        ]}
+        kolomGroupBy={[{ kunci: 'status', label: 'Status' }]}
+        favorit={favorit.map((f) => ({ ...f, kriteria: f.kriteria as ParameterDaftar }))}
+      />
+      <DaftarProyek param={param} />
     </>
   )
 }
