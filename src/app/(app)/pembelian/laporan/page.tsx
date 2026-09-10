@@ -19,8 +19,8 @@ export default async function HalamanLaporanPembelian({
   await wajibIzin('pembelian.laporan.lihat')
   const { dari, sampai } = periodeBawaan(await searchParams)
 
-  const [semua, semuaMitra] = await Promise.all([
-    daftarPesanan(),
+  const [{ data: semua }, semuaMitra] = await Promise.all([
+    daftarPesanan({ halaman: 1, ukuranHalaman: 100000 }),
     db.select({ id: partners.id, nama: partners.nama }).from(partners).orderBy(asc(partners.nama)),
   ])
   const mitraLewatId = new Map(semuaMitra.map((m) => [m.id, m.nama]))

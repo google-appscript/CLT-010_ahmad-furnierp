@@ -6,24 +6,30 @@ import { LABEL_STATUS_PEMBELIAN } from '@/modules/pembelian/validasi/pesanan'
 import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import type { ParameterDaftar } from '@/lib/daftar'
 
 const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
   dikonfirmasi: 'default', selesai: 'default',
   permintaan: 'secondary', dibatalkan: 'outline',
 }
 
-export async function DaftarPesanan({ status }: { status?: Pesanan['status'] }) {
-  const [pesanan, semuaMitra] = await Promise.all([
-    daftarPesanan(status ? { status } : {}),
+type BarisPesanan = Pesanan & { totalTagihan: string }
+
+export async function DaftarPesanan({
+  param,
+}: {
+  param: ParameterDaftar & { status?: Pesanan['status'] }
+}) {
+  const [{ data: pesanan, totalBaris }, semuaMitra] = await Promise.all([
+    daftarPesanan(param),
     db.select({ id: partners.id, nama: partners.nama }).from(partners).orderBy(asc(partners.nama)),
   ])
   const mitraLewatId = new Map(semuaMitra.map((m) => [m.id, m.nama]))
-
-  const dengan = await Promise.all(
+  const baris: BarisPesanan[] = await Promise.all(
     pesanan.map(async (p) => ({ ...p, totalTagihan: (await totalPesanan(p.id)).totalTagihan })),
   )
 
-  const kolom: Kolom<(typeof dengan)[number]>[] = [
+  const kolom: Kolom<BarisPesanan>[] = [
     { kunci: 'nomor', judul: 'Nomor', render: (p) => <span className="font-mono text-xs">{p.nomor ?? '—'}</span> },
     { kunci: 'tanggal', judul: 'Tanggal', render: (p) => p.tanggal },
     { kunci: 'pemasok', judul: 'Pemasok', render: (p) => mitraLewatId.get(p.partnerId) ?? '—' },
@@ -35,13 +41,27 @@ export async function DaftarPesanan({ status }: { status?: Pesanan['status'] }) 
     },
   ]
 
+  const pengelompokan = param.kelompokkan === 'status'
+    ? {
+        kelompokkanDari: (p: BarisPesanan) => p.status,
+        label: (nilaiGrup: string) => LABEL_STATUS_PEMBELIAN[nilaiGrup] ?? nilaiGrup,
+      }
+    : param.kelompokkan === 'partnerId'
+      ? {
+          kelompokkanDari: (p: BarisPesanan) => p.partnerId,
+          label: (nilaiGrup: string) => mitraLewatId.get(nilaiGrup) ?? '—',
+        }
+      : undefined
+
   return (
     <TabelData
       kolom={kolom}
-      baris={dengan}
+      baris={baris}
       kunciBaris={(p) => p.id}
       pesanKosong="Belum ada dokumen."
       hrefBaris={(p) => `/pembelian/pesanan/${p.id}`}
+      pagination={{ halaman: param.halaman, ukuranHalaman: param.ukuranHalaman, totalBaris }}
+      pengelompokan={pengelompokan}
     />
   )
 }
