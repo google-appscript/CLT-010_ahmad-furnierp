@@ -21,7 +21,7 @@ export function BilahMenu({ item }: { item: ItemMenu[] }) {
   return (
     <nav
       aria-label={`Menu ${seksi.label}`}
-      className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b border-chrome-border bg-chrome-background px-4 text-chrome-foreground"
+      className="flex h-11 shrink-0 items-center gap-1 overflow-x-auto border-b border-chrome-border bg-chrome-topbar px-4 text-chrome-foreground"
     >
       <span className="mr-2 shrink-0 text-xs text-chrome-muted-foreground">
         {grup?.label} · {seksi.label}

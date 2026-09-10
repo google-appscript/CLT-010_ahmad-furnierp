@@ -4,13 +4,12 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import {
-  CheckIcon, LayersIcon, ListFilterIcon, PlusIcon, SearchIcon, StarIcon, XIcon,
+  ChevronDownIcon, ListFilterIcon, PlusIcon, SearchIcon, StarIcon, XIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -31,8 +30,9 @@ export type KolomGroupByPanel = { kunci: string; label: string }
 export type FavoritPanel = { id: string; nama: string; kriteria: ParameterDaftar }
 
 /**
- * Panel kontrol daftar bergaya Odoo: kotak pencarian, chip filter aktif,
- * dropdown pengelompokan, dan favorit tersimpan.
+ * Panel kontrol daftar bergaya Odoo: satu wadah bersambung berisi ikon cari,
+ * chip facet (filter aktif) sebaris dengan kotak teks, lalu Filter/Kelompokkan/
+ * Favorit sebagai tautan tanpa bingkai di kanan — bukan tombol-tombol terpisah.
  *
  * Seluruh interaksi hanya mengubah `searchParams` lewat `router.push()` —
  * komponen ini tidak menyimpan hasil query sendiri. Server Component pemanggil
@@ -151,152 +151,159 @@ export function PanelPencarian({
     })
   }
 
-  const chipFilter = Object.entries(parameter.filter ?? {}).flatMap(([kunciKolom, nilaiList]) => {
-    const kolom = kolomFilter.find((k) => k.kunci === kunciKolom)
-    return nilaiList.map((nilai) => ({
-      kunciKolom,
-      nilai,
-      label: `${kolom?.label ?? kunciKolom}: ${kolom?.opsi.find((o) => o.nilai === nilai)?.label ?? nilai}`,
-    }))
-  })
+  // Facet: satu chip per KOLOM filter, memuat semua nilai yang dipilih pada
+  // kolom itu (gaya Odoo — satu "facet" bisa memuat beberapa nilai OR).
+  const facet = Object.entries(parameter.filter ?? {})
+    .filter(([, nilaiList]) => nilaiList.length > 0)
+    .map(([kunciKolom, nilaiList]) => {
+      const kolom = kolomFilter.find((k) => k.kunci === kunciKolom)
+      return {
+        kunciKolom,
+        labelKolom: kolom?.label ?? kunciKolom,
+        labelNilai: nilaiList
+          .map((nilai) => kolom?.opsi.find((o) => o.nilai === nilai)?.label ?? nilai)
+          .join(', '),
+      }
+    })
 
   return (
-    <div className="mb-4 space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full max-w-sm">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={cariInput}
-            onChange={(e) => setCariInput(e.target.value)}
-            placeholder="Cari…"
-            aria-label="Cari"
-            className="pl-8"
-          />
-        </div>
+    <div className="mb-4">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-md border bg-card px-2 py-1 focus-within:ring-2 focus-within:ring-ring/30">
+        <SearchIcon className="ml-1 size-4 shrink-0 text-muted-foreground" />
 
-        {kolomFilter.length > 0 && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline">
-                <ListFilterIcon />
-                Filter
-                {chipFilter.length > 0 && (
-                  <Badge variant="secondary">{chipFilter.length}</Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-72">
-              <div className="space-y-3">
-                {kolomFilter.map((kolom) => (
-                  <div key={kolom.kunci} className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">{kolom.label}</p>
-                    <div className="space-y-1">
-                      {kolom.opsi.map((opsi) => {
-                        const id = `panel-filter-${kolom.kunci}-${opsi.nilai}`
-                        const dicentang = (parameter.filter?.[kolom.kunci] ?? []).includes(opsi.nilai)
-                        return (
-                          <div key={opsi.nilai} className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-accent">
-                            <Checkbox
-                              id={id}
-                              checked={dicentang}
-                              onCheckedChange={(checked) => ubahFilter(kolom.kunci, opsi.nilai, checked === true)}
-                            />
-                            <Label htmlFor={id} className="font-normal">{opsi.label}</Label>
-                          </div>
-                        )
-                      })}
+        {facet.map((f) => (
+          <span
+            key={f.kunciKolom}
+            className="flex items-center gap-1.5 rounded bg-accent py-1 pr-1 pl-2 text-xs"
+          >
+            <span className="text-muted-foreground">{f.labelKolom}</span>
+            <span className="font-medium text-accent-foreground">{f.labelNilai}</span>
+            <button
+              type="button"
+              aria-label={`Hapus filter ${f.labelKolom}`}
+              className="rounded p-0.5 hover:bg-foreground/10"
+              onClick={() => terapkan({ filter: { ...parameter.filter, [f.kunciKolom]: [] }, halaman: 1 })}
+            >
+              <XIcon className="size-3" />
+            </button>
+          </span>
+        ))}
+
+        <input
+          value={cariInput}
+          onChange={(e) => setCariInput(e.target.value)}
+          placeholder={facet.length === 0 ? 'Cari…' : ''}
+          aria-label="Cari"
+          className="h-7 min-w-32 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        />
+
+        <div className="ml-auto flex shrink-0 items-center">
+          {kolomFilter.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground">
+                  <ListFilterIcon className="size-3.5" />
+                  Filter
+                  <ChevronDownIcon className="size-3.5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-72">
+                <div className="space-y-3">
+                  {kolomFilter.map((kolom) => (
+                    <div key={kolom.kunci} className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">{kolom.label}</p>
+                      <div className="space-y-1">
+                        {kolom.opsi.map((opsi) => {
+                          const id = `panel-filter-${kolom.kunci}-${opsi.nilai}`
+                          const dicentang = (parameter.filter?.[kolom.kunci] ?? []).includes(opsi.nilai)
+                          return (
+                            <div key={opsi.nilai} className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-accent">
+                              <Checkbox
+                                id={id}
+                                checked={dicentang}
+                                onCheckedChange={(checked) => ubahFilter(kolom.kunci, opsi.nilai, checked === true)}
+                              />
+                              <Label htmlFor={id} className="font-normal">{opsi.label}</Label>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
 
-        {kolomGroupBy.length > 0 && (
+          {kolomGroupBy.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground">
+                  {parameter.kelompokkan
+                    ? `Kelompok: ${kolomGroupBy.find((k) => k.kunci === parameter.kelompokkan)?.label ?? parameter.kelompokkan}`
+                    : 'Kelompokkan'}
+                  <ChevronDownIcon className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Kelompokkan berdasarkan</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {kolomGroupBy.map((kolom) => (
+                  <DropdownMenuItem
+                    key={kolom.kunci}
+                    onSelect={() => pilihGroupBy(kolom.kunci)}
+                    className={kolom.kunci === parameter.kelompokkan ? 'bg-accent' : undefined}
+                  >
+                    {kolom.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <LayersIcon />
-                {parameter.kelompokkan
-                  ? `Kelompok: ${kolomGroupBy.find((k) => k.kunci === parameter.kelompokkan)?.label ?? parameter.kelompokkan}`
-                  : 'Kelompokkan'}
+              <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground">
+                <StarIcon className="size-3.5" />
+                Favorit
+                <ChevronDownIcon className="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>Kelompokkan berdasarkan</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {kolomGroupBy.map((kolom) => (
-                <DropdownMenuItem key={kolom.kunci} onSelect={() => pilihGroupBy(kolom.kunci)}>
-                  {kolom.kunci === parameter.kelompokkan
-                    ? <CheckIcon className="size-4" />
-                    : <span className="size-4" />}
-                  {kolom.label}
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent align="end" className="w-64">
+              {favorit.length > 0 && (
+                <>
+                  <DropdownMenuLabel>Favorit tersimpan</DropdownMenuLabel>
+                  {favorit.map((f) => (
+                    <div key={f.id} className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        className="flex-1 truncate rounded-md px-1.5 py-1 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => terapkanFavorit(f.kriteria)}
+                      >
+                        {f.nama}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Hapus favorit ${f.nama}`}
+                        disabled={menghapusFavorit}
+                        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                        onClick={() => hapusFavorit(f.id, f.nama)}
+                      >
+                        <XIcon className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onSelect={() => setTimeout(() => setDialogSimpanTerbuka(true), 0)}>
+                <PlusIcon />
+                Simpan filter saat ini…
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <StarIcon />
-              Favorit
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
-            {favorit.length > 0 && (
-              <>
-                <DropdownMenuLabel>Favorit tersimpan</DropdownMenuLabel>
-                {favorit.map((f) => (
-                  <div key={f.id} className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className="flex-1 truncate rounded-md px-1.5 py-1 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                      onClick={() => terapkanFavorit(f.kriteria)}
-                    >
-                      {f.nama}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Hapus favorit ${f.nama}`}
-                      disabled={menghapusFavorit}
-                      className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                      onClick={() => hapusFavorit(f.id, f.nama)}
-                    >
-                      <XIcon className="size-3.5" />
-                    </button>
-                  </div>
-                ))}
-                <DropdownMenuSeparator />
-              </>
-            )}
-            <DropdownMenuItem onSelect={() => setTimeout(() => setDialogSimpanTerbuka(true), 0)}>
-              <PlusIcon />
-              Simpan filter saat ini…
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {chipFilter.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {chipFilter.map((chip) => (
-            <Badge key={`${chip.kunciKolom}:${chip.nilai}`} variant="secondary" className="gap-1 pr-1">
-              {chip.label}
-              <button
-                type="button"
-                aria-label={`Hapus filter ${chip.label}`}
-                className="rounded-full p-0.5 hover:bg-foreground/10"
-                onClick={() => ubahFilter(chip.kunciKolom, chip.nilai, false)}
-              >
-                <XIcon className="size-3" />
-              </button>
-            </Badge>
-          ))}
         </div>
-      )}
+      </div>
 
       <Dialog open={dialogSimpanTerbuka} onOpenChange={setDialogSimpanTerbuka}>
         <DialogContent className="sm:max-w-sm">

@@ -290,7 +290,7 @@ export function FormulirPesanan({
                 <Button type="submit" disabled={menyimpan}>
                   {menyimpan ? 'Menyimpan…' : 'Simpan Penawaran'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => router.back()}>Batal</Button>
+                <Button type="button" variant="ghost" onClick={() => router.back()}>Batal</Button>
               </>
             )}
           </div>

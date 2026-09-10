@@ -40,6 +40,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --color-chrome-background: var(--chrome-background);
+  --color-chrome-topbar: var(--chrome-topbar);
   --color-chrome-foreground: var(--chrome-foreground);
   --color-chrome-muted-foreground: var(--chrome-muted-foreground);
   --color-chrome-border: var(--chrome-border);
@@ -87,6 +88,7 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   --chrome-background: oklch(0.22 0.045 259);
+  --chrome-topbar: oklch(0.16 0.04 259);
   --chrome-foreground: oklch(0.92 0.01 259);
   --chrome-muted-foreground: oklch(0.65 0.02 259);
   --chrome-border: oklch(0.30 0.04 259);
@@ -126,6 +128,7 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
   --chrome-background: oklch(0.12 0.03 259);
+  --chrome-topbar: oklch(0.08 0.025 259);
   --chrome-foreground: oklch(0.90 0.01 259);
   --chrome-muted-foreground: oklch(0.60 0.02 259);
   --chrome-border: oklch(0.22 0.035 259);
