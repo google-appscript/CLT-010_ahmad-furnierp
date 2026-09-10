@@ -25,7 +25,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             name: pengguna.nama,
             izin: pengguna.izin,
           }
-        } catch {
+        } catch (e) {
+          console.error('[masuk] authorize gagal:', e)
           return null
         }
       },
