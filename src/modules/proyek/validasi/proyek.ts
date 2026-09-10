@@ -56,6 +56,7 @@ export const LABEL_STATUS_PROYEK: Record<string, string> = {
   draft: 'Draft',
   berjalan: 'Berjalan',
   selesai: 'Selesai',
+  terkunci: 'Terkunci',
   dibatalkan: 'Dibatalkan',
 }
 

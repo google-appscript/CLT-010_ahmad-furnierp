@@ -31,6 +31,21 @@ export const projects = pgTable('projects', {
    */
   tarifPerJam: numeric('tarif_per_jam', { precision: 18, scale: 2 }).notNull().default('0'),
   catatan: text('catatan'),
+  /**
+   * Angka job costing yang dibekukan saat proyek dikunci.
+   *
+   * Tanpa snapshot, laporan historis akan bergeser ketika harga pokok
+   * rata-rata berubah oleh pembelian berikutnya — proyek yang sudah selesai
+   * dan lunas tidak boleh berubah angkanya hanya karena ada transaksi lain.
+   */
+  pendapatanFinal: numeric('pendapatan_final', { precision: 18, scale: 2 }),
+  hargaPokokFinal: numeric('harga_pokok_final', { precision: 18, scale: 2 }),
+  bebanLainFinal: numeric('beban_lain_final', { precision: 18, scale: 2 }),
+  biayaTenagaKerjaFinal: numeric('biaya_tenaga_kerja_final', { precision: 18, scale: 2 }),
+  totalJamFinal: numeric('total_jam_final', { precision: 18, scale: 2 }),
+  labaFinal: numeric('laba_final', { precision: 18, scale: 2 }),
+  dikunciPada: timestamp('dikunci_pada', { withTimezone: true }),
+  dikunciOleh: uuid('dikunci_oleh').references(() => users.id),
   dibuatOleh: uuid('dibuat_oleh').references(() => users.id),
   dibuatPada: timestamp('dibuat_pada', { withTimezone: true }).notNull().defaultNow(),
   diubahPada: timestamp('diubah_pada', { withTimezone: true }).notNull().defaultNow(),

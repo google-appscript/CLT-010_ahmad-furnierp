@@ -21,7 +21,11 @@ import {
   catatTimesheet, hapusTimesheet, daftarTimesheet, rekapTimesheetProyek,
 } from '@/modules/proyek/layanan/timesheet'
 import { profitabilitasProyek } from '@/modules/proyek/layanan/laporan'
+import {
+  kunciProyek, bukaKunciProyek, kesiapanKunci,
+} from '@/modules/proyek/layanan/penguncian'
 import { bersihkanTabel, tutupKoneksi } from '../bantuan/db'
+import { seedPemetaanJurnal } from '../bantuan/pemetaan'
 
 const TABEL = [
   'timesheets', 'project_tasks', 'projects',
@@ -30,7 +34,7 @@ const TABEL = [
   'sales_order_lines', 'sales_orders',
   'stock_moves', 'stock_operation_lines', 'stock_operations',
   'products', 'product_categories', 'uoms', 'locations', 'warehouses',
-  'journal_items', 'journal_entries', 'reconciliations', 'journals', 'sequences',
+  'journal_items', 'journal_entries', 'reconciliations', 'journal_mappings', 'journals', 'sequences',
   'company_settings', 'accounts', 'currency_rates', 'currencies',
   'audit_logs', 'user_roles', 'users', 'partners', 'payment_terms', 'taxes',
 ]
@@ -81,6 +85,8 @@ beforeEach(async () => {
     { kode: 'penjualan:pesanan', prefix: 'SO', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:faktur', prefix: 'FJ', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:nota-kredit', prefix: 'NK', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
+    { kode: 'penjualan:pembayaran', prefix: 'BKM', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
+    { kode: 'jurnal:KAS', prefix: 'BK', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
   ]).returning()
   const urutan = new Map(dibuatUrutan.map((u) => [u.kode, u.id]))
 
@@ -88,7 +94,9 @@ beforeEach(async () => {
     { kode: 'JPS', nama: 'Jurnal Penyesuaian Persediaan', tipe: 'umum', sequenceId: urutan.get('jurnal:JPS')! },
     { kode: 'PNJ', nama: 'Jurnal Penjualan', tipe: 'penjualan', sequenceId: urutan.get('jurnal:PNJ')! },
     { kode: 'JU', nama: 'Jurnal Umum', tipe: 'umum', sequenceId: urutan.get('jurnal:JU')! },
+    { kode: 'KAS', nama: 'Jurnal Kas', tipe: 'kas', sequenceId: urutan.get('jurnal:KAS')! },
   ])
+  await seedPemetaanJurnal()
 
   const [satuan] = await db.insert(uoms).values({
     kode: 'UNIT', nama: 'Unit', kategori: 'satuan', faktor: '1',
@@ -658,5 +666,185 @@ describe('profitabilitas proyek', () => {
     await postingFaktur(nota.id, penggunaId)
 
     expect(Number((await profitabilitasProyek(proyek.id)).pendapatan)).toBe(18_000_000)
+  })
+})
+
+
+// ── Penguncian job costing pasca-lunas ──────────────────────────────────────
+
+describe('penguncian job costing', () => {
+  async function proyekSelesaiDenganFaktur(bayarPenuh: boolean) {
+    await sediakanStok('20', '1200000')
+    const so = await pesananDikonfirmasi('10')
+    const proyek = await mulaiProyek((await buatProyek(isiProyek(so.id), penggunaId)).id)
+
+    const { barisDenganSisa } = await import('@/modules/penjualan/layanan/pesanan')
+    const sisa = await barisDenganSisa(so.id)
+    await kirimDariPesanan({
+      soId: so.id, tanggal: '2026-02-05',
+      baris: [{ soLineId: sisa[0].id, kuantitas: '10' }],
+    }, penggunaId)
+
+    const faktur = await buatFaktur({
+      tipe: 'faktur', partnerId: pelangganId, soId: so.id,
+      tanggal: '2026-02-06', tanggalJatuhTempo: null, referensi: null,
+      mataUangId: 'IDR', catatan: null,
+      baris: [{
+        produkId, soLineId: sisa[0].id, deskripsi: 'Kursi Makan Jati',
+        kuantitas: '10', uomId: satuanUnitId, hargaSatuan: '2000000',
+        taxId: pajakPpnId, akunId: akun['4101'],
+      }],
+    }, penggunaId)
+    await postingFaktur(faktur.id, penggunaId)
+
+    if (bayarPenuh) {
+      const { buatPembayaran, postingPembayaran } =
+        await import('@/modules/penjualan/layanan/pembayaran')
+      const bayar = await buatPembayaran({
+        partnerId: pelangganId, tanggal: '2026-02-20', akunKasId: akun['1101'],
+        jumlah: '22200000', referensi: null, catatan: null,
+        alokasi: [{ invoiceId: faktur.id, jumlah: '22200000' }],
+      }, penggunaId)
+      await postingPembayaran(bayar.id, penggunaId)
+    }
+
+    await selesaikanProyek(proyek.id, '2026-03-01')
+    return proyek
+  }
+
+  it('menolak penguncian selama piutang belum lunas', async () => {
+    const proyek = await proyekSelesaiDenganFaktur(false)
+
+    const kesiapan = await kesiapanKunci(proyek.id)
+    expect(kesiapan.siap).toBe(false)
+    expect(kesiapan.penghalang.join(' ')).toMatch(/piutang belum lunas/)
+
+    await expect(kunciProyek(proyek.id, penggunaId))
+      .rejects.toThrow(/belum dapat dikunci/)
+  })
+
+  it('menolak penguncian proyek yang belum punya faktur', async () => {
+    const so = await pesananDikonfirmasi()
+    const proyek = await mulaiProyek((await buatProyek(isiProyek(so.id), penggunaId)).id)
+    await selesaikanProyek(proyek.id, '2026-03-01')
+
+    const kesiapan = await kesiapanKunci(proyek.id)
+    expect(kesiapan.penghalang.join(' ')).toMatch(/Belum ada faktur terposting/)
+  })
+
+  it('menolak penguncian selama masih ada tugas terbuka', async () => {
+    const so = await pesananDikonfirmasi()
+    const proyek = await mulaiProyek((await buatProyek(isiProyek(so.id), penggunaId)).id)
+    await buatTugas({
+      proyekId: proyek.id, nama: 'Finishing', deskripsi: null, penanggungJawabId: null,
+      tanggalMulai: null, tenggat: null, estimasiJam: '8',
+    })
+
+    const kesiapan = await kesiapanKunci(proyek.id)
+    expect(kesiapan.penghalang.join(' ')).toMatch(/1 tugas terbuka/)
+  })
+
+  it('mengunci setelah pekerjaan selesai dan faktur lunas', async () => {
+    const proyek = await proyekSelesaiDenganFaktur(true)
+
+    const kesiapan = await kesiapanKunci(proyek.id)
+    expect(kesiapan.siap).toBe(true)
+    expect(Number(kesiapan.sisaPiutang)).toBe(0)
+
+    await kunciProyek(proyek.id, penggunaId)
+    expect((await ambilProyek(proyek.id))!.status).toBe('terkunci')
+  })
+
+  it('angka dibekukan dan tidak bergeser saat harga pokok berubah', async () => {
+    const proyek = await proyekSelesaiDenganFaktur(true)
+    const sebelum = await profitabilitasProyek(proyek.id)
+    await kunciProyek(proyek.id, penggunaId)
+
+    // Pembelian baru dengan harga jauh lebih tinggi menggeser rata-rata.
+    await sediakanStok('50', '5000000')
+
+    const sesudah = await profitabilitasProyek(proyek.id)
+    expect(sesudah.terkunci).toBe(true)
+    expect(sesudah.pendapatan).toBe(sebelum.pendapatan)
+    expect(sesudah.hargaPokok).toBe(sebelum.hargaPokok)
+    expect(sesudah.laba).toBe(sebelum.laba)
+  })
+
+  it('biaya baru tidak dapat lagi ditandai ke proyek terkunci', async () => {
+    const proyek = await proyekSelesaiDenganFaktur(true)
+    await kunciProyek(proyek.id, penggunaId)
+
+    const [jurnal] = await db.select().from(journals).where(eq(journals.kode, 'JU'))
+    await expect(postingJurnal({
+      journalId: jurnal.id, tanggal: '2026-04-01', referensi: null,
+      keterangan: 'Beban telat', mataUangId: 'IDR', partnerId: null,
+      sumberTipe: 'uji', sumberId: crypto.randomUUID(),
+      item: [
+        {
+          accountId: akun['6101'], partnerId: null, label: 'Telat',
+          debit: '100000', kredit: '0',
+          nilaiMataUang: null, taxId: null, projectId: proyek.id,
+        },
+        {
+          accountId: akun['1101'], partnerId: null, label: 'Telat',
+          debit: '0', kredit: '100000',
+          nilaiMataUang: null, taxId: null, projectId: null,
+        },
+      ],
+    }, penggunaId)).rejects.toThrow(/sudah dikunci sehingga tidak dapat lagi dibebani/)
+  })
+
+  it('biaya untuk proyek lain tetap boleh diposting', async () => {
+    const terkunci = await proyekSelesaiDenganFaktur(true)
+    await kunciProyek(terkunci.id, penggunaId)
+
+    const soLain = await pesananDikonfirmasi()
+    const lain = await mulaiProyek(
+      (await buatProyek(isiProyek(soLain.id, { kode: 'PRJ-002' }), penggunaId)).id,
+    )
+
+    const [jurnal] = await db.select().from(journals).where(eq(journals.kode, 'JU'))
+    await postingJurnal({
+      journalId: jurnal.id, tanggal: '2026-04-01', referensi: null,
+      keterangan: 'Beban proyek lain', mataUangId: 'IDR', partnerId: null,
+      sumberTipe: 'uji', sumberId: crypto.randomUUID(),
+      item: [
+        {
+          accountId: akun['6101'], partnerId: null, label: 'Angkut',
+          debit: '250000', kredit: '0',
+          nilaiMataUang: null, taxId: null, projectId: lain.id,
+        },
+        {
+          accountId: akun['1101'], partnerId: null, label: 'Angkut',
+          debit: '0', kredit: '250000',
+          nilaiMataUang: null, taxId: null, projectId: null,
+        },
+      ],
+    }, penggunaId)
+
+    expect(Number((await profitabilitasProyek(lain.id)).bebanLain)).toBe(250_000)
+  })
+
+  it('proyek terkunci tidak dapat diubah maupun dibatalkan', async () => {
+    const proyek = await proyekSelesaiDenganFaktur(true)
+    await kunciProyek(proyek.id, penggunaId)
+
+    await expect(ubahProyek(proyek.id, isiProyek(proyek.soId)))
+      .rejects.toThrow(/tidak dapat diubah/)
+    await expect(batalkanProyek(proyek.id))
+      .rejects.toThrow(/tidak dapat dibatalkan/)
+    await expect(kunciProyek(proyek.id, penggunaId))
+      .rejects.toThrow(/sudah terkunci/)
+  })
+
+  it('membuka kunci mengembalikan perhitungan dari data sebenarnya', async () => {
+    const proyek = await proyekSelesaiDenganFaktur(true)
+    await kunciProyek(proyek.id, penggunaId)
+    await bukaKunciProyek(proyek.id)
+
+    const dibuka = (await ambilProyek(proyek.id))!
+    expect(dibuka.status).toBe('selesai')
+    expect(dibuka.labaFinal).toBeNull()
+    expect((await profitabilitasProyek(proyek.id)).terkunci).toBe(false)
   })
 })

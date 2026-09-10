@@ -1,6 +1,8 @@
-import { asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
-import { journalEntries, journalItems, journals, companySettings } from '@/db/schema'
+import {
+  journalEntries, journalItems, journals, companySettings, projects,
+} from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bulatkan, kurang, samaDengan, tambah, type Uang } from '@/lib/uang'
 import { skemaEntri, type MasukanEntri } from '../validasi/entri'
@@ -8,6 +10,7 @@ import { ambilNomorBerikut } from './urutan'
 import { PeriodeTerkunciError, formatTanggalIndonesia } from './penguncian'
 import { ambilKurs, MATA_UANG_FUNGSIONAL } from './kurs'
 import { kodeUrutanJurnal } from './jurnal'
+import { simpanAlokasiDalamTx, hapusAlokasiEntriDalamTx } from './pos-biaya'
 
 export type Entri = typeof journalEntries.$inferSelect
 export type ItemEntri = typeof journalItems.$inferSelect
@@ -44,6 +47,64 @@ function jumlahkan(item: { debit: string; kredit: string }[]): { debit: Uang; kr
     debit: bulatkan(tambah(...item.map((b) => b.debit)), DESIMAL_IDR),
     kredit: bulatkan(tambah(...item.map((b) => b.kredit)), DESIMAL_IDR),
   }
+}
+
+/**
+ * Menolak penanda proyek yang job costing-nya sudah dikunci.
+ *
+ * Proyek dikunci setelah pekerjaannya selesai dan fakturnya lunas, dan
+ * angkanya dibekukan saat itu. Membiarkan biaya baru masuk sesudahnya akan
+ * membuat buku besar dan laporan proyek bercerita berbeda — laporan memakai
+ * snapshot, sedangkan jurnal terus bertambah.
+ */
+async function wajibProyekTerbukaDalamTx(
+  tx: Transaksi, item: { projectId?: string | null }[],
+): Promise<void> {
+  const idProyek = [...new Set(
+    item.map((b) => b.projectId).filter((x): x is string => Boolean(x)),
+  )]
+  if (idProyek.length === 0) return
+
+  const terkunci = await tx.select({ kode: projects.kode }).from(projects)
+    .where(and(inArray(projects.id, idProyek), eq(projects.status, 'terkunci')))
+
+  if (terkunci.length > 0) {
+    throw new ValidasiError(
+      `Proyek ${terkunci.map((p) => p.kode).join(', ')} sudah dikunci sehingga tidak dapat ` +
+      'lagi dibebani biaya baru. Buka kuncinya terlebih dahulu bila koreksi memang perlu.',
+    )
+  }
+}
+
+/**
+ * Menyimpan alokasi pos biaya setelah item jurnalnya tertulis.
+ *
+ * Item dicocokkan lewat urutan, bukan dicari ulang, karena nomor urutnya
+ * memang ditetapkan dari posisi baris masukan.
+ */
+async function simpanAlokasiTerhadapItem(
+  tx: Transaksi,
+  entryId: string,
+  masukan: {
+    accountId: string
+    debit: string
+    kredit: string
+    alokasiBiaya?: { costCenterId: string; persentase: string }[]
+  }[],
+): Promise<void> {
+  if (!masukan.some((b) => (b.alokasiBiaya?.length ?? 0) > 0)) return
+
+  const tertulis = await tx.select({ id: journalItems.id, urutan: journalItems.urutan })
+    .from(journalItems).where(eq(journalItems.entryId, entryId))
+  const lewatUrutan = new Map(tertulis.map((i) => [i.urutan, i.id]))
+
+  await simpanAlokasiDalamTx(tx, masukan.map((b, i) => ({
+    itemId: lewatUrutan.get(i + 1)!,
+    accountId: b.accountId,
+    debit: b.debit,
+    kredit: b.kredit,
+    alokasiBiaya: b.alokasiBiaya,
+  })))
 }
 
 function wajibSeimbang(item: { debit: string; kredit: string }[]): void {
@@ -126,6 +187,8 @@ export async function buatEntri(masukan: MasukanEntri, dibuatOleh: string): Prom
       })),
     )
 
+    await simpanAlokasiTerhadapItem(tx, entri.id, data.item)
+
     return entri.id
   })
 
@@ -163,6 +226,7 @@ export async function ubahEntri(
       diubahPada: new Date(),
     }).where(eq(journalEntries.id, id))
 
+    await hapusAlokasiEntriDalamTx(tx, id)
     await tx.delete(journalItems).where(eq(journalItems.entryId, id))
     await tx.insert(journalItems).values(
       data.item.map((b, i) => ({
@@ -179,6 +243,8 @@ export async function ubahEntri(
         projectId: b.projectId,
       })),
     )
+
+    await simpanAlokasiTerhadapItem(tx, id, data.item)
   })
 
   return (await ambilEntri(id))!
@@ -208,6 +274,7 @@ export async function postingEntri(id: string, dipostingOleh: string): Promise<E
     const item = await tx.select().from(journalItems).where(eq(journalItems.entryId, id))
     if (item.length < 2) throw new ValidasiError('Entri jurnal memerlukan minimal dua baris')
     wajibSeimbang(item)
+    await wajibProyekTerbukaDalamTx(tx, item)
 
     const [jurnal] = await tx.select().from(journals)
       .where(eq(journals.id, entri.journalId)).limit(1)
@@ -348,6 +415,7 @@ export async function postingJurnalDalamTx(
   const data = urai(masukan)
   wajibSeimbang(data.item)
   await wajibPeriodeTerbukaDalamTx(tx, data.tanggal)
+  await wajibProyekTerbukaDalamTx(tx, data.item)
 
   const [jurnal] = await tx.select().from(journals)
     .where(eq(journals.id, data.journalId)).limit(1)
@@ -388,6 +456,8 @@ export async function postingJurnalDalamTx(
       projectId: b.projectId,
     })),
   )
+
+  await simpanAlokasiTerhadapItem(tx, entri.id, data.item)
 
   return { id: entri.id, nomor }
 }

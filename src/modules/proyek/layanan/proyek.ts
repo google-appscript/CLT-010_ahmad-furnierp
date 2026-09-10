@@ -112,7 +112,7 @@ export async function ubahProyek(id: string, masukan: MasukanProyek): Promise<Pr
   const data = urai(masukan)
   const lama = await ambilProyek(id)
   if (!lama) throw new ValidasiError('Proyek tidak ditemukan')
-  if (lama.status === 'selesai' || lama.status === 'dibatalkan') {
+  if (lama.status !== 'draft' && lama.status !== 'berjalan') {
     throw new ValidasiError('Proyek yang sudah ditutup tidak dapat diubah')
   }
 
@@ -181,7 +181,7 @@ export async function selesaikanProyek(id: string, tanggalSelesai: string): Prom
 export async function batalkanProyek(id: string): Promise<Proyek> {
   const proyek = await ambilProyek(id)
   if (!proyek) throw new ValidasiError('Proyek tidak ditemukan')
-  if (proyek.status === 'selesai') {
+  if (proyek.status === 'selesai' || proyek.status === 'terkunci') {
     throw new ValidasiError('Proyek yang sudah selesai tidak dapat dibatalkan')
   }
 

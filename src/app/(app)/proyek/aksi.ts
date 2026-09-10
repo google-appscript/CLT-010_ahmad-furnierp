@@ -10,6 +10,7 @@ import {
   buatTugas, ubahTugas, ubahStatusTugas, hapusTugas,
 } from '@/modules/proyek/layanan/tugas'
 import { catatTimesheet, hapusTimesheet } from '@/modules/proyek/layanan/timesheet'
+import { kunciProyek, bukaKunciProyek } from '@/modules/proyek/layanan/penguncian'
 import { catatAudit } from '@/modules/identitas/layanan/audit'
 import type {
   MasukanProyek, MasukanTugas, MasukanTimesheet,
@@ -185,6 +186,39 @@ export async function aksiHapusTimesheet(id: string): Promise<HasilAksi> {
     await hapusTimesheet(id)
     await catatAudit({
       penggunaId: sesi.penggunaId, entitas: 'timesheets', entitasId: id, aksi: 'hapus',
+    })
+    segarkan()
+    return { berhasil: true }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+
+// ── Penguncian job costing ───────────────────────────────────────────────────
+
+export async function aksiKunciProyek(id: string): Promise<HasilAksi> {
+  const sesi = await wajibIzin('proyek.proyek.kelola')
+  try {
+    await kunciProyek(id, sesi.penggunaId)
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'projects', entitasId: id,
+      aksi: 'posting', dataBaru: { status: 'terkunci' },
+    })
+    segarkan()
+    return { berhasil: true }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+export async function aksiBukaKunciProyek(id: string): Promise<HasilAksi> {
+  const sesi = await wajibIzin('proyek.proyek.kelola')
+  try {
+    await bukaKunciProyek(id)
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'projects', entitasId: id,
+      aksi: 'ubah', dataBaru: { status: 'selesai', keterangan: 'kunci dibuka' },
     })
     segarkan()
     return { berhasil: true }

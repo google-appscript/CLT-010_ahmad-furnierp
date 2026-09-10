@@ -8,6 +8,7 @@ import { ambilProyek } from '@/modules/proyek/layanan/proyek'
 import { daftarTugas } from '@/modules/proyek/layanan/tugas'
 import { daftarTimesheet } from '@/modules/proyek/layanan/timesheet'
 import { profitabilitasProyek } from '@/modules/proyek/layanan/laporan'
+import { kesiapanKunci } from '@/modules/proyek/layanan/penguncian'
 import {
   LABEL_STATUS_PROYEK, LABEL_STATUS_TUGAS,
 } from '@/modules/proyek/validasi/proyek'
@@ -17,13 +18,13 @@ import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { FormulirProyek } from '../formulir-proyek'
 import { ambilDataPilihanProyek } from '../data-pilihan'
-import { AksiProyek, DialogTugas, AksiTugas } from './aksi-proyek'
+import { AksiProyek, DialogTugas, AksiTugas, AksiPenguncian } from './aksi-proyek'
 
 export const metadata = { title: 'Detail Proyek' }
 
 const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', draft: 'secondary', dibatalkan: 'outline',
-  belum_mulai: 'secondary',
+  berjalan: 'default', selesai: 'default', terkunci: 'default',
+  draft: 'secondary', dibatalkan: 'outline', belum_mulai: 'secondary',
 }
 
 export default async function HalamanDetailProyek({
@@ -65,11 +66,12 @@ export default async function HalamanDetailProyek({
     )
   }
 
-  const [tugas, timesheet, laba, semuaPengguna] = await Promise.all([
+  const [tugas, timesheet, laba, semuaPengguna, kesiapan] = await Promise.all([
     daftarTugas({ proyekId: id }),
     daftarTimesheet({ proyekId: id }),
     profitabilitasProyek(id),
     db.select({ id: users.id, nama: users.nama }).from(users).orderBy(asc(users.nama)),
+    kesiapanKunci(id),
   ])
 
   const [pelanggan] = await db.select({ nama: partners.nama }).from(partners)
@@ -91,6 +93,18 @@ export default async function HalamanDetailProyek({
 
       {terbuka && (
         <div className="mb-6"><AksiProyek id={proyek.id} status={proyek.status} /></div>
+      )}
+
+      {(proyek.status === 'selesai' || proyek.status === 'terkunci') && (
+        <div className="mb-6 rounded-md border p-4">
+          <AksiPenguncian
+            id={proyek.id}
+            status={proyek.status}
+            siap={kesiapan.siap}
+            penghalang={kesiapan.penghalang}
+            sisaPiutang={kesiapan.sisaPiutang}
+          />
+        </div>
       )}
 
       <dl className="mb-6 grid gap-4 rounded-md border p-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -148,6 +162,11 @@ export default async function HalamanDetailProyek({
         <p className="mt-2 text-xs text-muted-foreground">
           Laba kotor murni angka buku besar. Biaya tenaga kerja berasal dari timesheet dan belum
           diposting ke buku besar, jadi laba proyek adalah pandangan manajerial di atasnya.
+          {laba.terkunci
+            ? ' Angka ini dibekukan saat proyek dikunci dan tidak lagi dihitung ulang.'
+            : ` Difakturkan ${formatRupiah(kesiapan.totalDifakturkan)}, diterima ` +
+              `${formatRupiah(kesiapan.totalDiterima)}, sisa piutang ` +
+              `${formatRupiah(kesiapan.sisaPiutang)}.`}
         </p>
       </section>
 

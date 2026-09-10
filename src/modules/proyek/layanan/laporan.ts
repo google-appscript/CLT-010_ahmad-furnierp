@@ -15,6 +15,8 @@ export type ProfitabilitasProyek = {
   kode: string
   nama: string
   status: string
+  /** Angka berasal dari snapshot saat penguncian, bukan dihitung ulang. */
+  terkunci: boolean
   /** Difakturkan ke pelanggan atas pesanan proyek ini, di luar PPN. */
   pendapatan: Uang
   /** Harga pokok barang yang dikirim atas pesanan itu. */
@@ -45,6 +47,31 @@ export type ProfitabilitasProyek = {
 export async function profitabilitasProyek(proyekId: string): Promise<ProfitabilitasProyek> {
   const [proyek] = await db.select().from(projects).where(eq(projects.id, proyekId)).limit(1)
   if (!proyek) throw new ValidasiError('Proyek tidak ditemukan')
+
+  // Proyek terkunci melaporkan angka yang dibekukan saat dikunci. Menghitung
+  // ulang akan membuat laba proyek yang sudah tuntas bergeser setiap harga
+  // pokok rata-rata berubah oleh pembelian berikutnya.
+  if (proyek.status === 'terkunci' && proyek.labaFinal !== null) {
+    const pendapatan = proyek.pendapatanFinal ?? '0.00'
+    const hargaPokok = proyek.hargaPokokFinal ?? '0.00'
+    return {
+      proyekId: proyek.id,
+      kode: proyek.kode,
+      nama: proyek.nama,
+      status: proyek.status,
+      terkunci: true,
+      pendapatan,
+      hargaPokok,
+      labaKotor: bulatkan(kurang(pendapatan, hargaPokok), DESIMAL),
+      bebanLain: proyek.bebanLainFinal ?? '0.00',
+      biayaTenagaKerja: proyek.biayaTenagaKerjaFinal ?? '0.00',
+      totalJam: proyek.totalJamFinal ?? '0.00',
+      laba: proyek.labaFinal,
+      marginPersen: Number(pendapatan) === 0
+        ? null
+        : bulatkan(kali(bagi(proyek.labaFinal, pendapatan), 100), DESIMAL),
+    }
+  }
 
   // ── Pendapatan: faktur terposting atas pesanan proyek ini ──────────────────
   const faktur = await db.select().from(customerInvoices)
@@ -125,6 +152,7 @@ export async function profitabilitasProyek(proyekId: string): Promise<Profitabil
     kode: proyek.kode,
     nama: proyek.nama,
     status: proyek.status,
+    terkunci: false,
     pendapatan: pendapatanBulat,
     hargaPokok,
     labaKotor,

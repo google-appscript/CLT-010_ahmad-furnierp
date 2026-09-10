@@ -16,6 +16,7 @@ import { LABEL_STATUS_TUGAS } from '@/modules/proyek/validasi/proyek'
 import {
   aksiMulaiProyek, aksiSelesaikanProyek, aksiBatalkanProyek, aksiHapusProyek,
   aksiSimpanTugas, aksiUbahStatusTugas, aksiHapusTugas,
+  aksiKunciProyek, aksiBukaKunciProyek,
 } from '../aksi'
 
 type Hasil = { berhasil: boolean; pesan?: string }
@@ -90,6 +91,62 @@ export function AksiProyek({ id, status }: { id: string; status: string }) {
         >
           Batalkan
         </Button>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Penguncian job costing. Tombolnya hanya muncul saat proyek benar-benar
+ * siap; selama belum, penghalangnya diterangkan supaya jelas apa yang kurang.
+ */
+export function AksiPenguncian({
+  id, status, siap, penghalang, sisaPiutang,
+}: {
+  id: string
+  status: string
+  siap: boolean
+  penghalang: string[]
+  sisaPiutang: string
+}) {
+  const { bekerja, jalankan } = useJalankan()
+
+  if (status === 'terkunci') {
+    return (
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="text-sm text-muted-foreground">
+          Job costing terkunci — angkanya dibekukan dan biaya baru tidak dapat lagi
+          ditandai ke proyek ini.
+        </p>
+        <Button
+          variant="outline" disabled={bekerja}
+          onClick={() => jalankan(() => aksiBukaKunciProyek(id), 'Kunci dibuka')}
+        >
+          Buka Kunci
+        </Button>
+      </div>
+    )
+  }
+
+  if (status !== 'selesai') return null
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <Button
+        disabled={bekerja || !siap}
+        onClick={() => jalankan(() => aksiKunciProyek(id), 'Job costing dikunci')}
+      >
+        {bekerja ? 'Memproses…' : 'Kunci Job Costing'}
+      </Button>
+      {siap ? (
+        <p className="text-sm text-muted-foreground">
+          Seluruh faktur lunas. Mengunci membekukan angkanya secara permanen.
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Belum dapat dikunci: {penghalang.join('; ')}.
+          {Number(sisaPiutang) > 0 && ' Lunasi piutangnya terlebih dahulu.'}
+        </p>
       )}
     </div>
   )

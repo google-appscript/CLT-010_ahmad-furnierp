@@ -15,7 +15,8 @@ import { KepalaHalaman } from '@/components/data/kepala-halaman'
 export const metadata = { title: 'Daftar Proyek' }
 
 const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', draft: 'secondary', dibatalkan: 'outline',
+  berjalan: 'default', selesai: 'default', terkunci: 'default',
+  draft: 'secondary', dibatalkan: 'outline',
 }
 
 export default async function HalamanDaftarProyek() {

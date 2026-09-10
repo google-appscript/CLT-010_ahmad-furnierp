@@ -135,7 +135,7 @@ export const statusDepresiasiEnum = pgEnum('status_depresiasi', ['draft', 'dipos
  * timesheet baru tanpa menghapus riwayatnya.
  */
 export const statusProyekEnum = pgEnum('status_proyek', [
-  'draft', 'berjalan', 'selesai', 'dibatalkan',
+  'draft', 'berjalan', 'selesai', 'terkunci', 'dibatalkan',
 ])
 
 export const statusTugasEnum = pgEnum('status_tugas', [
