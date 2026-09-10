@@ -1,9 +1,10 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   journalEntries, journalItems, journals, companySettings, projects,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
+import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { bulatkan, kurang, samaDengan, tambah, type Uang } from '@/lib/uang'
 import { skemaEntri, type MasukanEntri } from '../validasi/entri'
 import { ambilNomorBerikut } from './urutan'
@@ -125,10 +126,54 @@ function urai(masukan: MasukanEntri) {
 
 // ── Pembacaan ────────────────────────────────────────────────────────────────
 
-export async function daftarEntri(saring: { status?: Entri['status'] } = {}): Promise<Entri[]> {
-  const kueri = db.select().from(journalEntries)
-    .orderBy(desc(journalEntries.tanggal), desc(journalEntries.dibuatPada))
-  return saring.status ? kueri.where(eq(journalEntries.status, saring.status)) : kueri
+function kolomUrutEntri(kolom?: string) {
+  switch (kolom) {
+    case 'nomor': return journalEntries.nomor
+    case 'status': return journalEntries.status
+    case 'dibuatPada': return journalEntries.dibuatPada
+    case 'tanggal':
+    default:
+      return journalEntries.tanggal
+  }
+}
+
+export async function daftarEntri(
+  param: ParameterDaftar & { status?: Entri['status'] } = { halaman: 1, ukuranHalaman: 20 },
+): Promise<HasilDaftar<Entri>> {
+  const halaman = param.halaman || 1
+  const ukuranHalaman = param.ukuranHalaman || 20
+
+  const kondisi = []
+  if (param.cari) {
+    kondisi.push(or(
+      ilike(journalEntries.nomor, `%${param.cari}%`),
+      ilike(journalEntries.keterangan, `%${param.cari}%`),
+      ilike(journalEntries.referensi, `%${param.cari}%`),
+    ))
+  }
+
+  const statusDisaring = [
+    ...(param.status ? [param.status] : []),
+    ...(param.filter?.status ?? []),
+  ] as Entri['status'][]
+  if (statusDisaring.length > 0) {
+    kondisi.push(inArray(journalEntries.status, statusDisaring))
+  }
+
+  const where = kondisi.length > 0 ? and(...kondisi) : undefined
+  const kolomUrut = kolomUrutEntri(param.urutkan?.kolom)
+  const arahUrut = param.urutkan?.arah === 'asc' ? asc : desc
+
+  const [data, [{ jumlah }]] = await Promise.all([
+    db.select().from(journalEntries)
+      .where(where)
+      .orderBy(arahUrut(kolomUrut), desc(journalEntries.dibuatPada))
+      .limit(ukuranHalaman)
+      .offset((halaman - 1) * ukuranHalaman),
+    db.select({ jumlah: sql<number>`count(*)::int` }).from(journalEntries).where(where),
+  ])
+
+  return { data, totalBaris: jumlah }
 }
 
 export async function ambilEntri(id: string): Promise<EntriLengkap | null> {

@@ -404,9 +404,9 @@ describe('daftar entri', () => {
     await buatEntri(entriSeimbang(), penggunaId)
     await postingEntri(a.id, penggunaId)
 
-    expect(await daftarEntri({ status: 'draft' })).toHaveLength(1)
-    expect(await daftarEntri({ status: 'diposting' })).toHaveLength(1)
-    expect(await daftarEntri()).toHaveLength(2)
+    expect((await daftarEntri({ status: 'draft', halaman: 1, ukuranHalaman: 20 })).data).toHaveLength(1)
+    expect((await daftarEntri({ status: 'diposting', halaman: 1, ukuranHalaman: 20 })).data).toHaveLength(1)
+    expect((await daftarEntri()).data).toHaveLength(2)
   })
 
   it('menghapus item jurnal saat draft dihapus', async () => {
