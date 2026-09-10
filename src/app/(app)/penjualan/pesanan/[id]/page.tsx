@@ -60,9 +60,9 @@ export default async function HalamanDetailPesanan({
   }).from(paymentTerms).orderBy(asc(paymentTerms.jumlahHari))
 
   const aksiTambahan = draf ? (
-    <AksiPenawaran id={pesanan.id} />
+    <AksiPenawaran key="aksi-penawaran" id={pesanan.id} />
   ) : pesanan.status === 'dikonfirmasi' ? (
-    <div className="flex gap-3">
+    <div key="aksi-dikonfirmasi" className="flex gap-3">
       <DialogKirimBarang
         soId={id}
         baris={sisa.map((b) => ({
@@ -71,7 +71,7 @@ export default async function HalamanDetailPesanan({
         }))}
       />
       {adaSisaDifakturkan && (
-        <Button asChild variant="outline">
+        <Button key="buat-faktur" asChild variant="outline">
           <Link href={`/akuntansi/pelanggan/faktur/baru?so=${id}`}>Buat Faktur</Link>
         </Button>
       )}
