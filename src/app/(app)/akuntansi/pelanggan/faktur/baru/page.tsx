@@ -3,7 +3,6 @@ import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { accounts } from '@/db/schema'
 import { ambilPesanan, barisDenganSisa } from '@/modules/penjualan/layanan/pesanan'
-import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { FormulirFaktur, type BarisFormulir } from '../../formulir-faktur'
 import { ambilDataPilihanFaktur } from '../../data-pilihan'
 
@@ -49,28 +48,18 @@ export default async function HalamanFakturBaru({
   }
 
   return (
-    <>
-      <KepalaHalaman
-        judul={tipe === 'nota_kredit' ? 'Nota Kredit Baru' : 'Faktur Penjualan Baru'}
-        deskripsi={
-          soId
-            ? 'Baris diisi otomatis dari barang yang sudah dikirim tetapi belum difakturkan.'
-            : 'Dokumen disimpan sebagai draft dan belum menyentuh buku besar sampai diposting.'
-        }
-      />
-      <FormulirFaktur
-        awal={{
-          tipe,
-          partnerId,
-          soId: soId ?? '',
-          tanggal: new Date().toISOString().slice(0, 10),
-          tanggalJatuhTempo: '',
-          referensi: '',
-          catatan: '',
-          baris,
-        }}
-        {...pilihan}
-      />
-    </>
+    <FormulirFaktur
+      awal={{
+        tipe,
+        partnerId,
+        soId: soId ?? '',
+        tanggal: new Date().toISOString().slice(0, 10),
+        tanggalJatuhTempo: '',
+        referensi: '',
+        catatan: '',
+        baris,
+      }}
+      {...pilihan}
+    />
   )
 }

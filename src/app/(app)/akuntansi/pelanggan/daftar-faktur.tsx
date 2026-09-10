@@ -5,60 +5,63 @@ import { daftarFaktur, ringkasanFaktur, type Faktur } from '@/modules/penjualan/
 import { LABEL_STATUS_FAKTUR } from '@/modules/penjualan/validasi/pesanan'
 import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
-import { BarisKlik } from '@/components/data/tabel-data-interaktif'
+import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import type { ParameterDaftar } from '@/lib/daftar'
 
 const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
   diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
 }
 
-export async function DaftarFaktur({ tipe }: { tipe: Faktur['tipe'] }) {
-  const [daftar, semuaMitra] = await Promise.all([
-    daftarFaktur({ tipe }),
+export async function DaftarFaktur({
+  tipe, param,
+}: {
+  tipe: Faktur['tipe']
+  param: ParameterDaftar
+}) {
+  const [{ data: daftar, totalBaris }, semuaMitra] = await Promise.all([
+    daftarFaktur({ ...param, tipe }),
     db.select({ id: partners.id, nama: partners.nama }).from(partners).orderBy(asc(partners.nama)),
   ])
   const mitraLewatId = new Map(semuaMitra.map((m) => [m.id, m.nama]))
   const dengan = await Promise.all(daftar.map(async (f) => (await ringkasanFaktur(f.id))!))
 
-  if (daftar.length === 0) {
-    return (
-      <div className="rounded-md border border-dashed p-12 text-center text-sm text-muted-foreground">
-        Belum ada dokumen.
-      </div>
-    )
-  }
+  const kolom: Kolom<(typeof dengan)[number]>[] = [
+    { kunci: 'nomor', judul: 'Nomor', render: (f) => <span className="font-mono text-xs">{f.nomor ?? '—'}</span> },
+    { kunci: 'tanggal', judul: 'Tanggal', render: (f) => f.tanggal },
+    { kunci: 'pelanggan', judul: 'Pelanggan', render: (f) => mitraLewatId.get(f.partnerId) ?? '—' },
+    { kunci: 'jatuhTempo', judul: 'Jatuh Tempo', render: (f) => <span className="text-muted-foreground">{f.tanggalJatuhTempo ?? '—'}</span> },
+    { kunci: 'total', judul: 'Total', rataKanan: true, render: (f) => formatAngka(f.totalTagihan) },
+    {
+      kunci: 'sisa', judul: 'Sisa', rataKanan: true,
+      render: (f) => (f.status === 'diposting' ? formatAngka(f.sisa) : '—'),
+    },
+    {
+      kunci: 'status', judul: 'Status',
+      render: (f) => <Badge variant={VARIAN[f.status]}>{LABEL_STATUS_FAKTUR[f.status]}</Badge>,
+    },
+  ]
+
+  const pengelompokan = param.kelompokkan === 'status'
+    ? {
+        kelompokkanDari: (f: (typeof dengan)[number]) => f.status,
+        label: (nilaiGrup: string) => LABEL_STATUS_FAKTUR[nilaiGrup] ?? nilaiGrup,
+      }
+    : param.kelompokkan === 'partnerId'
+      ? {
+          kelompokkanDari: (f: (typeof dengan)[number]) => f.partnerId,
+          label: (nilaiGrup: string) => mitraLewatId.get(nilaiGrup) ?? '—',
+        }
+      : undefined
 
   return (
-    <div className="overflow-x-auto rounded-md border">
-      <table className="w-full text-sm">
-        <thead className="border-b bg-muted/40">
-          <tr>
-            <th className="px-4 py-2 text-left font-medium">Nomor</th>
-            <th className="px-4 py-2 text-left font-medium">Tanggal</th>
-            <th className="px-4 py-2 text-left font-medium">Pelanggan</th>
-            <th className="px-4 py-2 text-left font-medium">Jatuh Tempo</th>
-            <th className="px-4 py-2 text-right font-medium">Total</th>
-            <th className="px-4 py-2 text-right font-medium">Sisa</th>
-            <th className="px-4 py-2 text-left font-medium">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dengan.map((f) => (
-            <BarisKlik key={f.id} href={`/akuntansi/pelanggan/faktur/${f.id}`}>
-              <td className="px-4 py-1.5 font-mono text-xs">{f.nomor ?? '—'}</td>
-              <td className="px-4 py-1.5">{f.tanggal}</td>
-              <td className="px-4 py-1.5">{mitraLewatId.get(f.partnerId) ?? '—'}</td>
-              <td className="px-4 py-1.5 text-muted-foreground">{f.tanggalJatuhTempo ?? '—'}</td>
-              <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(f.totalTagihan)}</td>
-              <td className="px-4 py-1.5 text-right tabular-nums">
-                {f.status === 'diposting' ? formatAngka(f.sisa) : '—'}
-              </td>
-              <td className="px-4 py-1.5">
-                <Badge variant={VARIAN[f.status]}>{LABEL_STATUS_FAKTUR[f.status]}</Badge>
-              </td>
-            </BarisKlik>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <TabelData
+      kolom={kolom}
+      baris={dengan}
+      kunciBaris={(f) => f.id}
+      pesanKosong="Belum ada dokumen."
+      hrefBaris={(f) => `/akuntansi/pelanggan/faktur/${f.id}`}
+      pagination={{ halaman: param.halaman, ukuranHalaman: param.ukuranHalaman, totalBaris }}
+      pengelompokan={pengelompokan}
+    />
   )
 }
