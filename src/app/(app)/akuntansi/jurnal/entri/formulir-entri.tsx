@@ -12,11 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatAngka, kurang, tambah } from '@/lib/uang'
 import { cn } from '@/lib/utils'
 import { aksiSimpanEntri } from './aksi'
+import { PemilihPosBiaya, type PilihanPos, type AlokasiBaris } from './pemilih-pos-biaya'
 
 export type PilihanAkun = { id: string; kode: string; nama: string }
 export type PilihanJurnal = { id: string; kode: string; nama: string }
 export type PilihanPartner = { id: string; nama: string }
 export type PilihanProyek = { id: string; kode: string; nama: string }
+export type { PilihanPos }
 
 export type BarisFormulir = {
   accountId: string
@@ -25,10 +27,12 @@ export type BarisFormulir = {
   kredit: string
   partnerId: string
   projectId: string
+  alokasiBiaya: AlokasiBaris[]
 }
 
 const BARIS_KOSONG: BarisFormulir = {
-  accountId: '', label: '', debit: '', kredit: '', partnerId: '', projectId: '',
+  accountId: '', label: '', debit: '', kredit: '',
+  partnerId: '', projectId: '', alokasiBiaya: [],
 }
 
 export type NilaiAwalEntri = {
@@ -47,13 +51,14 @@ function angka(v: string): string {
 }
 
 export function FormulirEntri({
-  awal, akun, jurnal, partner, proyek,
+  awal, akun, jurnal, partner, proyek, posBiaya,
 }: {
   awal: NilaiAwalEntri
   akun: PilihanAkun[]
   jurnal: PilihanJurnal[]
   partner: PilihanPartner[]
   proyek: PilihanProyek[]
+  posBiaya: PilihanPos[]
 }) {
   const router = useRouter()
   const [menyimpan, mulai] = useTransition()
@@ -98,6 +103,7 @@ export function FormulirEntri({
           nilaiMataUang: null,
           taxId: null,
           projectId: b.projectId || null,
+          alokasiBiaya: b.alokasiBiaya,
         })),
       })
 
@@ -173,6 +179,7 @@ export function FormulirEntri({
                 <th className="px-3 py-2 text-left font-medium">Keterangan</th>
                 <th className="px-3 py-2 text-left font-medium">Mitra</th>
                 <th className="px-3 py-2 text-left font-medium">Proyek</th>
+                <th className="px-3 py-2 text-left font-medium">Pos Biaya</th>
                 <th className="w-40 px-3 py-2 text-right font-medium">Debit</th>
                 <th className="w-40 px-3 py-2 text-right font-medium">Kredit</th>
                 <th className="w-12 px-3 py-2" />
@@ -233,6 +240,13 @@ export function FormulirEntri({
                         ))}
                       </SelectContent>
                     </Select>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <PemilihPosBiaya
+                      nilai={b.alokasiBiaya}
+                      pos={posBiaya}
+                      onUbah={(alokasiBiaya) => ubahBaris(i, { alokasiBiaya })}
+                    />
                   </td>
                   <td className="px-3 py-1.5">
                     <Input

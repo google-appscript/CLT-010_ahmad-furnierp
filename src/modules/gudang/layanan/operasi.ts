@@ -422,8 +422,19 @@ export async function selesaikanOperasiDalamTx(
   if (berdampakNilai.length > 0) {
     const journalId = await jurnalUntukDalamTx(tx, PEMETAAN_JURNAL.STOK)
 
+    // Hanya sisi beban yang menanggung pos biaya; membebankan persediaan atau
+    // penampung tagihan ke sebuah unit kerja tidak punya arti.
+    const akunLawanBeban = new Map(
+      (await tx.select().from(accounts).where(inArray(
+        accounts.id, [...new Set(berdampakNilai.map((p) => p.akunLawanId))],
+      ))).map((a) => [a.id, a.tipeAkun.startsWith('beban_')]),
+    )
+
     const item = berdampakNilai.flatMap((p) => {
       const persediaanDebit = p.arah === 'masuk'
+      const alokasiBiaya = p.costCenterId && akunLawanBeban.get(p.akunLawanId)
+        ? [{ costCenterId: p.costCenterId, persentase: '100' }]
+        : []
       return [
         {
           accountId: p.akunPersediaanId,
@@ -431,7 +442,7 @@ export async function selesaikanOperasiDalamTx(
           label: `${labelTipeOperasi(operasi.tipe)} — ${p.namaProduk}`,
           debit: persediaanDebit ? p.nilaiTotal : '0',
           kredit: persediaanDebit ? '0' : p.nilaiTotal,
-          nilaiMataUang: null, taxId: null, projectId: null,
+          nilaiMataUang: null, taxId: null, projectId: null, alokasiBiaya: [],
         },
         {
           accountId: p.akunLawanId,
@@ -439,7 +450,7 @@ export async function selesaikanOperasiDalamTx(
           label: `${labelTipeOperasi(operasi.tipe)} — ${p.namaProduk}`,
           debit: persediaanDebit ? '0' : p.nilaiTotal,
           kredit: persediaanDebit ? p.nilaiTotal : '0',
-          nilaiMataUang: null, taxId: null, projectId: null,
+          nilaiMataUang: null, taxId: null, projectId: null, alokasiBiaya,
         },
       ]
     }).filter((b) => Number(b.debit) > 0 || Number(b.kredit) > 0)

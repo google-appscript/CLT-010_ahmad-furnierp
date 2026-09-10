@@ -144,6 +144,7 @@ export const NAVIGASI: ItemMenu[] = [
           { label: 'Buku Besar Pembantu', rute: '/akuntansi/laporan/buku-pembantu', izin: 'akuntansi.laporan.buku-pembantu', fase: 1 },
           { label: 'Umur Piutang & Utang', rute: '/akuntansi/laporan/umur', izin: 'akuntansi.laporan.umur', fase: 1 },
           { label: 'Laporan Pajak', rute: '/akuntansi/laporan/pajak', izin: 'akuntansi.laporan.pajak', fase: 1 },
+          { label: 'Laba Rugi per Pos Biaya', rute: '/akuntansi/laporan/pos-biaya', izin: 'akuntansi.laporan.pos-biaya', fase: 1 },
         ],
       },
       {
@@ -157,6 +158,7 @@ export const NAVIGASI: ItemMenu[] = [
           { label: 'Tahun Buku & Penguncian', rute: '/akuntansi/konfigurasi/tahun-buku', izin: 'akuntansi.tahun-buku.kelola', fase: 1 },
           { label: 'Kategori Aset', rute: '/akuntansi/konfigurasi/kategori-aset', izin: 'akuntansi.kategori-aset.kelola', fase: 6 },
           { label: 'Pemetaan Jurnal', rute: '/akuntansi/konfigurasi/pemetaan-jurnal', izin: 'akuntansi.pemetaan-jurnal.kelola', fase: 1 },
+          { label: 'Pos Biaya', rute: '/akuntansi/konfigurasi/pos-biaya', izin: 'akuntansi.pos-biaya.kelola', fase: 1 },
         ],
       },
     ],
