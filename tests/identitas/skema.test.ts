@@ -27,7 +27,14 @@ afterAll(async () => { await tutupKoneksi() })
 describe('koneksi basis data', () => {
   it('menunjuk basis data pengujian, bukan pengembangan', async () => {
     const hasil = await koneksi`SELECT current_database() AS nama`
-    expect(hasil[0].nama).toBe('furnierp_test')
+    const nama = hasil[0].nama as string
+
+    // Namanya tidak dipatok persis agar tiap sesi kerja dapat memakai basis
+    // data ujinya sendiri; dua sesi yang berbagi satu basis akan saling
+    // menghapus data di tengah jalan. Yang dijaga tetap sama: pengujian tidak
+    // boleh menyentuh basis data pengembangan.
+    expect(nama).toMatch(/test/)
+    expect(nama).not.toBe('furnierp_dev')
   })
 })
 

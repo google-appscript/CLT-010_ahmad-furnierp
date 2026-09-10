@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Worktree sesi lain berada di dalam repositori ini dan membawa salinan
+    // kodenya sendiri; melintasinya hanya menghasilkan temuan ganda.
+    ".claude/**",
   ]),
 ]);
 

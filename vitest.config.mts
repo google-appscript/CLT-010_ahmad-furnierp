@@ -9,6 +9,11 @@ export default defineConfig({
     // Pengujian berbagi satu basis data; menjalankannya paralel akan saling
     // menghapus data antar berkas.
     fileParallelism: false,
+    // Worktree sesi lain berada di dalam repositori ini dan membawa salinan
+    // berkas ujinya sendiri. Tanpa pengecualian ini, Vitest menjalankan
+    // keduanya terhadap satu basis data yang sama dan hasilnya saling
+    // menimpa.
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.claude/**'],
   },
   resolve: {
     alias: { '@': resolve(import.meta.dirname, './src') },
