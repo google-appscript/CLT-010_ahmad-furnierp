@@ -1,9 +1,12 @@
-import { and, asc, desc, eq } from 'drizzle-orm'
+import {
+  and, asc, desc, eq, ilike, inArray, or, sql,
+} from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   fixedAssets, assetCategories, depreciationLines, accounts,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
+import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
 import {
@@ -32,16 +35,53 @@ export async function daftarKategoriAset(): Promise<KategoriAset[]> {
   return db.select().from(assetCategories).orderBy(asc(assetCategories.kode))
 }
 
-export async function daftarAset(
-  saring: { status?: Aset['status']; kategoriId?: string } = {},
-): Promise<Aset[]> {
-  const syarat = []
-  if (saring.status) syarat.push(eq(fixedAssets.status, saring.status))
-  if (saring.kategoriId) syarat.push(eq(fixedAssets.kategoriId, saring.kategoriId))
+function kolomUrutAset(kolom?: string) {
+  switch (kolom) {
+    case 'kode': return fixedAssets.kode
+    case 'status': return fixedAssets.status
+    case 'tanggalPerolehan':
+    default:
+      return fixedAssets.tanggalPerolehan
+  }
+}
 
-  const kueri = db.select().from(fixedAssets)
-    .orderBy(desc(fixedAssets.tanggalPerolehan), asc(fixedAssets.kode))
-  return syarat.length > 0 ? kueri.where(and(...syarat)) : kueri
+export async function daftarAset(
+  param: ParameterDaftar & { status?: Aset['status']; kategoriId?: string } = { halaman: 1, ukuranHalaman: 20 },
+): Promise<HasilDaftar<Aset>> {
+  const halaman = param.halaman || 1
+  const ukuranHalaman = param.ukuranHalaman || 20
+
+  const kondisi = []
+  if (param.cari) {
+    kondisi.push(or(
+      ilike(fixedAssets.kode, `%${param.cari}%`),
+      ilike(fixedAssets.nama, `%${param.cari}%`),
+    ))
+  }
+  if (param.kategoriId) kondisi.push(eq(fixedAssets.kategoriId, param.kategoriId))
+
+  const statusDisaring = [
+    ...(param.status ? [param.status] : []),
+    ...(param.filter?.status ?? []),
+  ] as Aset['status'][]
+  if (statusDisaring.length > 0) {
+    kondisi.push(inArray(fixedAssets.status, statusDisaring))
+  }
+
+  const where = kondisi.length > 0 ? and(...kondisi) : undefined
+  const kolomUrut = kolomUrutAset(param.urutkan?.kolom)
+  const arahUrut = param.urutkan?.arah === 'asc' ? asc : desc
+
+  const [data, [{ jumlah }]] = await Promise.all([
+    db.select().from(fixedAssets)
+      .where(where)
+      .orderBy(arahUrut(kolomUrut), asc(fixedAssets.kode))
+      .limit(ukuranHalaman)
+      .offset((halaman - 1) * ukuranHalaman),
+    db.select({ jumlah: sql<number>`count(*)::int` }).from(fixedAssets).where(where),
+  ])
+
+  return { data, totalBaris: jumlah }
 }
 
 export async function ambilAset(id: string): Promise<AsetLengkap | null> {

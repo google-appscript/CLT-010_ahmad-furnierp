@@ -429,8 +429,8 @@ describe('register aset terhadap buku besar', () => {
     await buatAset(mobil(), penggunaId)
     await jalankanAset((await buatAset(mobil({ kode: 'AST-002' }), penggunaId)).id, penggunaId)
 
-    expect(await daftarAset({ status: 'draft' })).toHaveLength(1)
-    expect(await daftarAset({ status: 'berjalan' })).toHaveLength(1)
-    expect(await daftarAset()).toHaveLength(2)
+    expect((await daftarAset({ status: 'draft', halaman: 1, ukuranHalaman: 20 })).data).toHaveLength(1)
+    expect((await daftarAset({ status: 'berjalan', halaman: 1, ukuranHalaman: 20 })).data).toHaveLength(1)
+    expect((await daftarAset()).data).toHaveLength(2)
   })
 })

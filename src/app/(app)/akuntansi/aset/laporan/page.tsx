@@ -11,7 +11,10 @@ export const metadata = { title: 'Laporan Aset' }
 export default async function HalamanLaporanAset() {
   await wajibIzin('akuntansi.aset.laporan')
 
-  const [aset, kategori] = await Promise.all([daftarAset(), daftarKategoriAset()])
+  const [{ data: aset }, kategori] = await Promise.all([
+    daftarAset({ halaman: 1, ukuranHalaman: 100000 }),
+    daftarKategoriAset(),
+  ])
   const dengan = await Promise.all(aset.map(async (a) => (await ringkasanAset(a.id))!))
 
   // Saldo buku besar dibaca agar penyimpangan antara register aset dan
