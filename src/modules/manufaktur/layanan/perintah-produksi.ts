@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   workOrders, workOrderLines, billOfMaterials, products, uoms, locations,
@@ -6,6 +6,7 @@ import {
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bagi, bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
+import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
 import {
@@ -31,12 +32,52 @@ function urai(masukan: MasukanPerintahProduksi) {
 
 // ── Pembacaan ────────────────────────────────────────────────────────────────
 
+function kolomUrutPerintah(kolom?: string) {
+  switch (kolom) {
+    case 'nomor': return workOrders.nomor
+    case 'status': return workOrders.status
+    case 'tanggal':
+    default:
+      return workOrders.tanggal
+  }
+}
+
 export async function daftarPerintahProduksi(
-  saring: { status?: PerintahProduksi['status'] } = {},
-): Promise<PerintahProduksi[]> {
-  const kueri = db.select().from(workOrders)
-    .orderBy(desc(workOrders.tanggal), desc(workOrders.dibuatPada))
-  return saring.status ? kueri.where(eq(workOrders.status, saring.status)) : kueri
+  param: ParameterDaftar & { status?: PerintahProduksi['status'] } = { halaman: 1, ukuranHalaman: 20 },
+): Promise<HasilDaftar<PerintahProduksi>> {
+  const halaman = param.halaman || 1
+  const ukuranHalaman = param.ukuranHalaman || 20
+
+  const kondisi = []
+  if (param.cari) {
+    kondisi.push(or(
+      ilike(workOrders.nomor, `%${param.cari}%`),
+      ilike(workOrders.referensi, `%${param.cari}%`),
+    ))
+  }
+
+  const statusDisaring = [
+    ...(param.status ? [param.status] : []),
+    ...(param.filter?.status ?? []),
+  ] as PerintahProduksi['status'][]
+  if (statusDisaring.length > 0) {
+    kondisi.push(inArray(workOrders.status, statusDisaring))
+  }
+
+  const where = kondisi.length > 0 ? and(...kondisi) : undefined
+  const kolomUrut = kolomUrutPerintah(param.urutkan?.kolom)
+  const arahUrut = param.urutkan?.arah === 'asc' ? asc : desc
+
+  const [baris, [{ jumlah }]] = await Promise.all([
+    db.select().from(workOrders)
+      .where(where)
+      .orderBy(arahUrut(kolomUrut), desc(workOrders.dibuatPada))
+      .limit(ukuranHalaman)
+      .offset((halaman - 1) * ukuranHalaman),
+    db.select({ jumlah: sql<number>`count(*)::int` }).from(workOrders).where(where),
+  ])
+
+  return { data: baris, totalBaris: jumlah }
 }
 
 export async function ambilPerintahProduksi(id: string): Promise<PerintahProduksiLengkap | null> {

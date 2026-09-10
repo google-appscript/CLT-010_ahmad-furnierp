@@ -20,8 +20,8 @@ export default async function HalamanLaporanHpp({
   await wajibIzin('manufaktur.laporan.hpp')
   const { dari, sampai } = periodeBawaan(await searchParams)
 
-  const [semua, semuaProduk, semuaSatuan] = await Promise.all([
-    daftarPerintahProduksi({ status: 'selesai' }),
+  const [{ data: semua }, semuaProduk, semuaSatuan] = await Promise.all([
+    daftarPerintahProduksi({ status: 'selesai', halaman: 1, ukuranHalaman: 100000 }),
     db.select({ id: products.id, kode: products.kode, nama: products.nama })
       .from(products).orderBy(asc(products.kode)),
     db.select({ id: uoms.id, nama: uoms.nama }).from(uoms),

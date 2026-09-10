@@ -2,13 +2,17 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { formatAngka } from '@/lib/uang'
+import { FormulirBingkai } from '@/components/formulir/formulir-bingkai'
+import { FormulirGrid } from '@/components/formulir/formulir-grid'
+import { FormulirField } from '@/components/formulir/formulir-field'
+import { FormulirNotebook } from '@/components/formulir/formulir-notebook'
+import { FormulirBarisTabel } from '@/components/formulir/formulir-baris-tabel'
 import { aksiSimpanPerintah, aksiKebutuhanBahan } from './aksi'
 import type { PilihanProduk, PilihanSatuan } from './formulir-bom'
 
@@ -21,6 +25,7 @@ export type BarisPerintahFormulir = {
   produkId: string
   kuantitas: string
   uomId: string
+  kuantitasDikonsumsi?: string
 }
 
 export type NilaiAwalPerintah = {
@@ -40,16 +45,30 @@ export type NilaiAwalPerintah = {
   baris: BarisPerintahFormulir[]
 }
 
+type KolomBaris = {
+  kunci: string
+  judul: string
+  render: (baris: BarisPerintahFormulir, index: number) => React.ReactNode
+  lebar?: string
+  rataKanan?: boolean
+}
+
 const TANPA_RESEP = 'tanpa-resep'
 
 export function FormulirPerintah({
   awal, produk, satuan, lokasi, resep,
+  readOnly = false, nomor, statusBadge, aksiTambahan, dokumenTerkait,
 }: {
   awal: NilaiAwalPerintah
   produk: PilihanProduk[]
   satuan: PilihanSatuan[]
   lokasi: PilihanLokasi[]
   resep: PilihanResep[]
+  readOnly?: boolean
+  nomor?: string
+  statusBadge?: React.ReactNode
+  aksiTambahan?: React.ReactNode
+  dokumenTerkait?: React.ReactNode
 }) {
   const router = useRouter()
   const [bekerja, mulai] = useTransition()
@@ -63,6 +82,10 @@ export function FormulirPerintah({
     awal.baris.length > 0 ? awal.baris : [{ produkId: '', kuantitas: '', uomId: '' }],
   )
 
+  const produkLewatId = new Map(produk.map((p) => [p.id, p]))
+  const satuanLewatId = new Map(satuan.map((s) => [s.id, s]))
+  const lokasiLewatId = new Map(lokasi.map((l) => [l.id, l]))
+  const resepLewatId = new Map(resep.map((r) => [r.id, r]))
   const resepProduk = resep.filter((r) => r.produkId === produkId)
 
   function ubahBaris(i: number, ubah: Partial<BarisPerintahFormulir>) {
@@ -139,212 +162,229 @@ export function FormulirPerintah({
     })
   }
 
+  const KOLOM_EDIT: KolomBaris[] = [
+    {
+      kunci: 'bahan', judul: 'Bahan',
+      render: (b, i) => (
+        <Select value={b.produkId} onValueChange={(v) => pilihProdukBaris(i, v)}>
+          <SelectTrigger className="w-full"><SelectValue placeholder="Pilih bahan" /></SelectTrigger>
+          <SelectContent>
+            {produk.map((p) => (
+              <SelectItem key={p.id} value={p.id}>{p.kode} — {p.nama}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      kunci: 'kuantitas', judul: 'Kuantitas', lebar: 'w-40', rataKanan: true,
+      render: (b, i) => (
+        <Input
+          value={b.kuantitas} onChange={(e) => ubahBaris(i, { kuantitas: e.target.value })}
+          type="number" step="0.000001" min="0" className="text-right tabular-nums"
+        />
+      ),
+    },
+    {
+      kunci: 'satuan', judul: 'Satuan', lebar: 'w-40',
+      render: (b, i) => (
+        <Select value={b.uomId} onValueChange={(v) => ubahBaris(i, { uomId: v })}>
+          <SelectTrigger className="w-full"><SelectValue placeholder="Satuan" /></SelectTrigger>
+          <SelectContent>
+            {satuan.map((s) => (
+              <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ),
+    },
+  ]
+
+  const KOLOM_READONLY: KolomBaris[] = [
+    { kunci: 'bahan', judul: 'Bahan', render: (b) => produkLewatId.get(b.produkId)?.nama ?? '—' },
+    {
+      kunci: 'dibutuhkan', judul: 'Dibutuhkan', rataKanan: true,
+      render: (b) => `${formatAngka(b.kuantitas || '0', 2)} ${satuanLewatId.get(b.uomId)?.nama ?? ''}`,
+    },
+    {
+      kunci: 'dikonsumsi', judul: 'Dikonsumsi', rataKanan: true,
+      render: (b) => formatAngka(b.kuantitasDikonsumsi || '0', 2),
+    },
+  ]
+
   return (
-    <form action={simpan} className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-2">
-          <Label htmlFor="produkId">Produk yang Diproduksi</Label>
-          <Select value={produkId} onValueChange={pilihProduk} required>
-            <SelectTrigger id="produkId" className="w-full">
-              <SelectValue placeholder="Pilih produk" />
-            </SelectTrigger>
-            <SelectContent>
-              {produk.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.kode} — {p.nama}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-2">
-            <Label htmlFor="kuantitas">Kuantitas</Label>
-            <Input
-              id="kuantitas" type="number" step="0.000001" min="0" required
-              value={kuantitas} onChange={(e) => setKuantitas(e.target.value)}
-              onBlur={hitungUlangDariResep}
-              className="text-right tabular-nums"
-            />
+    <form action={simpan}>
+      <FormulirBingkai
+        breadcrumb={[
+          { label: 'Manufaktur' },
+          { label: 'Perintah Produksi', href: '/manufaktur/perintah-produksi' },
+          { label: nomor ?? 'Draft Baru' },
+        ]}
+        nomor={nomor ?? 'Draft Baru'}
+        status={statusBadge}
+        aksi={
+          <div className="flex gap-3">
+            {aksiTambahan}
+            {!readOnly && (
+              <>
+                <Button type="submit" disabled={bekerja}>
+                  {bekerja ? 'Menyimpan…' : 'Simpan Draft'}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => router.back()}>Batal</Button>
+              </>
+            )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="uomId">Satuan</Label>
-            <Select value={uomId} onValueChange={setUomId} required>
-              <SelectTrigger id="uomId" className="w-full">
-                <SelectValue placeholder="Satuan" />
-              </SelectTrigger>
-              <SelectContent>
-                {satuan.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bomId">Resep</Label>
-          <Select value={bomId} onValueChange={pilihResep}>
-            <SelectTrigger id="bomId" className="w-full">
-              <SelectValue placeholder="Tanpa resep" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TANPA_RESEP}>Tanpa resep</SelectItem>
-              {resepProduk.map((r) => (
-                <SelectItem key={r.id} value={r.id}>{r.kode} — {r.nama}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="tanggal">Tanggal</Label>
-          <Input id="tanggal" name="tanggal" type="date" required defaultValue={awal.tanggal} />
-        </div>
-      </div>
+        }
+      >
+        <FormulirGrid
+          kiri={
+            <>
+              <FormulirField
+                label="Produk yang Diproduksi" htmlFor="produkId" readOnly={readOnly}
+                valueTampilan={produkLewatId.get(produkId) ? `${produkLewatId.get(produkId)!.kode} — ${produkLewatId.get(produkId)!.nama}` : '—'}
+              >
+                <Select value={produkId} onValueChange={pilihProduk} required>
+                  <SelectTrigger id="produkId" className="w-full">
+                    <SelectValue placeholder="Pilih produk" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {produk.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.kode} — {p.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormulirField>
+              <FormulirField
+                label="Kuantitas" htmlFor="kuantitas" readOnly={readOnly}
+                valueTampilan={`${formatAngka(awal.kuantitas, 2)} ${satuanLewatId.get(uomId)?.nama ?? ''}`}
+              >
+                <Input
+                  id="kuantitas" type="number" step="0.000001" min="0" required
+                  value={kuantitas} onChange={(e) => setKuantitas(e.target.value)}
+                  onBlur={hitungUlangDariResep}
+                  className="text-right tabular-nums"
+                />
+              </FormulirField>
+              <FormulirField label="Satuan" htmlFor="uomId" readOnly={readOnly} valueTampilan={satuanLewatId.get(uomId)?.nama ?? '—'}>
+                <Select value={uomId} onValueChange={setUomId} required>
+                  <SelectTrigger id="uomId" className="w-full">
+                    <SelectValue placeholder="Satuan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {satuan.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormulirField>
+              <FormulirField
+                label="Resep" htmlFor="bomId" readOnly={readOnly}
+                valueTampilan={bomId !== TANPA_RESEP ? (resepLewatId.get(bomId)?.kode ?? '—') : 'Tanpa resep'}
+              >
+                <Select value={bomId} onValueChange={pilihResep}>
+                  <SelectTrigger id="bomId" className="w-full">
+                    <SelectValue placeholder="Tanpa resep" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TANPA_RESEP}>Tanpa resep</SelectItem>
+                    {resepProduk.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>{r.kode} — {r.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormulirField>
+              <FormulirField label="Tanggal" htmlFor="tanggal" readOnly={readOnly} valueTampilan={awal.tanggal}>
+                <Input id="tanggal" name="tanggal" type="date" required defaultValue={awal.tanggal} />
+              </FormulirField>
+            </>
+          }
+          kanan={
+            <>
+              <FormulirField label="Gudang Bahan" htmlFor="lokasiSumberId" readOnly={readOnly} valueTampilan={lokasiLewatId.get(lokasiSumberId)?.nama ?? '—'}>
+                <Select value={lokasiSumberId} onValueChange={setLokasiSumberId} required>
+                  <SelectTrigger id="lokasiSumberId" className="w-full">
+                    <SelectValue placeholder="Pilih gudang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lokasi.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>{l.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormulirField>
+              <FormulirField label="Gudang Barang Jadi" htmlFor="lokasiTujuanId" readOnly={readOnly} valueTampilan={lokasiLewatId.get(lokasiTujuanId)?.nama ?? '—'}>
+                <Select value={lokasiTujuanId} onValueChange={setLokasiTujuanId} required>
+                  <SelectTrigger id="lokasiTujuanId" className="w-full">
+                    <SelectValue placeholder="Pilih gudang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lokasi.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>{l.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormulirField>
+              <FormulirField label="Target Selesai" htmlFor="tanggalTarget" readOnly={readOnly} valueTampilan={awal.tanggalTarget || '—'}>
+                <Input id="tanggalTarget" name="tanggalTarget" type="date" defaultValue={awal.tanggalTarget} />
+              </FormulirField>
+              <FormulirField label="Referensi" htmlFor="referensi" readOnly={readOnly} valueTampilan={awal.referensi || '—'}>
+                <Input id="referensi" name="referensi" defaultValue={awal.referensi} placeholder="Opsional" />
+              </FormulirField>
+              <FormulirField label="Biaya Tenaga Kerja" htmlFor="biayaTenagaKerja" readOnly={readOnly} valueTampilan={formatAngka(awal.biayaTenagaKerja)}>
+                <Input
+                  id="biayaTenagaKerja" name="biayaTenagaKerja" type="number" step="0.01" min="0"
+                  defaultValue={awal.biayaTenagaKerja} className="text-right tabular-nums"
+                />
+              </FormulirField>
+              <FormulirField label="Biaya Overhead" htmlFor="biayaOverhead" readOnly={readOnly} valueTampilan={formatAngka(awal.biayaOverhead)}>
+                <Input
+                  id="biayaOverhead" name="biayaOverhead" type="number" step="0.01" min="0"
+                  defaultValue={awal.biayaOverhead} className="text-right tabular-nums"
+                />
+              </FormulirField>
+              <FormulirField label="Catatan" htmlFor="catatan" readOnly={readOnly} valueTampilan={awal.catatan || '—'}>
+                <Textarea id="catatan" name="catatan" rows={1} defaultValue={awal.catatan} />
+              </FormulirField>
+            </>
+          }
+        />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-2">
-          <Label htmlFor="lokasiSumberId">Gudang Bahan</Label>
-          <Select value={lokasiSumberId} onValueChange={setLokasiSumberId} required>
-            <SelectTrigger id="lokasiSumberId" className="w-full">
-              <SelectValue placeholder="Pilih gudang" />
-            </SelectTrigger>
-            <SelectContent>
-              {lokasi.map((l) => (
-                <SelectItem key={l.id} value={l.id}>{l.nama}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="lokasiTujuanId">Gudang Barang Jadi</Label>
-          <Select value={lokasiTujuanId} onValueChange={setLokasiTujuanId} required>
-            <SelectTrigger id="lokasiTujuanId" className="w-full">
-              <SelectValue placeholder="Pilih gudang" />
-            </SelectTrigger>
-            <SelectContent>
-              {lokasi.map((l) => (
-                <SelectItem key={l.id} value={l.id}>{l.nama}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="tanggalTarget">Target Selesai</Label>
-          <Input
-            id="tanggalTarget" name="tanggalTarget" type="date"
-            defaultValue={awal.tanggalTarget}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="referensi">Referensi</Label>
-          <Input id="referensi" name="referensi" defaultValue={awal.referensi} placeholder="Opsional" />
-        </div>
-      </div>
+        {!readOnly && (
+          <p className="text-sm text-muted-foreground">
+            Biaya tenaga kerja dan overhead diserap ke harga pokok barang jadi: keduanya mendebit
+            Barang Dalam Proses dan mengkredit akun bebannya, sehingga tidak dihitung dua kali
+            ketika barangnya terjual.
+          </p>
+        )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-2">
-          <Label htmlFor="biayaTenagaKerja">Biaya Tenaga Kerja</Label>
-          <Input
-            id="biayaTenagaKerja" name="biayaTenagaKerja" type="number" step="0.01" min="0"
-            defaultValue={awal.biayaTenagaKerja} className="text-right tabular-nums"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="biayaOverhead">Biaya Overhead</Label>
-          <Input
-            id="biayaOverhead" name="biayaOverhead" type="number" step="0.01" min="0"
-            defaultValue={awal.biayaOverhead} className="text-right tabular-nums"
-          />
-        </div>
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="catatan">Catatan</Label>
-          <Textarea id="catatan" name="catatan" rows={1} defaultValue={awal.catatan} />
-        </div>
-      </div>
-
-      <p className="text-sm text-muted-foreground">
-        Biaya tenaga kerja dan overhead diserap ke harga pokok barang jadi: keduanya mendebit
-        Barang Dalam Proses dan mengkredit akun bebannya, sehingga tidak dihitung dua kali
-        ketika barangnya terjual.
-      </p>
-
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium">Kebutuhan Bahan</h2>
-          <Button
-            type="button" variant="outline" size="sm"
-            onClick={() => setBaris((l) => [...l, { produkId: '', kuantitas: '', uomId: '' }])}
-          >
-            <Plus className="mr-2 h-4 w-4" />Tambah Bahan
-          </Button>
-        </div>
-
-        <div className="overflow-x-auto rounded-md border">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40">
-              <tr>
-                <th className="px-3 py-2 text-left font-medium">Bahan</th>
-                <th className="w-40 px-3 py-2 text-right font-medium">Kuantitas</th>
-                <th className="w-40 px-3 py-2 text-left font-medium">Satuan</th>
-                <th className="w-12 px-3 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {baris.map((b, i) => (
-                <tr key={i} className="border-b">
-                  <td className="px-3 py-1.5">
-                    <Select value={b.produkId} onValueChange={(v) => pilihProdukBaris(i, v)}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Pilih bahan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {produk.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.kode} — {p.nama}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Input
-                      value={b.kuantitas}
-                      onChange={(e) => ubahBaris(i, { kuantitas: e.target.value })}
-                      type="number" step="0.000001" min="0"
-                      className="text-right tabular-nums"
-                    />
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Select value={b.uomId} onValueChange={(v) => ubahBaris(i, { uomId: v })}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Satuan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {satuan.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="px-3 py-1.5 text-right">
-                    <Button
-                      type="button" variant="ghost" size="icon"
-                      aria-label={`Hapus bahan ${i + 1}`}
-                      disabled={baris.length === 1}
-                      onClick={() => setBaris((l) => l.filter((_, j) => j !== i))}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        <Button type="submit" disabled={bekerja}>
-          {bekerja ? 'Menyimpan…' : 'Simpan Draft'}
-        </Button>
-        <Button type="button" variant="outline" onClick={() => router.back()}>Batal</Button>
-      </div>
+        <FormulirNotebook
+          tab={[
+            {
+              id: 'kebutuhan-bahan',
+              label: 'Kebutuhan Bahan',
+              children: (
+                <FormulirBarisTabel
+                  kolom={readOnly ? KOLOM_READONLY : KOLOM_EDIT}
+                  baris={baris}
+                  onTambahBaris={readOnly ? undefined : () => setBaris((l) => [...l, { produkId: '', kuantitas: '', uomId: '' }])}
+                  onHapusBaris={readOnly ? undefined : (i) => setBaris((l) => (l.length <= 1 ? l : l.filter((_, j) => j !== i)))}
+                  labelTambah="Tambah Bahan"
+                  readOnly={readOnly}
+                />
+              ),
+            },
+            {
+              id: 'lainnya',
+              label: 'Harga Pokok & Dokumen',
+              children: dokumenTerkait ?? (
+                <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  Harga pokok dan dokumen terkait tersedia setelah perintah dikonfirmasi.
+                </p>
+              ),
+            },
+          ]}
+        />
+      </FormulirBingkai>
     </form>
   )
 }

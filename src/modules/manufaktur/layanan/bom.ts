@@ -1,8 +1,9 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm'
 import { db } from '@/db/klien'
 import { billOfMaterials, bomLines, products, uoms } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bagi, bulatkan, kali, type Uang } from '@/lib/uang'
+import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { skemaBom, type MasukanBom } from '../validasi/produksi'
 
 export type Bom = typeof billOfMaterials.$inferSelect
@@ -19,11 +20,49 @@ function urai(masukan: MasukanBom) {
 
 // ── Pembacaan ────────────────────────────────────────────────────────────────
 
-export async function daftarBom(saring: { produkId?: string } = {}): Promise<Bom[]> {
-  const kueri = db.select().from(billOfMaterials).orderBy(asc(billOfMaterials.kode))
-  return saring.produkId
-    ? kueri.where(eq(billOfMaterials.produkId, saring.produkId))
-    : kueri
+function kolomUrutBom(kolom?: string) {
+  switch (kolom) {
+    case 'nama': return billOfMaterials.nama
+    case 'kode':
+    default:
+      return billOfMaterials.kode
+  }
+}
+
+export async function daftarBom(
+  param: ParameterDaftar & { produkId?: string } = { halaman: 1, ukuranHalaman: 20 },
+): Promise<HasilDaftar<Bom>> {
+  const halaman = param.halaman || 1
+  const ukuranHalaman = param.ukuranHalaman || 20
+
+  const kondisi = []
+  if (param.produkId) kondisi.push(eq(billOfMaterials.produkId, param.produkId))
+  if (param.cari) {
+    kondisi.push(or(
+      ilike(billOfMaterials.kode, `%${param.cari}%`),
+      ilike(billOfMaterials.nama, `%${param.cari}%`),
+    ))
+  }
+
+  const statusDisaring = param.filter?.status ?? []
+  if (statusDisaring.length > 0 && statusDisaring.length < 2) {
+    kondisi.push(eq(billOfMaterials.isActive, statusDisaring[0] === 'aktif'))
+  }
+
+  const where = kondisi.length > 0 ? and(...kondisi) : undefined
+  const kolomUrut = kolomUrutBom(param.urutkan?.kolom)
+  const arahUrut = param.urutkan?.arah === 'desc' ? desc : asc
+
+  const [baris, [{ jumlah }]] = await Promise.all([
+    db.select().from(billOfMaterials)
+      .where(where)
+      .orderBy(arahUrut(kolomUrut))
+      .limit(ukuranHalaman)
+      .offset((halaman - 1) * ukuranHalaman),
+    db.select({ jumlah: sql<number>`count(*)::int` }).from(billOfMaterials).where(where),
+  ])
+
+  return { data: baris, totalBaris: jumlah }
 }
 
 export async function ambilBom(id: string): Promise<BomLengkap | null> {
