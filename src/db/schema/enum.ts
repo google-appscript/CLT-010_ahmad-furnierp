@@ -138,6 +138,16 @@ export const statusProyekEnum = pgEnum('status_proyek', [
   'draft', 'berjalan', 'selesai', 'terkunci', 'dibatalkan',
 ])
 
+/**
+ * Panjang periode bagi hasil, dipilih sekali di pengaturan perusahaan.
+ * Mengubahnya tidak mengusik periode yang sudah terlanjur dikunci.
+ */
+export const periodeBagiHasilEnum = pgEnum('periode_bagi_hasil', [
+  'bulanan', 'kuartalan', 'tahunan',
+])
+
+export const statusBagiHasilEnum = pgEnum('status_bagi_hasil', ['terbuka', 'terkunci'])
+
 export const statusTugasEnum = pgEnum('status_tugas', [
   'belum_mulai', 'berjalan', 'selesai', 'dibatalkan',
 ])

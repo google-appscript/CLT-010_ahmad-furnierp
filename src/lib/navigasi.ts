@@ -126,6 +126,14 @@ export const NAVIGASI: ItemMenu[] = [
         ],
       },
       {
+        label: 'Bagi Hasil', fase: 1,
+        anak: [
+          { label: 'Pemilik & Porsi', rute: '/akuntansi/bagi-hasil/pemilik', izin: 'akuntansi.bagi-hasil.kelola', fase: 1 },
+          { label: 'Distribusi Laba', rute: '/akuntansi/bagi-hasil/distribusi', izin: 'akuntansi.bagi-hasil.kelola', fase: 1 },
+          { label: 'Transparansi', rute: '/akuntansi/bagi-hasil/laporan', izin: 'akuntansi.bagi-hasil.lihat', fase: 1 },
+        ],
+      },
+      {
         label: 'Aset Tetap', fase: 6,
         anak: [
           { label: 'Daftar Aset', rute: '/akuntansi/aset', izin: 'akuntansi.aset.lihat', fase: 6 },

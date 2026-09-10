@@ -109,6 +109,7 @@ export const BAGAN_AKUN_STANDAR = [
 ] as const
 
 export const AKUN_LABA_DITAHAN = '3201'
+export const AKUN_LABA_BERJALAN = '3202'
 export const AKUN_SELISIH_KURS_UNTUNG = '4202'
 export const AKUN_SELISIH_KURS_RUGI = '7102'
 export const AKUN_PEMBULATAN = '7104'

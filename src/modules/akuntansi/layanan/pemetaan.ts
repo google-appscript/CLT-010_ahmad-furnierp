@@ -76,6 +76,7 @@ export const AKUN_OTOMATIS = {
   akunRugiPelepasanAsetId: 'Rugi Pelepasan Aset',
   akunPembulatanId: 'Selisih Pembulatan',
   akunLabaDitahanId: 'Laba Ditahan',
+  akunLabaBerjalanId: 'Laba Tahun Berjalan',
 } as const
 
 export type BidangAkunOtomatis = keyof typeof AKUN_OTOMATIS

@@ -10,7 +10,7 @@ import {
 import { daftarKodeIzin } from '@/lib/navigasi'
 import { hashKataSandi } from '@/modules/identitas/layanan/kata-sandi'
 import {
-  BAGAN_AKUN_STANDAR, AKUN_LABA_DITAHAN, AKUN_SELISIH_KURS_UNTUNG,
+  BAGAN_AKUN_STANDAR, AKUN_LABA_DITAHAN, AKUN_LABA_BERJALAN, AKUN_SELISIH_KURS_UNTUNG,
   AKUN_SELISIH_KURS_RUGI, AKUN_PEMBULATAN, AKUN_PENERIMAAN_BELUM_DITAGIH,
   AKUN_BARANG_DALAM_PROSES, AKUN_TENAGA_KERJA_LANGSUNG, AKUN_OVERHEAD_PABRIK,
   AKUN_LABA_PELEPASAN_ASET, AKUN_RUGI_PELEPASAN_ASET,
@@ -103,6 +103,7 @@ export async function jalankanSeed(): Promise<void> {
       mataUangFungsional: 'IDR',
       bulanAwalTahunBuku: 1,
       akunLabaDitahanId: akunId(AKUN_LABA_DITAHAN),
+      akunLabaBerjalanId: akunId(AKUN_LABA_BERJALAN),
       akunSelisihKursUntungId: akunId(AKUN_SELISIH_KURS_UNTUNG),
       akunSelisihKursRugiId: akunId(AKUN_SELISIH_KURS_RUGI),
       akunPembulatanId: akunId(AKUN_PEMBULATAN),
@@ -134,6 +135,9 @@ export async function jalankanSeed(): Promise<void> {
     }
     if (!pengaturan.akunRugiPelepasanAsetId) {
       tambahan.akunRugiPelepasanAsetId = akunId(AKUN_RUGI_PELEPASAN_ASET)
+    }
+    if (!pengaturan.akunLabaBerjalanId) {
+      tambahan.akunLabaBerjalanId = akunId(AKUN_LABA_BERJALAN)
     }
     if (Object.keys(tambahan).length > 0) {
       await db.update(companySettings).set(tambahan)

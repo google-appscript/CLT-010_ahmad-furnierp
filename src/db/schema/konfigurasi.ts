@@ -1,7 +1,7 @@
 import {
   pgTable, uuid, text, integer, date, timestamp, uniqueIndex,
 } from 'drizzle-orm/pg-core'
-import { statusTahunBukuEnum, resetUrutanEnum } from './enum'
+import { statusTahunBukuEnum, resetUrutanEnum, periodeBagiHasilEnum } from './enum'
 import { accounts } from './akuntansi'
 
 export const companySettings = pgTable('company_settings', {
@@ -44,6 +44,10 @@ export const companySettings = pgTable('company_settings', {
     .references(() => accounts.id),
   akunRugiPelepasanAsetId: uuid('akun_rugi_pelepasan_aset_id')
     .references(() => accounts.id),
+  /** Laba periode berjalan yang belum dibagikan kepada pemilik. */
+  akunLabaBerjalanId: uuid('akun_laba_berjalan_id').references(() => accounts.id),
+  /** Panjang periode bagi hasil: bulanan, kuartalan, atau tahunan. */
+  periodeBagiHasil: periodeBagiHasilEnum('periode_bagi_hasil').notNull().default('tahunan'),
   diubahPada: timestamp('diubah_pada', { withTimezone: true }).notNull().defaultNow(),
 })
 
