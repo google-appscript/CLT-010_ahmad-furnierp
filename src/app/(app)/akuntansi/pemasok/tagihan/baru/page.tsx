@@ -1,9 +1,7 @@
-
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { companySettings } from '@/db/schema'
 import { ambilPesanan, barisDenganSisa } from '@/modules/pembelian/layanan/pesanan'
-import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { FormulirTagihan, type BarisFormulir } from '../../formulir-tagihan'
 import { ambilDataPilihanTagihan } from '../../data-pilihan'
 
@@ -46,28 +44,18 @@ export default async function HalamanTagihanBaru({
   }
 
   return (
-    <>
-      <KepalaHalaman
-        judul={tipe === 'nota_debit' ? 'Nota Debit Baru' : 'Tagihan Pembelian Baru'}
-        deskripsi={
-          poId
-            ? 'Baris diisi otomatis dari barang yang sudah diterima tetapi belum ditagih.'
-            : 'Dokumen disimpan sebagai draft dan belum menyentuh buku besar sampai diposting.'
-        }
-      />
-      <FormulirTagihan
-        awal={{
-          tipe,
-          partnerId,
-          poId: poId ?? '',
-          tanggal: new Date().toISOString().slice(0, 10),
-          tanggalJatuhTempo: '',
-          referensiPemasok: '',
-          catatan: '',
-          baris,
-        }}
-        {...pilihan}
-      />
-    </>
+    <FormulirTagihan
+      awal={{
+        tipe,
+        partnerId,
+        poId: poId ?? '',
+        tanggal: new Date().toISOString().slice(0, 10),
+        tanggalJatuhTempo: '',
+        referensiPemasok: '',
+        catatan: '',
+        baris,
+      }}
+      {...pilihan}
+    />
   )
 }

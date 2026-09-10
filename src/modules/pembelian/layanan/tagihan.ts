@@ -1,10 +1,11 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   vendorBills, vendorBillLines,
   purchaseOrderLines, taxes, accounts, partners,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
+import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
@@ -34,17 +35,58 @@ function urai(masukan: MasukanTagihan) {
 
 // ── Pembacaan ────────────────────────────────────────────────────────────────
 
-export async function daftarTagihan(
-  saring: { tipe?: Tagihan['tipe']; status?: Tagihan['status'] } = {},
-): Promise<Tagihan[]> {
-  const syarat = [
-    saring.tipe ? eq(vendorBills.tipe, saring.tipe) : undefined,
-    saring.status ? eq(vendorBills.status, saring.status) : undefined,
-  ].filter(Boolean)
+function kolomUrutTagihan(kolom?: string) {
+  switch (kolom) {
+    case 'nomor': return vendorBills.nomor
+    case 'status': return vendorBills.status
+    case 'dibuatPada': return vendorBills.dibuatPada
+    case 'tanggal':
+    default:
+      return vendorBills.tanggal
+  }
+}
 
-  const kueri = db.select().from(vendorBills)
-    .orderBy(desc(vendorBills.tanggal), desc(vendorBills.dibuatPada))
-  return syarat.length > 0 ? kueri.where(and(...syarat)) : kueri
+export async function daftarTagihan(
+  param: ParameterDaftar & { tipe?: Tagihan['tipe']; status?: Tagihan['status'] } = { halaman: 1, ukuranHalaman: 20 },
+): Promise<HasilDaftar<Tagihan>> {
+  const halaman = param.halaman || 1
+  const ukuranHalaman = param.ukuranHalaman || 20
+
+  const kondisi = []
+  if (param.tipe) kondisi.push(eq(vendorBills.tipe, param.tipe))
+  if (param.cari) {
+    kondisi.push(or(
+      ilike(vendorBills.nomor, `%${param.cari}%`),
+      ilike(partners.nama, `%${param.cari}%`),
+      ilike(vendorBills.referensiPemasok, `%${param.cari}%`),
+    ))
+  }
+
+  const statusDisaring = [
+    ...(param.status ? [param.status] : []),
+    ...(param.filter?.status ?? []),
+  ] as Tagihan['status'][]
+  if (statusDisaring.length > 0) {
+    kondisi.push(inArray(vendorBills.status, statusDisaring))
+  }
+
+  const where = kondisi.length > 0 ? and(...kondisi) : undefined
+  const kolomUrut = kolomUrutTagihan(param.urutkan?.kolom)
+  const arahUrut = param.urutkan?.arah === 'asc' ? asc : desc
+
+  const [baris, [{ jumlah }]] = await Promise.all([
+    db.select({ tagihan: vendorBills }).from(vendorBills)
+      .innerJoin(partners, eq(partners.id, vendorBills.partnerId))
+      .where(where)
+      .orderBy(arahUrut(kolomUrut), desc(vendorBills.dibuatPada))
+      .limit(ukuranHalaman)
+      .offset((halaman - 1) * ukuranHalaman),
+    db.select({ jumlah: sql<number>`count(*)::int` }).from(vendorBills)
+      .innerJoin(partners, eq(partners.id, vendorBills.partnerId))
+      .where(where),
+  ])
+
+  return { data: baris.map((b) => b.tagihan), totalBaris: jumlah }
 }
 
 export async function ambilTagihan(id: string): Promise<TagihanLengkap | null> {
