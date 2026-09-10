@@ -39,6 +39,16 @@ Nomor diberikan saat posting, bukan saat draft dibuat.
 bukan dari hierarki kode akun. Menambah akun baru otomatis muncul di baris
 laporan yang benar tanpa konfigurasi tambahan.
 
+**Jurnal dan akun otomatis berasal dari data, bukan dari kode.** Tidak boleh
+ada kode akun maupun kode jurnal yang ditulis harfiah di dalam layanan. Jurnal
+tujuan setiap posting otomatis dibaca lewat `jurnalUntukDalamTx()` dari tabel
+`journal_mappings`, dan akun penampung otomatis lewat `akunOtomatisDalamTx()`
+dari `company_settings` — keduanya di
+`src/modules/akuntansi/layanan/pemetaan.ts`. Mengubah pemetaan hanya berlaku
+untuk transaksi berikutnya; dokumen yang sudah diposting tetap memegang jurnal
+yang berlaku saat itu, sesuai aturan bahwa entri terposting tidak pernah
+diubah.
+
 **Master data dinonaktifkan, tidak dihapus.** Akun, mitra, pajak, jurnal, dan
 produk dapat sudah dirujuk dokumen lain.
 
@@ -86,6 +96,15 @@ laba kotor murni angka akuntansi, dan laba proyek adalah pandangan manajerial di
 atasnya. Tarif dibekukan ke setiap baris saat dicatat sehingga menaikkan tarif
 tidak mengubah biaya pekerjaan yang sudah lewat.
 
+**Job costing dikunci setelah lunas.** Selama proyek berjalan angkanya dihitung
+ulang dari dokumen sumbernya. Begitu seluruh faktur proyek diterima
+pembayarannya, proyek boleh dikunci: keenam angkanya dibekukan ke kolom
+`…_final` dan laporan membaca snapshot itu, bukan menghitung ulang. Sejak saat
+itu `postingJurnalDalamTx()` menolak item jurnal apa pun yang menandai proyek
+tersebut, sehingga biaya yang datang terlambat tidak bisa diam-diam mengubah
+laba yang sudah dilaporkan. Membuka kunci mengembalikan perhitungan hidup dan
+menghapus snapshot-nya, dan siapa yang mengunci beserta kapan selalu tercatat.
+
 **Penampung penerimaan wajib tertutup.** Penerimaan barang mengkredit akun
 Penerimaan Barang Belum Ditagih, dan tagihan pemasok mendebitnya kembali.
 Saldo akun itu yang tidak nol berarti ada barang diterima yang belum ditagih —
@@ -94,6 +113,27 @@ bukan kesalahan, tetapi harus dapat dijelaskan.
 **PPN dan PPh diperlakukan berbeda.** PPN Masukan menambah nilai tagihan dan
 dapat dikreditkan; PPh adalah pajak yang dipotong dari pembayaran sehingga
 mengurangi kas tanpa mengurangi nilai tagihan pemasok.
+
+**Pos biaya tidak memecah item jurnal.** Alokasi ke pos biaya hidup di tabel
+sampingan `journal_item_cost_allocations`; baris jurnalnya tetap utuh sehingga
+buku besar tidak pernah berubah bentuk hanya karena sebuah beban dibagi ke
+beberapa unit kerja. Persentase satu item wajib berjumlah tepat seratus, satu
+pos tidak boleh muncul dua kali, dan baris terakhir menyerap sisa pembulatan
+agar jumlah nilai alokasi persis sama dengan nilai itemnya. Hanya akun laba
+rugi yang boleh dialokasikan. Beban yang belum dialokasikan tidak hilang —
+Laporan Laba Rugi per Pos menampilkannya sebagai "Belum dialokasikan" supaya
+totalnya selalu sama dengan laba rugi biasa.
+
+**Bagi hasil tidak menutup laba rugi.** Penguncian sebuah periode memindahkan
+laba bersihnya dari Laba Tahun Berjalan ke akun modal masing-masing pemilik,
+tetapi tidak menyentuh akun pendapatan maupun beban — Laporan Laba Rugi
+periode itu tetap terbaca utuh sesudahnya. Setiap pemilik wajib punya akun
+modalnya sendiri, porsi satu susunan kepemilikan wajib berjumlah seratus
+persen, dan susunan yang sudah dipakai periode terkunci tidak boleh diubah
+lagi. Periode dikunci berurutan; membuka kunci membalik jurnal distribusinya,
+bukan menghapusnya. Panjang periode — bulanan, kuartalan, atau tahunan —
+adalah pengaturan global, dan periode yang sudah terkunci menyimpan tipenya
+sendiri sehingga tidak ikut berubah.
 
 **Penomoran dokumen.** Nomor diambil lewat `ambilNomorBerikut()` yang mengunci
 baris definisi urutan dengan `FOR UPDATE` di dalam transaksi yang sama dengan
@@ -127,7 +167,10 @@ nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
 ## Status
 
-Ketujuh fase selesai. Sistem mencatat transaksi keuangan lengkap, mengelola
+Ketujuh fase selesai, ditambah empat kebutuhan spesifik pemilik usaha:
+konfigurasi jurnal otomatis, pos biaya mengambang, kepemilikan bersama dengan
+bagi hasil, dan job costing yang terkunci pasca-lunas. Sistem mencatat
+transaksi keuangan lengkap, mengelola
 persediaan dengan valuasi rata-rata bergerak, menjalankan alur pembelian dari
 permintaan penawaran sampai pelunasan pemasok, alur penjualan dari penawaran
 sampai penerimaan pembayaran dengan rekonsiliasi item jurnal, produksi dari
@@ -156,7 +199,27 @@ membandingkannya terhadap saldo akun agar selisih apa pun langsung terlihat.
 Proyek memegang tepat satu pesanan penjualan, sehingga pendapatan dan harga
 pokoknya terbaca langsung dari dokumen penjualan tanpa alokasi. Beban lain
 ditandai lewat kolom proyek pada item jurnal, dan jam kerja dicatat di
-timesheet dengan tarif yang dibekukan saat pencatatan.
+timesheet dengan tarif yang dibekukan saat pencatatan. Setelah seluruh faktur
+proyek lunas, angkanya dibekukan dan proyek tidak lagi menerima biaya baru.
+
+Seluruh posting otomatis mengambil jurnal tujuan dan akun penampungnya dari
+konfigurasi, bukan dari kode. Layar Pemetaan Jurnal menampilkan sembilan
+pemetaan — stok, tagihan pembelian, pembayaran kas dan bank, faktur penjualan,
+biaya produksi, depresiasi, pelepasan aset, distribusi bagi hasil — beserta
+sembilan akun otomatis yang menyertainya. Pemetaan pembayaran memilih jurnal
+kas atau bank sendiri berdasarkan tipe akun yang dipakai.
+
+Beban operasional dikelompokkan ke pos biaya. Satu baris jurnal boleh
+sepenuhnya milik satu pos atau dibagi berpersentase ke beberapa pos sekaligus,
+dan lokasi gudang internal dapat menunjuk pos bawaannya sehingga pergerakan
+stok teralokasi tanpa dipilih manual. Pos biaya dan proyek adalah dua dimensi
+yang berdiri sendiri di atas item jurnal yang sama.
+
+Kepemilikan dicatat sebagai susunan berlaku per rentang tanggal. Laba bersih
+sebuah periode dikunci lalu dipindahkan ke akun modal tiap pemilik sesuai
+porsinya, tanpa menutup laba rugi periode itu. Laporan transparansi membaca
+hak tiap pemilik langsung dari buku besar, sehingga tidak mungkin berselisih
+dengan neraca.
 
 **Kanal integrasi.** Modul memposting jurnal lewat `postingJurnalDalamTx()` di
 `src/modules/akuntansi/layanan/entri.ts` bila perubahan datanya perlu segabung
@@ -169,3 +232,10 @@ dalam satu transaksi, seperti pada penyelesaian perintah produksi. Modul proyek
 tidak memposting jurnal sama sekali; ia membaca dokumen penjualan dan penanda
 proyek pada item jurnal. Tidak ada modul yang menulis ke tabel jurnal secara
 langsung.
+
+Jurnal tujuan dan akun penampung diambil lewat `jurnalUntukDalamTx()` dan
+`akunOtomatisDalamTx()` di `src/modules/akuntansi/layanan/pemetaan.ts`;
+konstanta `PEMETAAN_JURNAL` dan `AKUN_OTOMATIS` di berkas itu adalah daftar
+lengkap titik konfigurasinya. Modul kepemilikan memposting distribusi bagi
+hasil lewat kanal yang sama dan membalikkannya dengan `balikEntri()` saat
+kunci dibuka.
