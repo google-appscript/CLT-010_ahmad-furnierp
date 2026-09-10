@@ -9,6 +9,7 @@ import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { BarisKlik } from '@/components/data/tabel-data-interaktif'
 
 export const metadata = { title: 'Bill of Materials' }
 
@@ -55,12 +56,11 @@ export default async function HalamanBom() {
                 <th className="px-4 py-2 text-right font-medium">Menghasilkan</th>
                 <th className="px-4 py-2 text-right font-medium">Jumlah Bahan</th>
                 <th className="px-4 py-2 text-left font-medium">Status</th>
-                <th className="w-24 px-4 py-2" />
               </tr>
             </thead>
             <tbody>
               {resep.map((r) => (
-                <tr key={r.id} className="border-b">
+                <BarisKlik key={r.id} href={`/manufaktur/bom/${r.id}`}>
                   <td className="px-4 py-1.5 font-mono text-xs">{r.kode}</td>
                   <td className="px-4 py-1.5">{r.nama}</td>
                   <td className="px-4 py-1.5 text-muted-foreground">
@@ -77,12 +77,7 @@ export default async function HalamanBom() {
                       {r.isActive ? 'Aktif' : 'Nonaktif'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-1.5 text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/manufaktur/bom/${r.id}`}>Buka</Link>
-                    </Button>
-                  </td>
-                </tr>
+                </BarisKlik>
               ))}
             </tbody>
           </table>

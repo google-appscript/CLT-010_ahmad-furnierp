@@ -7,6 +7,7 @@ import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { BarisKlik } from '@/components/data/tabel-data-interaktif'
 
 export const metadata = { title: 'Daftar Aset' }
 
@@ -58,12 +59,11 @@ export default async function HalamanDaftarAset() {
                 <th className="px-4 py-2 text-right font-medium">Akumulasi</th>
                 <th className="px-4 py-2 text-right font-medium">Nilai Buku</th>
                 <th className="px-4 py-2 text-left font-medium">Status</th>
-                <th className="w-24 px-4 py-2" />
               </tr>
             </thead>
             <tbody>
               {dengan.map((a) => (
-                <tr key={a.id} className="border-b">
+                <BarisKlik key={a.id} href={`/akuntansi/aset/${a.id}`}>
                   <td className="px-4 py-1.5 font-mono text-xs">{a.kode}</td>
                   <td className="px-4 py-1.5">{a.nama}</td>
                   <td className="px-4 py-1.5 text-muted-foreground">
@@ -83,12 +83,7 @@ export default async function HalamanDaftarAset() {
                   <td className="px-4 py-1.5">
                     <Badge variant={VARIAN[a.status]}>{LABEL_STATUS_ASET[a.status]}</Badge>
                   </td>
-                  <td className="px-4 py-1.5 text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/akuntansi/aset/${a.id}`}>Buka</Link>
-                    </Button>
-                  </td>
-                </tr>
+                </BarisKlik>
               ))}
             </tbody>
             <tfoot className="border-t-2 bg-muted/40 font-semibold">
@@ -101,7 +96,7 @@ export default async function HalamanDaftarAset() {
                 <td className="px-4 py-2 text-right tabular-nums">
                   {formatAngka(totalBuku.toFixed(2))}
                 </td>
-                <td colSpan={2} />
+                <td />
               </tr>
             </tfoot>
           </table>

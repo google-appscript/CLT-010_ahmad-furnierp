@@ -10,6 +10,7 @@ import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { BarisKlik } from '@/components/data/tabel-data-interaktif'
 
 export const metadata = { title: 'Perintah Produksi' }
 
@@ -59,12 +60,11 @@ export default async function HalamanPerintahProduksi() {
                 <th className="px-4 py-2 text-right font-medium">Kuantitas</th>
                 <th className="px-4 py-2 text-right font-medium">Harga Pokok Satuan</th>
                 <th className="px-4 py-2 text-left font-medium">Status</th>
-                <th className="w-24 px-4 py-2" />
               </tr>
             </thead>
             <tbody>
               {perintah.map((p) => (
-                <tr key={p.id} className="border-b">
+                <BarisKlik key={p.id} href={`/manufaktur/perintah-produksi/${p.id}`}>
                   <td className="px-4 py-1.5 font-mono text-xs">{p.nomor ?? '—'}</td>
                   <td className="px-4 py-1.5">{p.tanggal}</td>
                   <td className="px-4 py-1.5">{produkLewatId.get(p.produkId) ?? '—'}</td>
@@ -79,12 +79,7 @@ export default async function HalamanPerintahProduksi() {
                       {LABEL_STATUS_PERINTAH_PRODUKSI[p.status]}
                     </Badge>
                   </td>
-                  <td className="px-4 py-1.5 text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/manufaktur/perintah-produksi/${p.id}`}>Buka</Link>
-                    </Button>
-                  </td>
-                </tr>
+                </BarisKlik>
               ))}
             </tbody>
           </table>

@@ -11,6 +11,7 @@ import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { BarisKlik } from '@/components/data/tabel-data-interaktif'
 
 export const metadata = { title: 'Daftar Proyek' }
 
@@ -68,12 +69,11 @@ export default async function HalamanDaftarProyek() {
                 <th className="px-4 py-2 text-right font-medium">Pendapatan</th>
                 <th className="px-4 py-2 text-right font-medium">Laba</th>
                 <th className="px-4 py-2 text-left font-medium">Status</th>
-                <th className="w-24 px-4 py-2" />
               </tr>
             </thead>
             <tbody>
               {dengan.map(({ p, laba }) => (
-                <tr key={p.id} className="border-b">
+                <BarisKlik key={p.id} href={`/proyek/${p.id}`}>
                   <td className="px-4 py-1.5 font-mono text-xs">{p.kode}</td>
                   <td className="px-4 py-1.5">{p.nama}</td>
                   <td className="px-4 py-1.5 font-mono text-xs">
@@ -97,12 +97,7 @@ export default async function HalamanDaftarProyek() {
                   <td className="px-4 py-1.5">
                     <Badge variant={VARIAN[p.status]}>{LABEL_STATUS_PROYEK[p.status]}</Badge>
                   </td>
-                  <td className="px-4 py-1.5 text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/proyek/${p.id}`}>Buka</Link>
-                    </Button>
-                  </td>
-                </tr>
+                </BarisKlik>
               ))}
             </tbody>
           </table>

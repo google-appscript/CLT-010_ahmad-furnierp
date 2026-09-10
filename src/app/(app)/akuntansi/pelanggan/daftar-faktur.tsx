@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { asc } from 'drizzle-orm'
 import { db } from '@/db/klien'
 import { partners } from '@/db/schema'
@@ -6,7 +5,7 @@ import { daftarFaktur, ringkasanFaktur, type Faktur } from '@/modules/penjualan/
 import { LABEL_STATUS_FAKTUR } from '@/modules/penjualan/validasi/pesanan'
 import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { BarisKlik } from '@/components/data/tabel-data-interaktif'
 
 const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
   diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
@@ -40,12 +39,11 @@ export async function DaftarFaktur({ tipe }: { tipe: Faktur['tipe'] }) {
             <th className="px-4 py-2 text-right font-medium">Total</th>
             <th className="px-4 py-2 text-right font-medium">Sisa</th>
             <th className="px-4 py-2 text-left font-medium">Status</th>
-            <th className="w-24 px-4 py-2" />
           </tr>
         </thead>
         <tbody>
           {dengan.map((f) => (
-            <tr key={f.id} className="border-b">
+            <BarisKlik key={f.id} href={`/akuntansi/pelanggan/faktur/${f.id}`}>
               <td className="px-4 py-1.5 font-mono text-xs">{f.nomor ?? '—'}</td>
               <td className="px-4 py-1.5">{f.tanggal}</td>
               <td className="px-4 py-1.5">{mitraLewatId.get(f.partnerId) ?? '—'}</td>
@@ -57,12 +55,7 @@ export async function DaftarFaktur({ tipe }: { tipe: Faktur['tipe'] }) {
               <td className="px-4 py-1.5">
                 <Badge variant={VARIAN[f.status]}>{LABEL_STATUS_FAKTUR[f.status]}</Badge>
               </td>
-              <td className="px-4 py-1.5 text-right">
-                <Button asChild variant="ghost" size="sm">
-                  <Link href={`/akuntansi/pelanggan/faktur/${f.id}`}>Buka</Link>
-                </Button>
-              </td>
-            </tr>
+            </BarisKlik>
           ))}
         </tbody>
       </table>

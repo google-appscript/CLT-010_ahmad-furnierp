@@ -7,6 +7,7 @@ import { LABEL_STATUS } from '@/modules/akuntansi/validasi/entri'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { BarisKlik } from '@/components/data/tabel-data-interaktif'
 
 export const metadata = { title: 'Entri Jurnal' }
 
@@ -48,12 +49,11 @@ export default async function HalamanEntriJurnal() {
                 <th className="px-4 py-2 text-left font-medium">Keterangan</th>
                 <th className="px-4 py-2 text-left font-medium">Referensi</th>
                 <th className="px-4 py-2 text-left font-medium">Status</th>
-                <th className="w-24 px-4 py-2" />
               </tr>
             </thead>
             <tbody>
               {entri.map((e) => (
-                <tr key={e.id} className="border-b">
+                <BarisKlik key={e.id} href={`/akuntansi/jurnal/entri/${e.id}`}>
                   <td className="px-4 py-1.5 font-mono text-xs">{e.nomor ?? '—'}</td>
                   <td className="px-4 py-1.5">{e.tanggal}</td>
                   <td className="px-4 py-1.5">{jurnalLewatId.get(e.journalId) ?? '—'}</td>
@@ -62,12 +62,7 @@ export default async function HalamanEntriJurnal() {
                   <td className="px-4 py-1.5">
                     <Badge variant={VARIAN[e.status]}>{LABEL_STATUS[e.status]}</Badge>
                   </td>
-                  <td className="px-4 py-1.5 text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/akuntansi/jurnal/entri/${e.id}`}>Buka</Link>
-                    </Button>
-                  </td>
-                </tr>
+                </BarisKlik>
               ))}
             </tbody>
           </table>

@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { asc } from 'drizzle-orm'
 import { db } from '@/db/klien'
 import { partners } from '@/db/schema'
@@ -6,7 +5,7 @@ import { daftarTagihan, ringkasanTagihan, type Tagihan } from '@/modules/pembeli
 import { LABEL_STATUS_TAGIHAN } from '@/modules/pembelian/validasi/pesanan'
 import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { BarisKlik } from '@/components/data/tabel-data-interaktif'
 
 const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
   diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
@@ -44,12 +43,11 @@ export async function DaftarTagihan({ tipe }: { tipe: Tagihan['tipe'] }) {
             <th className="px-4 py-2 text-right font-medium">Total</th>
             <th className="px-4 py-2 text-right font-medium">Sisa</th>
             <th className="px-4 py-2 text-left font-medium">Status</th>
-            <th className="w-24 px-4 py-2" />
           </tr>
         </thead>
         <tbody>
           {dengan.map((t) => (
-            <tr key={t.id} className="border-b">
+            <BarisKlik key={t.id} href={`/akuntansi/pemasok/tagihan/${t.id}`}>
               <td className="px-4 py-1.5 font-mono text-xs">{t.nomor ?? '—'}</td>
               <td className="px-4 py-1.5">{t.tanggal}</td>
               <td className="px-4 py-1.5">{mitraLewatId.get(t.partnerId) ?? '—'}</td>
@@ -62,12 +60,7 @@ export async function DaftarTagihan({ tipe }: { tipe: Tagihan['tipe'] }) {
               <td className="px-4 py-1.5">
                 <Badge variant={VARIAN[t.status]}>{LABEL_STATUS_TAGIHAN[t.status]}</Badge>
               </td>
-              <td className="px-4 py-1.5 text-right">
-                <Button asChild variant="ghost" size="sm">
-                  <Link href={`/akuntansi/pemasok/tagihan/${t.id}`}>Buka</Link>
-                </Button>
-              </td>
-            </tr>
+            </BarisKlik>
           ))}
         </tbody>
       </table>

@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { TabelData, type Kolom } from '@/components/data/tabel-data'
 
 const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
   selesai: 'default', draft: 'secondary', dibatalkan: 'outline',
@@ -48,6 +49,24 @@ export default async function HalamanDaftarOperasi({
   const lokasiLewatId = new Map(semuaLokasi.map((l) => [l.id, l.nama]))
   const mitraLewatId = new Map(semuaMitra.map((m) => [m.id, m.nama]))
 
+  type BarisOperasi = (typeof operasi)[number]
+
+  const kolom: Kolom<BarisOperasi>[] = [
+    { kunci: 'nomor', judul: 'Nomor', render: (o) => <span className="font-mono text-xs">{o.nomor ?? '—'}</span> },
+    { kunci: 'tanggal', judul: 'Tanggal', render: (o) => o.tanggal },
+    { kunci: 'dari', judul: 'Dari', render: (o) => lokasiLewatId.get(o.lokasiAsalId) ?? '—' },
+    { kunci: 'ke', judul: 'Ke', render: (o) => lokasiLewatId.get(o.lokasiTujuanId) ?? '—' },
+    {
+      kunci: 'mitra', judul: 'Mitra',
+      render: (o) => <span className="text-muted-foreground">{o.partnerId ? mitraLewatId.get(o.partnerId) ?? '—' : '—'}</span>,
+    },
+    { kunci: 'referensi', judul: 'Referensi', render: (o) => <span className="text-muted-foreground">{o.referensi ?? '—'}</span> },
+    {
+      kunci: 'status', judul: 'Status',
+      render: (o) => <Badge variant={VARIAN[o.status]}>{LABEL_STATUS_OPERASI[o.status]}</Badge>,
+    },
+  ]
+
   return (
     <>
       <KepalaHalaman
@@ -62,50 +81,13 @@ export default async function HalamanDaftarOperasi({
         ) : undefined}
       />
 
-      {operasi.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-sm text-muted-foreground">
-          Belum ada dokumen {labelTipeOperasi(tipe).toLowerCase()}.
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-md border">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40">
-              <tr>
-                <th className="px-4 py-2 text-left font-medium">Nomor</th>
-                <th className="px-4 py-2 text-left font-medium">Tanggal</th>
-                <th className="px-4 py-2 text-left font-medium">Dari</th>
-                <th className="px-4 py-2 text-left font-medium">Ke</th>
-                <th className="px-4 py-2 text-left font-medium">Mitra</th>
-                <th className="px-4 py-2 text-left font-medium">Referensi</th>
-                <th className="px-4 py-2 text-left font-medium">Status</th>
-                <th className="w-24 px-4 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {operasi.map((o) => (
-                <tr key={o.id} className="border-b">
-                  <td className="px-4 py-1.5 font-mono text-xs">{o.nomor ?? '—'}</td>
-                  <td className="px-4 py-1.5">{o.tanggal}</td>
-                  <td className="px-4 py-1.5">{lokasiLewatId.get(o.lokasiAsalId) ?? '—'}</td>
-                  <td className="px-4 py-1.5">{lokasiLewatId.get(o.lokasiTujuanId) ?? '—'}</td>
-                  <td className="px-4 py-1.5 text-muted-foreground">
-                    {o.partnerId ? mitraLewatId.get(o.partnerId) ?? '—' : '—'}
-                  </td>
-                  <td className="px-4 py-1.5 text-muted-foreground">{o.referensi ?? '—'}</td>
-                  <td className="px-4 py-1.5">
-                    <Badge variant={VARIAN[o.status]}>{LABEL_STATUS_OPERASI[o.status]}</Badge>
-                  </td>
-                  <td className="px-4 py-1.5 text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/gudang/operasi/${slug}/${o.id}`}>Buka</Link>
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TabelData
+        kolom={kolom}
+        baris={operasi}
+        kunciBaris={(o) => o.id}
+        pesanKosong={`Belum ada dokumen ${labelTipeOperasi(tipe).toLowerCase()}.`}
+        hrefBaris={(o) => `/gudang/operasi/${slug}/${o.id}`}
+      />
     </>
   )
 }
