@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest'
-import { eq } from 'drizzle-orm'
 import { db } from '@/db/klien'
 import {
   users, accounts, journals, sequences, companySettings, currencies,
