@@ -3,15 +3,15 @@ import { notFound } from 'next/navigation'
 import { asc, eq } from 'drizzle-orm'
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
-import { locations, stockMoves, journalEntries } from '@/db/schema'
+import {
+  locations, stockMoves, journalEntries, products, uoms, partners,
+} from '@/db/schema'
 import { ambilOperasi, nilaiOperasi } from '@/modules/gudang/layanan/operasi'
 import {
   SLUG_KE_TIPE, labelTipeOperasi, LABEL_STATUS_OPERASI,
 } from '@/modules/gudang/validasi/operasi'
 import { formatAngka, formatRupiah } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { FormulirOperasi } from '../../formulir-operasi'
 import { ambilDataPilihan } from '../../data-pilihan'
 import { AksiDraftOperasi } from './aksi-operasi'
@@ -46,43 +46,42 @@ export default async function HalamanDetailOperasi({
 
   const { daftarProduk, daftarLokasi, daftarSatuan, daftarMitra } = await ambilDataPilihan()
 
+  const awal = {
+    id: operasi.id,
+    tipe,
+    tanggal: operasi.tanggal,
+    lokasiAsalId: operasi.lokasiAsalId,
+    lokasiTujuanId: operasi.lokasiTujuanId,
+    partnerId: operasi.partnerId ?? '',
+    referensi: operasi.referensi ?? '',
+    catatan: operasi.catatan ?? '',
+    baris: operasi.baris.map((b) => ({
+      produkId: b.produkId,
+      kuantitas: String(Number(b.kuantitas)),
+      uomId: b.uomId,
+      hargaSatuan: b.hargaSatuan ? String(Number(b.hargaSatuan)) : '',
+      catatan: b.catatan ?? '',
+    })),
+  }
+
   // Draft masih dapat diubah, jadi ditampilkan sebagai formulir.
   if (operasi.status === 'draft') {
     return (
-      <>
-        <KepalaHalaman
-          judul={`${labelTipeOperasi(tipe)} Draft`}
-          deskripsi="Draft belum bernomor dan belum menyentuh stok sampai diselesaikan."
-        />
-        <div className="mb-6"><AksiDraftOperasi id={operasi.id} tipe={tipe} /></div>
-        <FormulirOperasi
-          awal={{
-            id: operasi.id,
-            tipe,
-            tanggal: operasi.tanggal,
-            lokasiAsalId: operasi.lokasiAsalId,
-            lokasiTujuanId: operasi.lokasiTujuanId,
-            partnerId: operasi.partnerId ?? '',
-            referensi: operasi.referensi ?? '',
-            catatan: operasi.catatan ?? '',
-            baris: operasi.baris.map((b) => ({
-              produkId: b.produkId,
-              kuantitas: String(Number(b.kuantitas)),
-              uomId: b.uomId,
-              hargaSatuan: b.hargaSatuan ? String(Number(b.hargaSatuan)) : '',
-              catatan: b.catatan ?? '',
-            })),
-          }}
-          produk={daftarProduk}
-          lokasi={daftarLokasi}
-          satuan={daftarSatuan}
-          mitra={daftarMitra}
-        />
-      </>
+      <FormulirOperasi
+        awal={awal}
+        produk={daftarProduk}
+        lokasi={daftarLokasi}
+        satuan={daftarSatuan}
+        mitra={daftarMitra}
+        aksiTambahan={<AksiDraftOperasi key="aksi-draft" id={operasi.id} tipe={tipe} />}
+      />
     )
   }
 
-  const [gerak, nilai] = await Promise.all([
+  // Dokumen non-draft dapat merujuk produk/lokasi/mitra yang sejak itu
+  // dinonaktifkan — data pilihan hanya berisi yang masih aktif, jadi tampilan
+  // readonly memakai daftar tanpa filter aktif supaya nama tetap terlihat.
+  const [gerak, nilai, semuaProduk, semuaSatuan, semuaLokasi, semuaMitra] = await Promise.all([
     db.select({
       id: stockMoves.id,
       produkId: stockMoves.produkId,
@@ -96,100 +95,99 @@ export default async function HalamanDetailOperasi({
       .where(eq(stockMoves.operasiId, id))
       .orderBy(asc(stockMoves.dibuatPada)),
     nilaiOperasi(id),
+    db.select({ id: products.id, kode: products.kode, nama: products.nama, uomId: products.uomId })
+      .from(products).orderBy(asc(products.kode)),
+    db.select({ id: uoms.id, kode: uoms.kode, nama: uoms.nama, kategori: uoms.kategori })
+      .from(uoms).orderBy(asc(uoms.kode)),
+    db.select({ id: locations.id, kode: locations.kode, nama: locations.nama, tipe: locations.tipe })
+      .from(locations).orderBy(asc(locations.kode)),
+    db.select({ id: partners.id, nama: partners.nama }).from(partners).orderBy(asc(partners.nama)),
   ])
 
-  const produkLewatId = new Map(daftarProduk.map((p) => [p.id, p]))
-  const satuanLewatId = new Map(daftarSatuan.map((s) => [s.id, s]))
-  const lokasiLewatId = new Map(daftarLokasi.map((l) => [l.id, l.nama]))
-  const mitraLewatId = new Map(daftarMitra.map((m) => [m.id, m.nama]))
+  const produkLewatId = new Map(semuaProduk.map((p) => [p.id, p]))
+  const satuanLewatId = new Map(semuaSatuan.map((s) => [s.id, s]))
 
   const [jurnal] = operasi.jurnalEntryId
     ? await db.select({ id: journalEntries.id, nomor: journalEntries.nomor })
         .from(journalEntries).where(eq(journalEntries.id, operasi.jurnalEntryId)).limit(1)
     : [undefined]
 
-  return (
-    <>
-      <KepalaHalaman judul={operasi.nomor ?? labelTipeOperasi(tipe)} deskripsi={operasi.catatan ?? undefined} />
-
-      <dl className="mb-6 grid gap-4 rounded-md border p-4 sm:grid-cols-3 lg:grid-cols-6">
-        <Bidang label="Status">
-          <Badge variant={VARIAN[operasi.status]}>{LABEL_STATUS_OPERASI[operasi.status]}</Badge>
-        </Bidang>
-        <Bidang label="Tanggal">{operasi.tanggal}</Bidang>
-        <Bidang label="Dari">{lokasiLewatId.get(operasi.lokasiAsalId) ?? '—'}</Bidang>
-        <Bidang label="Ke">{lokasiLewatId.get(operasi.lokasiTujuanId) ?? '—'}</Bidang>
-        <Bidang label="Mitra">
-          {operasi.partnerId ? mitraLewatId.get(operasi.partnerId) ?? '—' : '—'}
-        </Bidang>
+  const dokumenTerkait = (
+    <div className="space-y-6">
+      <dl className="grid gap-4 rounded-md border p-4 sm:grid-cols-2">
         <Bidang label="Nilai">{formatRupiah(nilai)}</Bidang>
+        <Bidang label="Jurnal">
+          {jurnal ? (
+            <Link href={`/akuntansi/jurnal/entri/${jurnal.id}`} className="font-medium underline">
+              {jurnal.nomor}
+            </Link>
+          ) : (
+            <span className="text-muted-foreground">Tidak ada — nilai persediaan tidak berubah</span>
+          )}
+        </Bidang>
       </dl>
 
-      {jurnal ? (
-        <p className="mb-6 rounded-md border bg-muted/40 p-4 text-sm">
-          Jurnal{' '}
-          <Link href={`/akuntansi/jurnal/entri/${jurnal.id}`} className="font-medium underline">
-            {jurnal.nomor}
-          </Link>{' '}
-          sudah diposting untuk operasi ini.
-        </p>
-      ) : (
-        <p className="mb-6 rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground">
-          Operasi ini tidak menghasilkan jurnal karena nilai persediaan perusahaan tidak berubah.
-        </p>
-      )}
-
-      <h2 className="mb-3 text-sm font-medium text-muted-foreground">Pergerakan Stok</h2>
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-muted/40">
-            <tr>
-              <th className="px-4 py-2 text-left font-medium">Produk</th>
-              <th className="px-4 py-2 text-left font-medium">Dari</th>
-              <th className="px-4 py-2 text-right font-medium">Kuantitas</th>
-              <th className="px-4 py-2 text-right font-medium">Harga Pokok</th>
-              <th className="px-4 py-2 text-right font-medium">Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            {gerak.length === 0 && (
+      <div>
+        <h3 className="mb-3 text-sm font-medium text-muted-foreground">Pergerakan Stok</h3>
+        <div className="overflow-x-auto rounded-md border">
+          <table className="w-full text-sm">
+            <thead className="border-b bg-muted/40">
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                  Tidak ada pergerakan stok pada operasi ini.
-                </td>
+                <th className="px-4 py-2 text-left font-medium">Produk</th>
+                <th className="px-4 py-2 text-left font-medium">Dari</th>
+                <th className="px-4 py-2 text-right font-medium">Kuantitas</th>
+                <th className="px-4 py-2 text-right font-medium">Harga Pokok</th>
+                <th className="px-4 py-2 text-right font-medium">Nilai</th>
               </tr>
-            )}
-            {gerak.map((g) => {
-              const p = produkLewatId.get(g.produkId)
-              const s = p ? satuanLewatId.get(p.uomId) : undefined
-              return (
-                <tr key={g.id} className="border-b">
-                  <td className="px-4 py-1.5">
-                    <span className="font-mono text-xs">{p?.kode}</span> {p?.nama}
-                  </td>
-                  <td className="px-4 py-1.5 text-muted-foreground">{g.namaAsal}</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatAngka(g.kuantitas, 2)} {s?.nama}
-                  </td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatAngka(g.hargaPokokSatuan, 2)}
-                  </td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatAngka(g.nilaiTotal)}
+            </thead>
+            <tbody>
+              {gerak.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
+                    Tidak ada pergerakan stok pada operasi ini.
                   </td>
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
+              )}
+              {gerak.map((g) => {
+                const p = produkLewatId.get(g.produkId)
+                const s = p ? satuanLewatId.get(p.uomId) : undefined
+                return (
+                  <tr key={g.id} className="border-b">
+                    <td className="px-4 py-1.5">
+                      <span className="font-mono text-xs">{p?.kode}</span> {p?.nama}
+                    </td>
+                    <td className="px-4 py-1.5 text-muted-foreground">{g.namaAsal}</td>
+                    <td className="px-4 py-1.5 text-right tabular-nums">
+                      {formatAngka(g.kuantitas, 2)} {s?.nama}
+                    </td>
+                    <td className="px-4 py-1.5 text-right tabular-nums">
+                      {formatAngka(g.hargaPokokSatuan, 2)}
+                    </td>
+                    <td className="px-4 py-1.5 text-right tabular-nums">
+                      {formatAngka(g.nilaiTotal)}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
+    </div>
+  )
 
-      <div className="mt-6">
-        <Button asChild variant="outline">
-          <Link href={`/gudang/operasi/${slug}`}>Kembali ke Daftar</Link>
-        </Button>
-      </div>
-    </>
+  return (
+    <FormulirOperasi
+      awal={awal}
+      produk={semuaProduk}
+      lokasi={semuaLokasi}
+      satuan={semuaSatuan}
+      mitra={semuaMitra}
+      readOnly
+      nomor={operasi.nomor ?? labelTipeOperasi(tipe)}
+      statusBadge={<Badge variant={VARIAN[operasi.status]}>{LABEL_STATUS_OPERASI[operasi.status]}</Badge>}
+      dokumenTerkait={dokumenTerkait}
+    />
   )
 }
 

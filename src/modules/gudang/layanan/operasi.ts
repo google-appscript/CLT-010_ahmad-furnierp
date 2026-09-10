@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   stockOperations, stockOperationLines, stockMoves,
@@ -6,6 +6,7 @@ import {
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
+import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
 import {
@@ -61,18 +62,53 @@ function urai(masukan: MasukanOperasi) {
 
 // ── Pembacaan ────────────────────────────────────────────────────────────────
 
-export async function daftarOperasi(
-  saring: { tipe?: TipeOperasi; status?: Operasi['status'] } = {},
-): Promise<Operasi[]> {
-  const kueri = db.select().from(stockOperations)
-    .orderBy(desc(stockOperations.tanggal), desc(stockOperations.dibuatPada))
-  if (saring.tipe && saring.status) {
-    return kueri.where(eq(stockOperations.tipe, saring.tipe))
-      .then((r) => r.filter((o) => o.status === saring.status))
+function kolomUrutOperasi(kolom?: string) {
+  switch (kolom) {
+    case 'nomor': return stockOperations.nomor
+    case 'status': return stockOperations.status
+    case 'tanggal':
+    default:
+      return stockOperations.tanggal
   }
-  if (saring.tipe) return kueri.where(eq(stockOperations.tipe, saring.tipe))
-  if (saring.status) return kueri.where(eq(stockOperations.status, saring.status))
-  return kueri
+}
+
+export async function daftarOperasi(
+  param: ParameterDaftar & { tipe?: TipeOperasi; status?: Operasi['status'] } = { halaman: 1, ukuranHalaman: 20 },
+): Promise<HasilDaftar<Operasi>> {
+  const halaman = param.halaman || 1
+  const ukuranHalaman = param.ukuranHalaman || 20
+
+  const kondisi = []
+  if (param.tipe) kondisi.push(eq(stockOperations.tipe, param.tipe))
+  if (param.cari) {
+    kondisi.push(or(
+      ilike(stockOperations.nomor, `%${param.cari}%`),
+      ilike(stockOperations.referensi, `%${param.cari}%`),
+    ))
+  }
+
+  const statusDisaring = [
+    ...(param.status ? [param.status] : []),
+    ...(param.filter?.status ?? []),
+  ] as Operasi['status'][]
+  if (statusDisaring.length > 0) {
+    kondisi.push(inArray(stockOperations.status, statusDisaring))
+  }
+
+  const where = kondisi.length > 0 ? and(...kondisi) : undefined
+  const kolomUrut = kolomUrutOperasi(param.urutkan?.kolom)
+  const arahUrut = param.urutkan?.arah === 'asc' ? asc : desc
+
+  const [baris, [{ jumlah }]] = await Promise.all([
+    db.select().from(stockOperations)
+      .where(where)
+      .orderBy(arahUrut(kolomUrut), desc(stockOperations.dibuatPada))
+      .limit(ukuranHalaman)
+      .offset((halaman - 1) * ukuranHalaman),
+    db.select({ jumlah: sql<number>`count(*)::int` }).from(stockOperations).where(where),
+  ])
+
+  return { data: baris, totalBaris: jumlah }
 }
 
 export async function ambilOperasi(id: string): Promise<OperasiLengkap | null> {

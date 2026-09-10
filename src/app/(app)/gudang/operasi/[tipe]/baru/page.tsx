@@ -1,9 +1,8 @@
 import { notFound } from 'next/navigation'
 import { wajibIzin } from '@/lib/sesi'
 import {
-  SLUG_KE_TIPE, labelTipeOperasi, ARAH_BAWAAN, dapatDibuatManual,
+  SLUG_KE_TIPE, ARAH_BAWAAN, dapatDibuatManual,
 } from '@/modules/gudang/validasi/operasi'
-import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { FormulirOperasi } from '../../formulir-operasi'
 import { ambilDataPilihan, lokasiBawaan } from '../../data-pilihan'
 
@@ -42,24 +41,18 @@ export default async function HalamanOperasiBaru({
     : lokasiBawaan(daftarLokasi, arah.tujuan)
 
   return (
-    <>
-      <KepalaHalaman
-        judul={`${labelTipeOperasi(tipe)} Baru`}
-        deskripsi="Dokumen disimpan sebagai draft dan belum menyentuh stok sampai diselesaikan."
-      />
-      <FormulirOperasi
-        awal={{
-          tipe,
-          tanggal: new Date().toISOString().slice(0, 10),
-          lokasiAsalId: lokasiBawaan(daftarLokasi, arah.asal),
-          lokasiTujuanId: tujuanBawaan,
-          partnerId: '', referensi: '', catatan: '', baris: [],
-        }}
-        produk={daftarProduk}
-        lokasi={daftarLokasi}
-        satuan={daftarSatuan}
-        mitra={daftarMitra}
-      />
-    </>
+    <FormulirOperasi
+      awal={{
+        tipe,
+        tanggal: new Date().toISOString().slice(0, 10),
+        lokasiAsalId: lokasiBawaan(daftarLokasi, arah.asal),
+        lokasiTujuanId: tujuanBawaan,
+        partnerId: '', referensi: '', catatan: '', baris: [],
+      }}
+      produk={daftarProduk}
+      lokasi={daftarLokasi}
+      satuan={daftarSatuan}
+      mitra={daftarMitra}
+    />
   )
 }
