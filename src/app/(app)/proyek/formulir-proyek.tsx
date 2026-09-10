@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { formatAngka } from '@/lib/uang'
 import { FormulirBingkai } from '@/components/formulir/formulir-bingkai'
 import { FormulirGrid } from '@/components/formulir/formulir-grid'
 import { FormulirField } from '@/components/formulir/formulir-field'
@@ -131,7 +132,7 @@ export function FormulirProyek({
                 </SelectContent>
               </Select>
             </FormulirField>
-            <FormulirField label="Tarif per Jam" htmlFor="tarifPerJam" readOnly={readOnly} valueTampilan={awal.tarifPerJam}>
+            <FormulirField label="Tarif per Jam" htmlFor="tarifPerJam" readOnly={readOnly} valueTampilan={formatAngka(awal.tarifPerJam)}>
               <Input
                 id="tarifPerJam" name="tarifPerJam" type="number" step="0.01" min="0"
                 defaultValue={awal.tarifPerJam} className="text-right tabular-nums"
