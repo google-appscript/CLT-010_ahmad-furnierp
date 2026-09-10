@@ -14,6 +14,15 @@ export const skemaItemEntri = z.object({
   nilaiMataUang: z.string().trim().nullable().default(null),
   taxId: z.uuid().nullable().default(null),
   projectId: z.uuid().nullable().default(null),
+  /**
+   * Pembagian baris ini ke pos biaya. Kosong berarti belum dialokasikan;
+   * satu pos ditulis sebagai satu baris berpersentase seratus.
+   */
+  alokasiBiaya: z.array(z.object({
+    costCenterId: z.uuid('Pos biaya wajib dipilih'),
+    persentase: z.string().trim()
+      .refine((v) => /^\d+(\.\d{1,4})?$/.test(v), { message: 'Persentase harus berupa angka' }),
+  })).default([]),
 }).refine((b) => !(Number(b.debit) > 0 && Number(b.kredit) > 0), {
   message: 'Satu baris tidak boleh memuat debit dan kredit sekaligus',
   path: ['debit'],
