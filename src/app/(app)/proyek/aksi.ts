@@ -9,7 +9,7 @@ import {
 import {
   buatTugas, ubahTugas, ubahStatusTugas, hapusTugas,
 } from '@/modules/proyek/layanan/tugas'
-import { catatTimesheet, hapusTimesheet } from '@/modules/proyek/layanan/timesheet'
+import { catatTimesheet, ubahTimesheet, hapusTimesheet } from '@/modules/proyek/layanan/timesheet'
 import { kunciProyek, bukaKunciProyek } from '@/modules/proyek/layanan/penguncian'
 import { catatAudit } from '@/modules/identitas/layanan/audit'
 import type {
@@ -172,6 +172,21 @@ export async function aksiCatatTimesheet(masukan: MasukanTimesheet): Promise<Has
     await catatAudit({
       penggunaId: sesi.penggunaId, entitas: 'timesheets', entitasId: baris.id,
       aksi: 'buat', dataBaru: { jam: masukan.jam, tanggal: masukan.tanggal },
+    })
+    segarkan()
+    return { berhasil: true, id: baris.id }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+export async function aksiUbahTimesheet(id: string, masukan: MasukanTimesheet): Promise<HasilAksi> {
+  const sesi = await wajibIzin('proyek.timesheet.kelola')
+  try {
+    const baris = await ubahTimesheet(id, masukan)
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'timesheets', entitasId: baris.id,
+      aksi: 'ubah', dataBaru: { jam: masukan.jam, tanggal: masukan.tanggal },
     })
     segarkan()
     return { berhasil: true, id: baris.id }

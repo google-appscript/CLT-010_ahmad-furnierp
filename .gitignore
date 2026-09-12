@@ -45,3 +45,4 @@ next-env.d.ts
 
 # Worktree sesi kerja lain; bukan bagian dari kode proyek.
 .claude/
+.neon

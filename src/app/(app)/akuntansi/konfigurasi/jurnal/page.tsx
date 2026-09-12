@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
-import { DialogJurnal } from './dialog-jurnal'
+import { DialogJurnal, TombolStatusJurnal } from './dialog-jurnal'
 
 export const metadata = { title: 'Jurnal' }
 
@@ -25,8 +25,13 @@ const kolom: Kolom<Jurnal>[] = [
     ),
   },
   {
-    kunci: 'aksi', judul: '', lebar: '80px', rataKanan: true,
-    render: (j) => <DialogJurnal jurnal={j} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />,
+    kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
+    render: (j) => (
+      <>
+        <DialogJurnal jurnal={j} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+        <TombolStatusJurnal id={j.id} isActive={j.isActive} />
+      </>
+    ),
   },
 ]
 

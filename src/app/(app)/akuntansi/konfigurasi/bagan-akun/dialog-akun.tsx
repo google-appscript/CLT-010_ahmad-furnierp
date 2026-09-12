@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select'
 import { KELOMPOK_TIPE_AKUN, labelTipeAkun } from '@/modules/akuntansi/validasi/akun'
 import type { Akun } from '@/modules/akuntansi/layanan/akun'
-import { aksiSimpanAkun } from './aksi'
+import { aksiSimpanAkun, aksiUbahStatusAkun } from './aksi'
 
 export function DialogAkun({ akun, pemicu }: { akun?: Akun; pemicu: React.ReactNode }) {
   const [terbuka, setTerbuka] = useState(false)
@@ -103,5 +103,25 @@ export function DialogAkun({ akun, pemicu }: { akun?: Akun; pemicu: React.ReactN
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export function TombolStatusAkun({ id, isActive }: { id: string; isActive: boolean }) {
+  const [bekerja, mulai] = useTransition()
+
+  return (
+    <Button
+      variant="ghost" size="sm" disabled={bekerja}
+      onClick={() => mulai(async () => {
+        const hasil = await aksiUbahStatusAkun(id, !isActive)
+        if (hasil.berhasil) {
+          toast.success(isActive ? 'Akun dinonaktifkan' : 'Akun diaktifkan')
+        } else {
+          toast.error(hasil.pesan)
+        }
+      })}
+    >
+      {isActive ? 'Nonaktifkan' : 'Aktifkan'}
+    </Button>
   )
 }

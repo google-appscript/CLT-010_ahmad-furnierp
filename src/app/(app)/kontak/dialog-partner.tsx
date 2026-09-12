@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Partner } from '@/modules/akuntansi/layanan/partner'
-import { aksiSimpanPartner } from './aksi'
+import { aksiSimpanPartner, aksiUbahStatusPartner } from './aksi'
 
 export function DialogPartner({
   partner, pemicu, peranAwal,
@@ -147,5 +147,25 @@ export function DialogPartner({
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export function TombolStatusPartner({ id, isActive }: { id: string; isActive: boolean }) {
+  const [bekerja, mulai] = useTransition()
+
+  return (
+    <Button
+      variant="ghost" size="sm" disabled={bekerja}
+      onClick={() => mulai(async () => {
+        const hasil = await aksiUbahStatusPartner(id, !isActive)
+        if (hasil.berhasil) {
+          toast.success(isActive ? 'Mitra dinonaktifkan' : 'Mitra diaktifkan')
+        } else {
+          toast.error(hasil.pesan)
+        }
+      })}
+    >
+      {isActive ? 'Nonaktifkan' : 'Aktifkan'}
+    </Button>
   )
 }

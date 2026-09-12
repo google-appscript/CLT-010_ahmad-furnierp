@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
-import { DialogPengguna, type PilihanPeran } from './dialog-pengguna'
+import { DialogPengguna, TombolStatusPengguna, type PilihanPeran } from './dialog-pengguna'
 
 export const metadata = { title: 'Pengguna' }
 
@@ -39,13 +39,16 @@ function kolomPengguna(peran: PilihanPeran[]): Kolom<BarisPengguna>[] {
       ),
     },
     {
-      kunci: 'aksi', judul: '', lebar: '80px', rataKanan: true,
+      kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
       render: (p) => (
-        <DialogPengguna
-          pengguna={{ id: p.id, email: p.email, nama: p.nama }}
-          peran={peran}
-          pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
-        />
+        <>
+          <DialogPengguna
+            pengguna={{ id: p.id, email: p.email, nama: p.nama }}
+            peran={peran}
+            pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+          />
+          <TombolStatusPengguna id={p.id} isActive={p.isActive} />
+        </>
       ),
     },
   ]

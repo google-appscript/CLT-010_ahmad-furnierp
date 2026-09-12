@@ -9,7 +9,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { aksiSimpanPengguna } from './aksi'
+import { aksiSimpanPengguna, aksiUbahStatusPengguna } from './aksi'
 
 export type PilihanPeran = { id: string; nama: string }
 export type PenggunaTampil = { id: string; email: string; nama: string }
@@ -98,5 +98,25 @@ export function DialogPengguna({
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export function TombolStatusPengguna({ id, isActive }: { id: string; isActive: boolean }) {
+  const [bekerja, mulai] = useTransition()
+
+  return (
+    <Button
+      variant="ghost" size="sm" disabled={bekerja}
+      onClick={() => mulai(async () => {
+        const hasil = await aksiUbahStatusPengguna(id, !isActive)
+        if (hasil.berhasil) {
+          toast.success(isActive ? 'Pengguna dinonaktifkan' : 'Pengguna diaktifkan')
+        } else {
+          toast.error(hasil.pesan)
+        }
+      })}
+    >
+      {isActive ? 'Nonaktifkan' : 'Aktifkan'}
+    </Button>
   )
 }

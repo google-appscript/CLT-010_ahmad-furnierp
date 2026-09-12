@@ -11,7 +11,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DAFTAR_TIPE_JURNAL, labelTipeJurnal } from '@/modules/akuntansi/validasi/jurnal'
 import type { Jurnal } from '@/modules/akuntansi/layanan/jurnal'
-import { aksiSimpanJurnal } from './aksi'
+import { aksiSimpanJurnal, aksiUbahStatusJurnal } from './aksi'
 
 export function DialogJurnal({ jurnal, pemicu }: { jurnal?: Jurnal; pemicu: React.ReactNode }) {
   const [terbuka, setTerbuka] = useState(false)
@@ -106,5 +106,25 @@ export function DialogJurnal({ jurnal, pemicu }: { jurnal?: Jurnal; pemicu: Reac
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export function TombolStatusJurnal({ id, isActive }: { id: string; isActive: boolean }) {
+  const [bekerja, mulai] = useTransition()
+
+  return (
+    <Button
+      variant="ghost" size="sm" disabled={bekerja}
+      onClick={() => mulai(async () => {
+        const hasil = await aksiUbahStatusJurnal(id, !isActive)
+        if (hasil.berhasil) {
+          toast.success(isActive ? 'Jurnal dinonaktifkan' : 'Jurnal diaktifkan')
+        } else {
+          toast.error(hasil.pesan)
+        }
+      })}
+    >
+      {isActive ? 'Nonaktifkan' : 'Aktifkan'}
+    </Button>
   )
 }

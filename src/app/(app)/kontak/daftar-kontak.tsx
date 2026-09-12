@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
-import { DialogPartner } from './dialog-partner'
+import { DialogPartner, TombolStatusPartner } from './dialog-partner'
 
 /** NPWP disimpan sebagai angka; pemformatan hanya untuk tampilan. */
 function formatNpwp(npwp: string | null): string {
@@ -43,9 +43,12 @@ const kolom: Kolom<Partner>[] = [
     ),
   },
   {
-    kunci: 'aksi', judul: '', lebar: '80px', rataKanan: true,
+    kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
     render: (m) => (
-      <DialogPartner partner={m} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+      <>
+        <DialogPartner partner={m} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+        <TombolStatusPartner id={m.id} isActive={m.isActive} />
+      </>
     ),
   },
 ]

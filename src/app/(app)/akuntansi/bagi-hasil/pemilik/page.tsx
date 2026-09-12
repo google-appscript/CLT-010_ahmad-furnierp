@@ -143,22 +143,30 @@ export default async function HalamanPemilik() {
                       )}
                     </div>
                     <div>
-                      <DialogSusunan
-                        susunan={{
-                          id: s.id, nama: s.nama,
-                          tanggalMulai: s.tanggalMulai,
-                          tanggalSelesai: s.tanggalSelesai ?? '',
-                          catatan: s.catatan ?? '',
-                          porsi: s.porsi.map((p) => ({
-                            ownerId: p.ownerId, persentase: String(Number(p.persentase)),
-                          })),
-                        }}
-                        pemilik={pemilikAktif.map((p) => ({
-                          id: p.id, kode: p.kode, nama: p.nama,
-                        }))}
-                        pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
-                      />
-                      <TombolHapusSusunan id={s.id} />
+                      {s.dipakaiBagiHasil ? (
+                        <span className="text-xs text-muted-foreground">
+                          Sudah dipakai membagi laba periode terkunci — tidak dapat diubah
+                        </span>
+                      ) : (
+                        <>
+                          <DialogSusunan
+                            susunan={{
+                              id: s.id, nama: s.nama,
+                              tanggalMulai: s.tanggalMulai,
+                              tanggalSelesai: s.tanggalSelesai ?? '',
+                              catatan: s.catatan ?? '',
+                              porsi: s.porsi.map((p) => ({
+                                ownerId: p.ownerId, persentase: String(Number(p.persentase)),
+                              })),
+                            }}
+                            pemilik={pemilikAktif.map((p) => ({
+                              id: p.id, kode: p.kode, nama: p.nama,
+                            }))}
+                            pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+                          />
+                          <TombolHapusSusunan id={s.id} />
+                        </>
+                      )}
                     </div>
                   </div>
                   <table className="w-full text-sm">

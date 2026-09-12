@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
-import { DialogAkun } from './dialog-akun'
+import { DialogAkun, TombolStatusAkun } from './dialog-akun'
 
 export const metadata = { title: 'Bagan Akun' }
 
@@ -30,8 +30,13 @@ const kolom: Kolom<Akun>[] = [
     ),
   },
   {
-    kunci: 'aksi', judul: '', lebar: '80px', rataKanan: true,
-    render: (a) => <DialogAkun akun={a} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />,
+    kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
+    render: (a) => (
+      <>
+        <DialogAkun akun={a} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+        <TombolStatusAkun id={a.id} isActive={a.isActive} />
+      </>
+    ),
   },
 ]
 

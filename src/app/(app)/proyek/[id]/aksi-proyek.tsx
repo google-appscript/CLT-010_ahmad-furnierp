@@ -154,22 +154,34 @@ export function AksiPenguncian({
 
 export type PilihanPengguna = { id: string; nama: string }
 
+export type TugasUntukDiubah = {
+  id: string
+  nama: string
+  deskripsi: string | null
+  penanggungJawabId: string | null
+  tanggalMulai: string | null
+  tenggat: string | null
+  estimasiJam: string
+}
+
 const TANPA_PJ = 'tanpa-pj'
 
 export function DialogTugas({
-  proyekId, pengguna,
+  proyekId, pengguna, tugas, pemicu,
 }: {
   proyekId: string
   pengguna: PilihanPengguna[]
+  tugas?: TugasUntukDiubah
+  pemicu?: React.ReactNode
 }) {
   const router = useRouter()
   const [terbuka, setTerbuka] = useState(false)
   const [bekerja, mulai] = useTransition()
-  const [penanggungJawabId, setPenanggungJawabId] = useState(TANPA_PJ)
+  const [penanggungJawabId, setPenanggungJawabId] = useState(tugas?.penanggungJawabId ?? TANPA_PJ)
 
   function simpan(data: FormData) {
     mulai(async () => {
-      const hasil = await aksiSimpanTugas(null, {
+      const hasil = await aksiSimpanTugas(tugas?.id ?? null, {
         proyekId,
         nama: String(data.get('nama') ?? ''),
         deskripsi: String(data.get('deskripsi') ?? '') || null,
@@ -180,7 +192,7 @@ export function DialogTugas({
       })
 
       if (hasil.berhasil) {
-        toast.success('Tugas ditambahkan')
+        toast.success(tugas ? 'Tugas diperbarui' : 'Tugas ditambahkan')
         setTerbuka(false)
         router.refresh()
       } else {
@@ -192,21 +204,23 @@ export function DialogTugas({
   return (
     <Dialog open={terbuka} onOpenChange={setTerbuka}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="mr-2 h-4 w-4" />Tambah Tugas
-        </Button>
+        {pemicu ?? (
+          <Button variant="outline" size="sm">
+            <Plus className="mr-2 h-4 w-4" />Tambah Tugas
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader><DialogTitle>Tambah Tugas</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{tugas ? 'Ubah Tugas' : 'Tambah Tugas'}</DialogTitle></DialogHeader>
 
         <form action={simpan} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nama">Nama Tugas</Label>
-            <Input id="nama" name="nama" required />
+            <Input id="nama" name="nama" required defaultValue={tugas?.nama} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="deskripsi">Deskripsi</Label>
-            <Textarea id="deskripsi" name="deskripsi" rows={2} />
+            <Textarea id="deskripsi" name="deskripsi" rows={2} defaultValue={tugas?.deskripsi ?? ''} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -227,16 +241,16 @@ export function DialogTugas({
               <Label htmlFor="estimasiJam">Estimasi Jam</Label>
               <Input
                 id="estimasiJam" name="estimasiJam" type="number" step="0.01" min="0"
-                defaultValue="0" className="text-right tabular-nums"
+                defaultValue={tugas?.estimasiJam ?? '0'} className="text-right tabular-nums"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tanggalMulai">Tanggal Mulai</Label>
-              <Input id="tanggalMulai" name="tanggalMulai" type="date" />
+              <Input id="tanggalMulai" name="tanggalMulai" type="date" defaultValue={tugas?.tanggalMulai ?? ''} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tenggat">Tenggat</Label>
-              <Input id="tenggat" name="tenggat" type="date" />
+              <Input id="tenggat" name="tenggat" type="date" defaultValue={tugas?.tenggat ?? ''} />
             </div>
           </div>
 

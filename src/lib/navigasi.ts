@@ -68,7 +68,7 @@ export const NAVIGASI: ItemMenu[] = [
       {
         label: 'Produk', fase: 2,
         anak: [
-          { label: 'Daftar Produk', rute: '/gudang/produk', izin: 'gudang.produk.lihat', fase: 2 },
+          { label: 'Daftar Produk', rute: '/gudang/produk', izin: 'gudang.produk.kelola', fase: 2 },
           { label: 'Kategori Produk', rute: '/gudang/produk/kategori', izin: 'gudang.kategori.kelola', fase: 2 },
           { label: 'Satuan', rute: '/gudang/produk/satuan', izin: 'gudang.satuan.kelola', fase: 2 },
         ],

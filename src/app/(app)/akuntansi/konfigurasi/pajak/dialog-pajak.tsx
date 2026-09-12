@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Pajak } from '@/modules/akuntansi/layanan/pajak'
-import { aksiSimpanPajak } from './aksi'
+import { aksiSimpanPajak, aksiUbahStatusPajak } from './aksi'
 
 export type PilihanAkun = { id: string; kode: string; nama: string }
 
@@ -123,5 +123,25 @@ export function DialogPajak({
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export function TombolStatusPajak({ id, isActive }: { id: string; isActive: boolean }) {
+  const [bekerja, mulai] = useTransition()
+
+  return (
+    <Button
+      variant="ghost" size="sm" disabled={bekerja}
+      onClick={() => mulai(async () => {
+        const hasil = await aksiUbahStatusPajak(id, !isActive)
+        if (hasil.berhasil) {
+          toast.success(isActive ? 'Pajak dinonaktifkan' : 'Pajak diaktifkan')
+        } else {
+          toast.error(hasil.pesan)
+        }
+      })}
+    >
+      {isActive ? 'Nonaktifkan' : 'Aktifkan'}
+    </Button>
   )
 }

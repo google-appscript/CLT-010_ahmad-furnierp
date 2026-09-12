@@ -100,16 +100,22 @@ export async function ubahStatusPemilik(id: string, isActive: boolean): Promise<
   if (!pemilik) throw new ValidasiError('Pemilik tidak ditemukan')
 
   if (!isActive) {
-    const [terpakai] = await db.select({ id: ownershipShares.id }).from(ownershipShares)
-      .innerJoin(ownershipPeriods, eq(ownershipPeriods.id, ownershipShares.periodeId))
-      .where(and(
-        eq(ownershipShares.ownerId, id),
-        eq(ownershipPeriods.tanggalSelesai, null as never),
-      )).limit(1)
-    if (terpakai) {
-      throw new ValidasiError(
-        `${pemilik.nama} masih tercantum pada susunan kepemilikan yang berlaku.`,
-      )
+    const hariIni = new Date().toISOString().slice(0, 10)
+    const kandidat = await db.select().from(ownershipPeriods)
+      .orderBy(desc(ownershipPeriods.tanggalMulai))
+    const berlaku = kandidat.find(
+      (s) => s.tanggalMulai <= hariIni
+        && (s.tanggalSelesai === null || s.tanggalSelesai >= hariIni),
+    )
+    if (berlaku) {
+      const [terpakai] = await db.select({ id: ownershipShares.id }).from(ownershipShares)
+        .where(and(eq(ownershipShares.ownerId, id), eq(ownershipShares.periodeId, berlaku.id)))
+        .limit(1)
+      if (terpakai) {
+        throw new ValidasiError(
+          `${pemilik.nama} masih tercantum pada susunan kepemilikan yang berlaku.`,
+        )
+      }
     }
   }
 
@@ -123,6 +129,7 @@ export async function ubahStatusPemilik(id: string, isActive: boolean): Promise<
 export type SusunanLengkap = SusunanKepemilikan & {
   porsi: (PorsiKepemilikan & { kodePemilik: string; namaPemilik: string })[]
   totalPersentase: Uang
+  dipakaiBagiHasil: boolean
 }
 
 export async function daftarSusunan(): Promise<SusunanLengkap[]> {
@@ -140,6 +147,10 @@ export async function daftarSusunan(): Promise<SusunanLengkap[]> {
     .innerJoin(owners, eq(owners.id, ownershipShares.ownerId))
     .orderBy(asc(owners.kode))
 
+  const dipakai = await db.select({ ownershipPeriodId: profitPeriods.ownershipPeriodId })
+    .from(profitPeriods)
+  const idTerpakai = new Set(dipakai.map((d) => d.ownershipPeriodId).filter((id) => id !== null))
+
   return susunan.map((s) => {
     const miliknya = porsi
       .filter((p) => p.porsi.periodeId === s.id)
@@ -151,6 +162,7 @@ export async function daftarSusunan(): Promise<SusunanLengkap[]> {
         tambah(...(miliknya.length > 0 ? miliknya.map((p) => p.persentase) : ['0'])),
         DESIMAL_PERSEN,
       ),
+      dipakaiBagiHasil: idTerpakai.has(s.id),
     }
   })
 }

@@ -11,6 +11,7 @@ import { periodeBawaan, tanggalPanjang } from '@/app/(app)/akuntansi/laporan/per
 import { ambilProyekTerbuka } from '../data-pilihan'
 import { FormulirTimesheet } from './formulir-timesheet'
 import { TombolHapusTimesheet } from './tombol-hapus'
+import { DialogUbahTimesheet } from './dialog-ubah-timesheet'
 
 export const metadata = { title: 'Timesheet' }
 
@@ -32,7 +33,8 @@ export default async function HalamanTimesheet({
   ])
 
   const proyekTertutup = new Set(
-    statusProyek.filter((p) => p.status === 'selesai' || p.status === 'dibatalkan')
+    statusProyek
+      .filter((p) => p.status === 'selesai' || p.status === 'dibatalkan' || p.status === 'terkunci')
       .map((p) => p.id),
   )
 
@@ -80,7 +82,7 @@ export default async function HalamanTimesheet({
                 <th className="px-4 py-2 text-right font-medium">Jam</th>
                 <th className="px-4 py-2 text-right font-medium">Tarif</th>
                 <th className="px-4 py-2 text-right font-medium">Biaya</th>
-                <th className="w-20 px-4 py-2" />
+                <th className="w-32 px-4 py-2" />
               </tr>
             </thead>
             <tbody>
@@ -102,7 +104,20 @@ export default async function HalamanTimesheet({
                   </td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(b.biaya)}</td>
                   <td className="px-4 py-1.5 text-right">
-                    {!proyekTertutup.has(b.proyekId) && <TombolHapusTimesheet id={b.id} />}
+                    {!proyekTertutup.has(b.proyekId) && (
+                      <>
+                        <DialogUbahTimesheet
+                          baris={{
+                            id: b.id, proyekId: b.proyekId, tugasId: b.tugasId,
+                            penggunaId: b.penggunaId, tanggal: b.tanggal, jam: b.jam,
+                            deskripsi: b.deskripsi,
+                          }}
+                          tugas={tugas}
+                          pengguna={pengguna}
+                        />
+                        <TombolHapusTimesheet id={b.id} />
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

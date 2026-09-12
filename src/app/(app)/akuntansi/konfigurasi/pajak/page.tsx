@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
-import { DialogPajak, type PilihanAkun } from './dialog-pajak'
+import { DialogPajak, TombolStatusPajak, type PilihanAkun } from './dialog-pajak'
 
 export const metadata = { title: 'Pajak' }
 
@@ -52,9 +52,12 @@ function kolomPajak(akunPajak: PilihanAkun[]): Kolom<Pajak>[] {
       ),
     },
     {
-      kunci: 'aksi', judul: '', lebar: '80px', rataKanan: true,
+      kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
       render: (p) => (
-        <DialogPajak pajak={p} akunPajak={akunPajak} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+        <>
+          <DialogPajak pajak={p} akunPajak={akunPajak} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+          <TombolStatusPajak id={p.id} isActive={p.isActive} />
+        </>
       ),
     },
   ]

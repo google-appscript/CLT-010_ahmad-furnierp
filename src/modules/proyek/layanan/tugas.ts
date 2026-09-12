@@ -70,7 +70,7 @@ export async function ambilTugas(id: string): Promise<Tugas | null> {
 async function wajibProyekTerbuka(proyekId: string): Promise<void> {
   const [proyek] = await db.select().from(projects).where(eq(projects.id, proyekId)).limit(1)
   if (!proyek) throw new ValidasiError('Proyek tidak ditemukan')
-  if (proyek.status === 'selesai' || proyek.status === 'dibatalkan') {
+  if (proyek.status === 'selesai' || proyek.status === 'dibatalkan' || proyek.status === 'terkunci') {
     throw new ValidasiError(`Proyek ${proyek.kode} sudah ditutup`)
   }
 }
@@ -135,6 +135,7 @@ export async function ubahStatusTugas(id: string, status: Tugas['status']): Prom
 export async function hapusTugas(id: string): Promise<void> {
   const tugas = await ambilTugas(id)
   if (!tugas) throw new ValidasiError('Tugas tidak ditemukan')
+  await wajibProyekTerbuka(tugas.proyekId)
 
   const [adaJam] = await db.select({ id: timesheets.id }).from(timesheets)
     .where(eq(timesheets.tugasId, id)).limit(1)

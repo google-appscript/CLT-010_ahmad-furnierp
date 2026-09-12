@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { wajibIzin } from '@/lib/sesi'
-import { buatPajak, ubahPajak, nonaktifkanPajak, aktifkanPajak } from '@/modules/akuntansi/layanan/pajak'
+import { buatProduk, ubahProduk, ubahStatusProduk } from '@/modules/gudang/layanan/produk'
 import { catatAudit } from '@/modules/identitas/layanan/audit'
-import type { MasukanPajak } from '@/modules/akuntansi/validasi/pajak'
+import type { MasukanProduk } from '@/modules/gudang/validasi/produk'
 
-const IZIN = 'akuntansi.pajak.kelola'
-const RUTE = '/akuntansi/konfigurasi/pajak'
+const IZIN = 'gudang.produk.kelola'
+const RUTE = '/gudang/produk'
 
 export type HasilAksi = { berhasil: true } | { berhasil: false; pesan: string }
 
@@ -15,12 +15,12 @@ function keHasil(galat: unknown): HasilAksi {
   return { berhasil: false, pesan: galat instanceof Error ? galat.message : 'Terjadi kesalahan' }
 }
 
-export async function aksiSimpanPajak(id: string | null, masukan: MasukanPajak): Promise<HasilAksi> {
+export async function aksiSimpanProduk(id: string | null, masukan: MasukanProduk): Promise<HasilAksi> {
   const sesi = await wajibIzin(IZIN)
   try {
-    const pajak = id ? await ubahPajak(id, masukan) : await buatPajak(masukan)
+    const produk = id ? await ubahProduk(id, masukan) : await buatProduk(masukan)
     await catatAudit({
-      penggunaId: sesi.penggunaId, entitas: 'taxes', entitasId: pajak.id,
+      penggunaId: sesi.penggunaId, entitas: 'products', entitasId: produk.id,
       aksi: id ? 'ubah' : 'buat', dataBaru: masukan,
     })
     revalidatePath(RUTE)
@@ -30,13 +30,12 @@ export async function aksiSimpanPajak(id: string | null, masukan: MasukanPajak):
   }
 }
 
-export async function aksiUbahStatusPajak(id: string, aktif: boolean): Promise<HasilAksi> {
+export async function aksiUbahStatusProduk(id: string, aktif: boolean): Promise<HasilAksi> {
   const sesi = await wajibIzin(IZIN)
   try {
-    if (aktif) await aktifkanPajak(id)
-    else await nonaktifkanPajak(id)
+    await ubahStatusProduk(id, aktif)
     await catatAudit({
-      penggunaId: sesi.penggunaId, entitas: 'taxes', entitasId: id,
+      penggunaId: sesi.penggunaId, entitas: 'products', entitasId: id,
       aksi: 'ubah', dataBaru: { isActive: aktif },
     })
     revalidatePath(RUTE)
