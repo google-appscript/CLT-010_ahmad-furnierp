@@ -1,12 +1,11 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { LABEL_STATUS_PEMBELIAN } from '@/modules/pembelian/validasi/pesanan'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DaftarPesanan } from '../daftar-pesanan'
 
 export const metadata = { title: 'Pesanan Pembelian' }
@@ -36,11 +35,7 @@ export default async function HalamanPesanan({
         judul="Pesanan Pembelian"
         deskripsi="Seluruh dokumen pembelian beserta tahapannya."
         aksi={
-          <Button asChild>
-            <Link href="/pembelian/pesanan/baru">
-              <Plus className="mr-2 h-4 w-4" />Buat Permintaan
-            </Link>
-          </Button>
+          <TombolBuat href="/pembelian/pesanan/baru">Buat Permintaan</TombolBuat>
         }
       />
       <PanelPencarian

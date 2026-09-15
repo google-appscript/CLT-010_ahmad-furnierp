@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,6 +9,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 
 export type PilihanPos = { id: string; kode: string; nama: string }
 
@@ -178,12 +179,9 @@ function DialogAlokasi({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button
+            <TombolBuat
               type="button" variant="outline" size="sm"
-              onClick={() => setBaris((l) => [...l, { costCenterId: '', persentase: '' }])}
-            >
-              <Plus className="mr-2 h-4 w-4" />Tambah Pos
-            </Button>
+              onClick={() => setBaris((l) => [...l, { costCenterId: '', persentase: '' }])}>Tambah Pos</TombolBuat>
             <Button type="button" variant="outline" size="sm" onClick={ratakan}>
               Ratakan
             </Button>

@@ -1,13 +1,13 @@
 import { asc } from 'drizzle-orm'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { accounts } from '@/db/schema'
 import { daftarKategoriAset } from '@/modules/aset/layanan/kategori'
 import { LABEL_METODE } from '@/modules/aset/validasi/aset'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { DialogKategoriAset, TombolStatusKategoriAset } from './dialog-kategori'
 
 export const metadata = { title: 'Kategori Aset' }
@@ -33,7 +33,7 @@ export default async function HalamanKategoriAset() {
         aksi={
           <DialogKategoriAset
             akun={akunAktif}
-            pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Kategori</Button>}
+            pemicu={<TombolBuat>Tambah Kategori</TombolBuat>}
           />
         }
       />
@@ -90,7 +90,7 @@ export default async function HalamanKategoriAset() {
                       masaManfaatBulanBawaan: k.masaManfaatBulanBawaan,
                     }}
                     akun={akunAktif}
-                    pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+                    pemicu={<TombolUbah />}
                   />
                   <TombolStatusKategoriAset id={k.id} isActive={k.isActive} />
                 </td>

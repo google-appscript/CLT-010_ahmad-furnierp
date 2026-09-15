@@ -1,10 +1,10 @@
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { daftarPartner, type Partner } from '@/modules/akuntansi/layanan/partner'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { DialogPartner, TombolStatusPartner } from './dialog-partner'
 
 /** NPWP disimpan sebagai angka; pemformatan hanya untuk tampilan. */
@@ -46,7 +46,7 @@ const kolom: Kolom<Partner>[] = [
     kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
     render: (m) => (
       <>
-        <DialogPartner partner={m} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+        <DialogPartner partner={m} pemicu={<TombolUbah />} />
         <TombolStatusPartner id={m.id} isActive={m.isActive} />
       </>
     ),
@@ -71,7 +71,7 @@ export async function DaftarKontak({
         aksi={
           <DialogPartner
             peranAwal={peran}
-            pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Mitra</Button>}
+            pemicu={<TombolBuat>Tambah Mitra</TombolBuat>}
           />
         }
       />

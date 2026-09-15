@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { TombolHapus } from '@/components/data/tombol-aksi'
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
@@ -40,12 +41,8 @@ export function AksiPermintaan({ id }: { id: string }) {
       >
         Batalkan
       </Button>
-      <Button
-        variant="outline" disabled={bekerja}
-        onClick={() => jalankan(() => aksiHapusPermintaan(id), 'Permintaan dihapus')}
-      >
-        Hapus
-      </Button>
+      <TombolHapus size="default" disabled={bekerja}
+        onClick={() => jalankan(() => aksiHapusPermintaan(id), 'Permintaan dihapus')} />
     </div>
   )
 }

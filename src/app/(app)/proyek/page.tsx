@@ -1,12 +1,11 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { LABEL_STATUS_PROYEK } from '@/modules/proyek/validasi/proyek'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DaftarProyek } from './daftar-proyek'
 
 export const metadata = { title: 'Daftar Proyek' }
@@ -36,9 +35,7 @@ export default async function HalamanDaftarProyek({
         judul="Daftar Proyek"
         deskripsi="Satu proyek memegang tepat satu pesanan penjualan, sehingga pendapatannya dapat dihitung tanpa alokasi."
         aksi={
-          <Button asChild>
-            <Link href="/proyek/baru"><Plus className="mr-2 h-4 w-4" />Buat Proyek</Link>
-          </Button>
+          <TombolBuat href="/proyek/baru">Buat Proyek</TombolBuat>
         }
       />
       <PanelPencarian

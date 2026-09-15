@@ -1,10 +1,10 @@
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { daftarJurnal, labelTipeJurnal, type Jurnal } from '@/modules/akuntansi/layanan/jurnal'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { DialogJurnal, TombolStatusJurnal } from './dialog-jurnal'
 
 export const metadata = { title: 'Jurnal' }
@@ -28,7 +28,7 @@ const kolom: Kolom<Jurnal>[] = [
     kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
     render: (j) => (
       <>
-        <DialogJurnal jurnal={j} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+        <DialogJurnal jurnal={j} pemicu={<TombolUbah />} />
         <TombolStatusJurnal id={j.id} isActive={j.isActive} />
       </>
     ),
@@ -44,7 +44,7 @@ export default async function HalamanJurnal() {
       <KepalaHalaman
         judul="Jurnal"
         deskripsi="Setiap jurnal memiliki urutan penomorannya sendiri yang dibuat otomatis."
-        aksi={<DialogJurnal pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Jurnal</Button>} />}
+        aksi={<DialogJurnal pemicu={<TombolBuat>Tambah Jurnal</TombolBuat>} />}
       />
       <TabelData
         kolom={kolom}

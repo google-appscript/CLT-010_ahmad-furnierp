@@ -1,5 +1,4 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { daftarAset, daftarKategoriAset, ringkasanAset } from '@/modules/aset/layanan/aset'
 import { LABEL_STATUS_ASET, LABEL_METODE } from '@/modules/aset/validasi/aset'
@@ -7,10 +6,10 @@ import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
 import { BarisKlik } from '@/components/data/tabel-data-interaktif'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 
 export const metadata = { title: 'Daftar Aset' }
 
@@ -58,9 +57,7 @@ export default async function HalamanDaftarAset({
         judul="Daftar Aset"
         deskripsi="Register aset tetap beserta akumulasi depresiasi dan nilai bukunya. Perolehan aset tidak diposting di sini — nilainya sudah masuk buku besar lewat tagihan pembelian atau saldo awal."
         aksi={
-          <Button asChild>
-            <Link href="/akuntansi/aset/baru"><Plus className="mr-2 h-4 w-4" />Daftarkan Aset</Link>
-          </Button>
+          <TombolBuat href="/akuntansi/aset/baru">Daftarkan Aset</TombolBuat>
         }
       />
       <PanelPencarian

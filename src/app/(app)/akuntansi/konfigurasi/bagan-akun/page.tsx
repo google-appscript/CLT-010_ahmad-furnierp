@@ -1,11 +1,11 @@
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { daftarAkun, type Akun } from '@/modules/akuntansi/layanan/akun'
 import { labelTipeAkun } from '@/modules/akuntansi/validasi/akun'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { DialogAkun, TombolStatusAkun } from './dialog-akun'
 
 export const metadata = { title: 'Bagan Akun' }
@@ -33,7 +33,7 @@ const kolom: Kolom<Akun>[] = [
     kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
     render: (a) => (
       <>
-        <DialogAkun akun={a} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+        <DialogAkun akun={a} pemicu={<TombolUbah />} />
         <TombolStatusAkun id={a.id} isActive={a.isActive} />
       </>
     ),
@@ -50,7 +50,7 @@ export default async function HalamanBaganAkun() {
         judul="Bagan Akun"
         deskripsi="Tipe akun menentukan penempatan setiap akun pada Laba Rugi dan Neraca."
         aksi={
-          <DialogAkun pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Akun</Button>} />
+          <DialogAkun pemicu={<TombolBuat>Tambah Akun</TombolBuat>} />
         }
       />
       <TabelData

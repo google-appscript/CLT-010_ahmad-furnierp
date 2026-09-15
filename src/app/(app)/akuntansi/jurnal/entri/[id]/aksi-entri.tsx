@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { TombolHapus } from '@/components/data/tombol-aksi'
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
@@ -55,7 +56,7 @@ export function AksiDraft({ id }: { id: string }) {
         {bekerja ? 'Memproses…' : 'Posting Entri'}
       </Button>
       <Button variant="outline" onClick={batalkan} disabled={bekerja}>Batalkan</Button>
-      <Button variant="outline" onClick={hapus} disabled={bekerja}>Hapus</Button>
+      <TombolHapus size="default" onClick={hapus} disabled={bekerja} />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { TombolHapus } from '@/components/data/tombol-aksi'
 import {
   aksiSelesaikanOperasi, aksiBatalkanOperasi, aksiHapusOperasi,
 } from '../../aksi'
@@ -38,12 +39,8 @@ export function AksiDraftOperasi({ id, tipe }: { id: string; tipe: string }) {
       >
         Batalkan
       </Button>
-      <Button
-        variant="outline" disabled={bekerja}
-        onClick={() => jalankan(() => aksiHapusOperasi(id, tipe), 'Draft dihapus')}
-      >
-        Hapus
-      </Button>
+      <TombolHapus size="default" disabled={bekerja}
+        onClick={() => jalankan(() => aksiHapusOperasi(id, tipe), 'Draft dihapus')} />
     </div>
   )
 }

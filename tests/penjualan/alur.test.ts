@@ -7,7 +7,7 @@ import {
   warehouses, locations, partners, taxes, salesOrderLines, stockMoves,
 } from '@/db/schema'
 import {
-  buatPesanan, konfirmasiPesanan, batalkanPesanan, hapusPenawaran,
+  buatPesanan, buatPesananLangsung, konfirmasiPesanan, batalkanPesanan, hapusPenawaran,
   ambilPesanan, barisDenganSisa, totalPesanan, daftarPesanan,
 } from '@/modules/penjualan/layanan/pesanan'
 import { kirimDariPesanan, pengirimanPesanan } from '@/modules/penjualan/layanan/pengiriman'
@@ -241,6 +241,37 @@ describe('penawaran penjualan', () => {
     const so = await buatPesanan(pesananDasar(), penggunaId)
     await konfirmasiPesanan(so.id, penggunaId)
     await expect(hapusPenawaran(so.id)).rejects.toThrow('sudah menjadi komitmen')
+  })
+})
+
+// ── Pesanan langsung ─────────────────────────────────────────────────────────
+
+describe('pesanan penjualan tanpa penawaran', () => {
+  it('terbit langsung sebagai pesanan bernomor', async () => {
+    const so = await buatPesananLangsung(pesananDasar(), penggunaId)
+    expect(so.status).toBe('dikonfirmasi')
+    expect(so.nomor).toBe('SO/2026/06/0001')
+    expect(so.dikonfirmasiOleh).toBe(penggunaId)
+    expect(so.baris).toHaveLength(1)
+  })
+
+  it('memakai urutan nomor yang sama dengan penawaran yang dikonfirmasi', async () => {
+    const penawaran = await buatPesanan(pesananDasar(), penggunaId)
+    await konfirmasiPesanan(penawaran.id, penggunaId)
+    const langsung = await buatPesananLangsung(pesananDasar(), penggunaId)
+    expect(langsung.nomor).toBe('SO/2026/06/0002')
+  })
+
+  it('menolak gudang asal yang bukan lokasi internal', async () => {
+    await expect(buatPesananLangsung(pesananDasar({ lokasiAsalId: lokasiPemasokId }), penggunaId))
+      .rejects.toThrow('harus lokasi internal')
+  })
+
+  it('tidak menerbitkan nomor bila barisnya ditolak validasi', async () => {
+    await expect(buatPesananLangsung(pesananDasar({ baris: [] }), penggunaId))
+      .rejects.toThrow('minimal satu baris')
+    const sesudah = await daftarPesanan({ halaman: 1, ukuranHalaman: 20 })
+    expect(sesudah.totalBaris).toBe(0)
   })
 })
 
@@ -608,6 +639,37 @@ describe('daftarPesanan', () => {
 
     const hasilLama = await daftarPesanan({ halaman: 1, ukuranHalaman: 20, status: 'penawaran' })
     expect(hasilLama.data.map((p) => p.id)).toEqual([so2.id])
+  })
+
+  it('bernomor memisahkan penawaran dari pesanan, termasuk yang dibatalkan', async () => {
+    const pesananBatal = await buatPesananLangsung(pesananDasar(), penggunaId)
+    await batalkanPesanan(pesananBatal.id)
+    const penawaranDitolak = await buatPesanan(
+      pesananDasar({ partnerId: pelangganKeduaId }), penggunaId,
+    )
+    await batalkanPesanan(penawaranDitolak.id)
+
+    // Keduanya berstatus 'dibatalkan'; hanya nomornya yang membedakan.
+    const daftarPenawaran = await daftarPesanan({
+      halaman: 1, ukuranHalaman: 20, bernomor: false,
+    })
+    expect(daftarPenawaran.data.map((p) => p.id)).toEqual([penawaranDitolak.id])
+
+    const daftarPesananSaja = await daftarPesanan({
+      halaman: 1, ukuranHalaman: 20, bernomor: true,
+    })
+    expect(daftarPesananSaja.data.map((p) => p.id)).toEqual([pesananBatal.id])
+  })
+
+  it('statusTermasuk mempersempit cakupan, bukan menambah', async () => {
+    const so1 = await buatPesananLangsung(pesananDasar(), penggunaId)
+    const penawaran = await buatPesanan(pesananDasar({ partnerId: pelangganKeduaId }), penggunaId)
+
+    const hasil = await daftarPesanan({
+      halaman: 1, ukuranHalaman: 20, statusTermasuk: ['dikonfirmasi', 'selesai'],
+    })
+    expect(hasil.data.map((p) => p.id)).toEqual([so1.id])
+    expect(hasil.data.map((p) => p.id)).not.toContain(penawaran.id)
   })
 
   it('halaman/ukuranHalaman membatasi data tapi totalBaris tetap total sesungguhnya', async () => {

@@ -1,17 +1,19 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { LABEL_STATUS_PENJUALAN } from '@/modules/penjualan/validasi/pesanan'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DaftarPesanan } from '../daftar-pesanan'
 
 export const metadata = { title: 'Pesanan Penjualan' }
 
 const KUNCI_DAFTAR = 'penjualan.pesanan'
+
+/** Penawaran punya layarnya sendiri dan tidak ikut muncul di sini. */
+const CAKUPAN = ['dikonfirmasi', 'selesai', 'dibatalkan'] as const
 
 export default async function HalamanPesanan({
   searchParams,
@@ -34,13 +36,9 @@ export default async function HalamanPesanan({
     <>
       <KepalaHalaman
         judul="Pesanan Penjualan"
-        deskripsi="Seluruh dokumen penjualan beserta tahapannya."
+        deskripsi="Komitmen yang sudah disepakati pelanggan, baik berasal dari penawaran maupun dibuat langsung."
         aksi={
-          <Button asChild>
-            <Link href="/penjualan/pesanan/baru">
-              <Plus className="mr-2 h-4 w-4" />Buat Penawaran
-            </Link>
-          </Button>
+          <TombolBuat href="/penjualan/pesanan/baru">Buat Pesanan</TombolBuat>
         }
       />
       <PanelPencarian
@@ -49,7 +47,7 @@ export default async function HalamanPesanan({
           {
             kunci: 'status',
             label: 'Status',
-            opsi: Object.entries(LABEL_STATUS_PENJUALAN).map(([nilai, label]) => ({ nilai, label })),
+            opsi: CAKUPAN.map((nilai) => ({ nilai, label: LABEL_STATUS_PENJUALAN[nilai] })),
           },
         ]}
         kolomGroupBy={[
@@ -58,7 +56,7 @@ export default async function HalamanPesanan({
         ]}
         favorit={favorit.map((f) => ({ ...f, kriteria: f.kriteria as ParameterDaftar }))}
       />
-      <DaftarPesanan param={param} />
+      <DaftarPesanan param={{ ...param, statusTermasuk: [...CAKUPAN], bernomor: true }} />
     </>
   )
 }

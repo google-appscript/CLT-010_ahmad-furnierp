@@ -1,12 +1,12 @@
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { daftarMataUang, daftarKurs, type BarisKurs } from '@/modules/akuntansi/layanan/konfigurasi'
 import { MATA_UANG_FUNGSIONAL } from '@/modules/akuntansi/layanan/kurs'
 import { formatAngka } from '@/lib/uang'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DialogKurs, type PilihanMataUang } from './dialog-kurs'
 
 export const metadata = { title: 'Mata Uang & Kurs' }
@@ -33,7 +33,7 @@ export default async function HalamanMataUang() {
         aksi={
           <DialogKurs
             mataUang={pilihan}
-            pemicu={<Button><Plus className="mr-2 h-4 w-4" />Catat Kurs</Button>}
+            pemicu={<TombolBuat>Catat Kurs</TombolBuat>}
           />
         }
       />

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Plus } from 'lucide-react'
+
 import { asc } from 'drizzle-orm'
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
@@ -12,11 +12,11 @@ import {
 } from '@/modules/gudang/validasi/operasi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 
 const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
   selesai: 'default', draft: 'secondary', dibatalkan: 'outline',
@@ -96,11 +96,9 @@ export default async function HalamanDaftarOperasi({
         judul={labelTipeOperasi(tipe)}
         deskripsi={DESKRIPSI_TIPE[tipe]}
         aksi={dapatDibuatManual(tipe) ? (
-          <Button asChild>
-            <Link href={`/gudang/operasi/${slug}/baru`}>
-              <Plus className="mr-2 h-4 w-4" />Buat {labelTipeOperasi(tipe)}
-            </Link>
-          </Button>
+          <TombolBuat asChild><Link href={`/gudang/operasi/${slug}/baru`}>
+              Buat {labelTipeOperasi(tipe)}
+            </Link></TombolBuat>
         ) : undefined}
       />
 

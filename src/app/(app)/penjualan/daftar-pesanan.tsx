@@ -17,9 +17,22 @@ type BarisPesanan = Pesanan & { totalTagihan: string }
 
 export async function DaftarPesanan({
   param,
+  basisRute = '/penjualan/pesanan',
+  labelDitolak = false,
 }: {
-  param: ParameterDaftar & { status?: Pesanan['status'] }
+  param: ParameterDaftar & {
+    status?: Pesanan['status']
+    statusTermasuk?: Pesanan['status'][]
+    bernomor?: boolean
+  }
+  /** Rute detail dokumen; penawaran dan pesanan dibuka di layar berbeda. */
+  basisRute?: string
+  /** Pada daftar penawaran, status `dibatalkan` dibaca sebagai penawaran yang ditolak. */
+  labelDitolak?: boolean
 }) {
+  const labelStatus = (status: string) =>
+    labelDitolak && status === 'dibatalkan' ? 'Ditolak' : LABEL_STATUS_PENJUALAN[status] ?? status
+
   const [{ data: pesanan, totalBaris }, semuaMitra] = await Promise.all([
     daftarPesanan(param),
     db.select({ id: partners.id, nama: partners.nama }).from(partners).orderBy(asc(partners.nama)),
@@ -51,14 +64,14 @@ export async function DaftarPesanan({
     {
       kunci: 'status',
       judul: 'Status',
-      render: (p) => <Badge variant={VARIAN[p.status]}>{LABEL_STATUS_PENJUALAN[p.status]}</Badge>,
+      render: (p) => <Badge variant={VARIAN[p.status]}>{labelStatus(p.status)}</Badge>,
     },
   ]
 
   const pengelompokan = param.kelompokkan === 'status'
     ? {
         kelompokkanDari: (p: BarisPesanan) => p.status,
-        label: (nilaiGrup: string) => LABEL_STATUS_PENJUALAN[nilaiGrup] ?? nilaiGrup,
+        label: labelStatus,
       }
     : param.kelompokkan === 'partnerId'
       ? {
@@ -73,7 +86,7 @@ export async function DaftarPesanan({
       baris={baris}
       kunciBaris={(p) => p.id}
       pesanKosong="Belum ada dokumen."
-      hrefBaris={(p) => `/penjualan/pesanan/${p.id}`}
+      hrefBaris={(p) => `${basisRute}/${p.id}`}
       pagination={{ halaman: param.halaman, ukuranHalaman: param.ukuranHalaman, totalBaris }}
       pengelompokan={pengelompokan}
     />

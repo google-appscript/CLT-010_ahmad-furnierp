@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus } from 'lucide-react'
+
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { formatAngka } from '@/lib/uang'
 import { aksiBuatPembayaran, aksiPostingPembayaran } from '../aksi'
 
@@ -46,11 +47,35 @@ export function DialogPenerimaan({
       ? { [fakturAwal]: String(Number(faktur.find((f) => f.id === fakturAwal)?.sisa ?? 0)) }
       : {},
   )
+  const [jumlah, setJumlah] = useState(
+    fakturAwal ? String(Number(faktur.find((f) => f.id === fakturAwal)?.sisa ?? 0)) : '',
+  )
 
   const fakturPelanggan = faktur.filter((f) => !partnerId || f.partnerId === partnerId)
   const totalAlokasi = Object.entries(alokasi)
     .filter(([id]) => fakturPelanggan.some((f) => f.id === id))
     .reduce((s, [, v]) => s + Number(v || 0), 0)
+  const kelebihan = Number(jumlah || 0) - totalAlokasi
+
+  /**
+   * Penerimaan sebagian adalah hal biasa, jadi mengetik jumlah yang diterima
+   * langsung membagi-habiskannya ke faktur terlama lebih dulu. Tanpa ini
+   * pengguna harus menurunkan alokasinya sendiri satu per satu, dan lupa
+   * melakukannya membuat simpanan ditolak karena alokasi melebihi penerimaan.
+   */
+  function isiJumlah(nilai: string) {
+    setJumlah(nilai)
+    let sisaBagi = Number(nilai || 0)
+    const baru: Record<string, string> = {}
+    for (const f of [...fakturPelanggan].sort((a, b) => a.tanggal.localeCompare(b.tanggal))) {
+      const porsi = Math.min(sisaBagi, Number(f.sisa))
+      if (porsi > 0) {
+        baru[f.id] = porsi.toFixed(2)
+        sisaBagi -= porsi
+      }
+    }
+    setAlokasi(baru)
+  }
 
   function simpan(data: FormData) {
     mulai(async () => {
@@ -80,6 +105,7 @@ export function DialogPenerimaan({
         toast.success('Penerimaan diposting ke buku besar')
         setTerbuka(false)
         setAlokasi({})
+        setJumlah('')
         router.refresh()
       } else {
         toast.error(posting.pesan)
@@ -90,7 +116,7 @@ export function DialogPenerimaan({
   return (
     <Dialog open={terbuka} onOpenChange={setTerbuka}>
       <DialogTrigger asChild>
-        <Button><Plus className="mr-2 h-4 w-4" />Catat Penerimaan</Button>
+        <TombolBuat>Catat Penerimaan</TombolBuat>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
@@ -136,7 +162,7 @@ export function DialogPenerimaan({
               <Label htmlFor="jumlah">Jumlah Diterima</Label>
               <Input
                 id="jumlah" name="jumlah" type="number" step="0.01" min="0" required
-                defaultValue={totalAlokasi > 0 ? totalAlokasi.toFixed(2) : ''}
+                value={jumlah} onChange={(e) => isiJumlah(e.target.value)}
                 className="text-right tabular-nums"
               />
             </div>
@@ -145,7 +171,9 @@ export function DialogPenerimaan({
           <div>
             <Label>Alokasi ke Faktur</Label>
             <p className="mb-2 text-xs text-muted-foreground">
-              Kelebihan yang tidak dialokasikan dicatat sebagai uang muka penjualan.
+              Penerimaan boleh sebagian — isi jumlah yang lebih kecil dari sisa faktur dan
+              faktur itu tetap terbuka sebesar kekurangannya. Kelebihan yang tidak dialokasikan
+              dicatat sebagai uang muka penjualan.
             </p>
             <div className="overflow-x-auto rounded-md border">
               <table className="w-full text-sm">
@@ -179,10 +207,40 @@ export function DialogPenerimaan({
                           type="number" step="0.01" min="0" max={Number(f.sisa)}
                           className="text-right tabular-nums"
                         />
+                        {Number(alokasi[f.id] ?? 0) > 0
+                          && Number(alokasi[f.id]) < Number(f.sisa) && (
+                          <span className="mt-1 block text-right text-xs text-muted-foreground">
+                            sisa {formatAngka(String(Number(f.sisa) - Number(alokasi[f.id])))}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
+                {fakturPelanggan.length > 0 && (
+                  <tfoot className="border-t-2 bg-muted/40">
+                    <tr>
+                      <td colSpan={3} className="px-3 py-2 text-right font-medium">
+                        Total dialokasikan
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold tabular-nums">
+                        {formatAngka(totalAlokasi.toFixed(2))}
+                      </td>
+                    </tr>
+                    {Math.abs(kelebihan) >= 0.01 && (
+                      <tr>
+                        <td colSpan={3} className="px-3 pb-2 text-right text-xs">
+                          {kelebihan > 0 ? 'Belum dialokasikan (uang muka)' : 'Melebihi penerimaan'}
+                        </td>
+                        <td className={`px-3 pb-2 text-right text-xs tabular-nums ${
+                          kelebihan < 0 ? 'font-medium text-destructive' : 'text-muted-foreground'
+                        }`}>
+                          {formatAngka(Math.abs(kelebihan).toFixed(2))}
+                        </td>
+                      </tr>
+                    )}
+                  </tfoot>
+                )}
               </table>
             </div>
           </div>
@@ -200,7 +258,7 @@ export function DialogPenerimaan({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setTerbuka(false)}>Batal</Button>
-            <Button type="submit" disabled={bekerja}>
+            <Button type="submit" disabled={bekerja || kelebihan < -0.005}>
               {bekerja ? 'Memproses…' : 'Simpan dan Posting'}
             </Button>
           </DialogFooter>

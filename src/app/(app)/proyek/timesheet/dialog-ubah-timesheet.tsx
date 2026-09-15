@@ -10,6 +10,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TombolUbah } from '@/components/data/tombol-aksi'
 import { aksiUbahTimesheet } from '../aksi'
 import type { PilihanTugas, PilihanPengguna } from './formulir-timesheet'
 
@@ -63,7 +64,7 @@ export function DialogUbahTimesheet({
   return (
     <Dialog open={terbuka} onOpenChange={setTerbuka}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">Ubah</Button>
+        <TombolUbah />
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

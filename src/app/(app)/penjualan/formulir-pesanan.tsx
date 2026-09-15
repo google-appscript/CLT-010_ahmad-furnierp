@@ -14,7 +14,29 @@ import { FormulirGrid } from '@/components/formulir/formulir-grid'
 import { FormulirField } from '@/components/formulir/formulir-field'
 import { FormulirNotebook } from '@/components/formulir/formulir-notebook'
 import { FormulirBarisTabel } from '@/components/formulir/formulir-baris-tabel'
-import { aksiSimpanPesanan } from './aksi'
+import { aksiSimpanPesanan, aksiSimpanPesananLangsung } from './aksi'
+
+/**
+ * Penawaran dan pesanan penjualan memakai formulir yang sama tetapi berdiri
+ * sebagai dua dokumen terpisah: penawaran belum tentu berlanjut menjadi
+ * pesanan, dan pesanan boleh dibuat langsung tanpa didahului penawaran.
+ */
+export type ModeDokumen = 'penawaran' | 'pesanan'
+
+const TEKS: Record<ModeDokumen, { judulBaru: string; simpan: string; induk: string; rute: string }> = {
+  penawaran: {
+    judulBaru: 'Penawaran Baru',
+    simpan: 'Simpan Penawaran',
+    induk: 'Penawaran',
+    rute: '/penjualan/penawaran',
+  },
+  pesanan: {
+    judulBaru: 'Pesanan Penjualan Baru',
+    simpan: 'Simpan Pesanan',
+    induk: 'Pesanan Penjualan',
+    rute: '/penjualan/pesanan',
+  },
+}
 
 export type PilihanProduk = {
   id: string; kode: string; nama: string; uomId: string; hargaJual: string
@@ -64,6 +86,7 @@ type KolomBaris = {
 
 export function FormulirPesanan({
   awal, produk, satuan, pajak, pelanggan, lokasi, syaratPembayaran,
+  mode = 'penawaran',
   readOnly = false, nomor, statusBadge, aksiTambahan, dokumenTerkait,
 }: {
   awal: NilaiAwalPesanan
@@ -73,6 +96,7 @@ export function FormulirPesanan({
   pelanggan: PilihanUmum[]
   lokasi: PilihanUmum[]
   syaratPembayaran: PilihanUmum[]
+  mode?: ModeDokumen
   readOnly?: boolean
   nomor?: string
   statusBadge?: React.ReactNode
@@ -83,6 +107,7 @@ export function FormulirPesanan({
   }
 }) {
   const router = useRouter()
+  const teks = TEKS[mode]
   const [menyimpan, mulai] = useTransition()
   const [baris, setBaris] = useState<BarisFormulir[]>(
     awal.baris.length > 0 ? awal.baris : [{ ...BARIS_KOSONG }],
@@ -133,7 +158,7 @@ export function FormulirPesanan({
 
   function simpan(data: FormData) {
     mulai(async () => {
-      const hasil = await aksiSimpanPesanan(awal.id ?? null, {
+      const masukan = {
         partnerId,
         tanggal: String(data.get('tanggal') ?? ''),
         tanggalPengiriman: String(data.get('tanggalPengiriman') ?? '') || null,
@@ -150,11 +175,19 @@ export function FormulirPesanan({
           hargaSatuan: b.hargaSatuan || '0',
           taxId: b.taxId && b.taxId !== TANPA_PAJAK ? b.taxId : null,
         })),
-      })
+      }
+
+      // Pesanan langsung terbit sebagai pesanan bernomor; penawaran tetap
+      // menjadi dokumen tersendiri sampai seseorang mengonfirmasinya.
+      const hasil = mode === 'pesanan' && !awal.id
+        ? await aksiSimpanPesananLangsung(masukan)
+        : await aksiSimpanPesanan(awal.id ?? null, masukan)
 
       if (hasil.berhasil) {
-        toast.success(awal.id ? 'Penawaran berhasil disimpan' : 'Penawaran berhasil dibuat')
-        router.push(`/penjualan/pesanan/${hasil.id}`)
+        toast.success(
+          awal.id ? `${teks.induk} berhasil disimpan` : `${teks.induk} berhasil dibuat`,
+        )
+        router.push(`${teks.rute}/${hasil.id}`)
       } else {
         toast.error(hasil.pesan)
       }
@@ -277,10 +310,10 @@ export function FormulirPesanan({
       <FormulirBingkai
         breadcrumb={[
           { label: 'Penjualan' },
-          { label: 'Pesanan Penjualan', href: '/penjualan/pesanan' },
-          { label: nomor ?? 'Penawaran Baru' },
+          { label: teks.induk, href: teks.rute },
+          { label: nomor ?? teks.judulBaru },
         ]}
-        nomor={nomor ?? 'Penawaran Baru'}
+        nomor={nomor ?? teks.judulBaru}
         status={statusBadge}
         aksi={
           <div className="flex gap-3">
@@ -288,7 +321,7 @@ export function FormulirPesanan({
             {!readOnly && (
               <>
                 <Button type="submit" disabled={menyimpan}>
-                  {menyimpan ? 'Menyimpan…' : 'Simpan Penawaran'}
+                  {menyimpan ? 'Menyimpan…' : teks.simpan}
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => router.back()}>Batal</Button>
               </>

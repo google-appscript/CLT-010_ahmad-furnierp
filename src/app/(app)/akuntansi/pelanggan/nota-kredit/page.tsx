@@ -1,12 +1,11 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { LABEL_STATUS_FAKTUR } from '@/modules/penjualan/validasi/pesanan'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DaftarFaktur } from '../daftar-faktur'
 
 export const metadata = { title: 'Nota Kredit' }
@@ -36,11 +35,7 @@ export default async function HalamanNotaKredit({
         judul="Nota Kredit"
         deskripsi="Membalik arah faktur, dipakai untuk retur penjualan atau koreksi tagihan kepada pelanggan."
         aksi={
-          <Button asChild>
-            <Link href="/akuntansi/pelanggan/faktur/baru?tipe=nota_kredit">
-              <Plus className="mr-2 h-4 w-4" />Buat Nota Kredit
-            </Link>
-          </Button>
+          <TombolBuat href="/akuntansi/pelanggan/faktur/baru?tipe=nota_kredit">Buat Nota Kredit</TombolBuat>
         }
       />
       <PanelPencarian

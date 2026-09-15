@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus } from 'lucide-react'
+
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TombolBuat, TombolHapus } from '@/components/data/tombol-aksi'
 import { LABEL_STATUS_TUGAS } from '@/modules/proyek/validasi/proyek'
 import {
   aksiMulaiProyek, aksiSelesaikanProyek, aksiBatalkanProyek, aksiHapusProyek,
@@ -55,12 +56,8 @@ export function AksiProyek({ id, status }: { id: string; status: string }) {
           >
             {bekerja ? 'Memproses…' : 'Mulai Proyek'}
           </Button>
-          <Button
-            variant="outline" disabled={bekerja}
-            onClick={() => jalankan(() => aksiHapusProyek(id), 'Draft proyek dihapus', true)}
-          >
-            Hapus
-          </Button>
+          <TombolHapus size="default" disabled={bekerja}
+            onClick={() => jalankan(() => aksiHapusProyek(id), 'Draft proyek dihapus', true)} />
         </>
       )}
 
@@ -205,9 +202,7 @@ export function DialogTugas({
     <Dialog open={terbuka} onOpenChange={setTerbuka}>
       <DialogTrigger asChild>
         {pemicu ?? (
-          <Button variant="outline" size="sm">
-            <Plus className="mr-2 h-4 w-4" />Tambah Tugas
-          </Button>
+          <TombolBuat variant="outline" size="sm">Tambah Tugas</TombolBuat>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -305,12 +300,8 @@ export function AksiTugas({
         </Button>
       )}
       {dapatDihapus && (
-        <Button
-          variant="ghost" size="sm" disabled={bekerja}
-          onClick={() => jalankan(() => aksiHapusTugas(id), 'Tugas dihapus')}
-        >
-          Hapus
-        </Button>
+        <TombolHapus size="sm" disabled={bekerja}
+          onClick={() => jalankan(() => aksiHapusTugas(id), 'Tugas dihapus')} />
       )}
     </div>
   )

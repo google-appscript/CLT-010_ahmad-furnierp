@@ -12,6 +12,18 @@ const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
   diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
 }
 
+/**
+ * Faktur terposting masih punya perjalanan sendiri sesudahnya: pembayaran boleh
+ * datang sebagian, jadi status akuntansinya ("Diposting") tidak cukup
+ * menceritakan apakah tagihannya sudah tertutup.
+ */
+function statusBayar(f: { status: string; terbayar: string; sisa: string }) {
+  if (f.status !== 'diposting') return null
+  if (Number(f.terbayar) <= 0) return { label: 'Belum Dibayar', varian: 'outline' as const }
+  if (Number(f.sisa) > 0) return { label: 'Lunas Sebagian', varian: 'secondary' as const }
+  return { label: 'Lunas', varian: 'default' as const }
+}
+
 export async function DaftarFaktur({
   tipe, param,
 }: {
@@ -32,12 +44,28 @@ export async function DaftarFaktur({
     { kunci: 'jatuhTempo', judul: 'Jatuh Tempo', render: (f) => <span className="text-muted-foreground">{f.tanggalJatuhTempo ?? '—'}</span> },
     { kunci: 'total', judul: 'Total', rataKanan: true, render: (f) => formatAngka(f.totalTagihan) },
     {
+      kunci: 'terbayar', judul: 'Terbayar', rataKanan: true,
+      render: (f) => (f.status === 'diposting' ? formatAngka(f.terbayar) : '—'),
+    },
+    {
       kunci: 'sisa', judul: 'Sisa', rataKanan: true,
-      render: (f) => (f.status === 'diposting' ? formatAngka(f.sisa) : '—'),
+      render: (f) => (f.status === 'diposting' ? (
+        <span className={Number(f.sisa) > 0 ? 'font-medium' : 'text-muted-foreground'}>
+          {formatAngka(f.sisa)}
+        </span>
+      ) : '—'),
     },
     {
       kunci: 'status', judul: 'Status',
-      render: (f) => <Badge variant={VARIAN[f.status]}>{LABEL_STATUS_FAKTUR[f.status]}</Badge>,
+      render: (f) => {
+        const bayar = statusBayar(f)
+        return (
+          <span className="flex flex-wrap gap-1">
+            <Badge variant={VARIAN[f.status]}>{LABEL_STATUS_FAKTUR[f.status]}</Badge>
+            {bayar && <Badge variant={bayar.varian}>{bayar.label}</Badge>}
+          </span>
+        )
+      },
     },
   ]
 

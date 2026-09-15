@@ -10,45 +10,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { formatAngka } from '@/lib/uang'
-import {
-  aksiKonfirmasiPesanan, aksiBatalkanPesanan, aksiHapusPenawaran, aksiKirimBarang,
-} from '../../aksi'
-
-export function AksiPenawaran({ id }: { id: string }) {
-  const router = useRouter()
-  const [bekerja, mulai] = useTransition()
-
-  function jalankan(fn: () => Promise<{ berhasil: boolean; pesan?: string }>, sukses: string) {
-    mulai(async () => {
-      const hasil = await fn()
-      if (hasil && !hasil.berhasil) toast.error(hasil.pesan!)
-      else if (hasil?.berhasil) { toast.success(sukses); router.refresh() }
-    })
-  }
-
-  return (
-    <div className="flex flex-wrap gap-3">
-      <Button
-        onClick={() => jalankan(() => aksiKonfirmasiPesanan(id), 'Pesanan dikonfirmasi')}
-        disabled={bekerja}
-      >
-        {bekerja ? 'Memproses…' : 'Konfirmasi Pesanan'}
-      </Button>
-      <Button
-        variant="outline" disabled={bekerja}
-        onClick={() => jalankan(() => aksiBatalkanPesanan(id), 'Pesanan dibatalkan')}
-      >
-        Batalkan
-      </Button>
-      <Button
-        variant="outline" disabled={bekerja}
-        onClick={() => jalankan(() => aksiHapusPenawaran(id), 'Penawaran dihapus')}
-      >
-        Hapus
-      </Button>
-    </div>
-  )
-}
+import { aksiKirimBarang } from '../../aksi'
 
 export type BarisKirim = {
   soLineId: string

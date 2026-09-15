@@ -1,11 +1,11 @@
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { daftarPajak, type Pajak } from '@/modules/akuntansi/layanan/pajak'
 import { daftarAkun } from '@/modules/akuntansi/layanan/akun'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { DialogPajak, TombolStatusPajak, type PilihanAkun } from './dialog-pajak'
 
 export const metadata = { title: 'Pajak' }
@@ -55,7 +55,7 @@ function kolomPajak(akunPajak: PilihanAkun[]): Kolom<Pajak>[] {
       kunci: 'aksi', judul: '', lebar: '160px', rataKanan: true,
       render: (p) => (
         <>
-          <DialogPajak pajak={p} akunPajak={akunPajak} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+          <DialogPajak pajak={p} akunPajak={akunPajak} pemicu={<TombolUbah />} />
           <TombolStatusPajak id={p.id} isActive={p.isActive} />
         </>
       ),
@@ -79,7 +79,7 @@ export default async function HalamanPajak() {
         aksi={
           <DialogPajak
             akunPajak={akunPajak}
-            pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Pajak</Button>}
+            pemicu={<TombolBuat>Tambah Pajak</TombolBuat>}
           />
         }
       />

@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { formatAngka, kurang, tambah } from '@/lib/uang'
 import { cn } from '@/lib/utils'
 import { aksiSimpanEntri } from './aksi'
@@ -166,9 +167,7 @@ export function FormulirEntri({
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-medium">Baris Jurnal</h2>
-          <Button type="button" variant="outline" size="sm" onClick={tambahBaris}>
-            <Plus className="mr-2 h-4 w-4" />Tambah Baris
-          </Button>
+          <TombolBuat type="button" variant="outline" size="sm" onClick={tambahBaris}>Tambah Baris</TombolBuat>
         </div>
 
         <div className="overflow-x-auto rounded-md border">

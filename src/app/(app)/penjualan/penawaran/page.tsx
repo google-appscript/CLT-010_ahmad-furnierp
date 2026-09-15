@@ -1,28 +1,65 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
 import { wajibIzin } from '@/lib/sesi'
-import { Button } from '@/components/ui/button'
+import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
+import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DaftarPesanan } from '../daftar-pesanan'
 
 export const metadata = { title: 'Penawaran' }
 
-export default async function HalamanPenawaran() {
-  await wajibIzin('penjualan.penawaran.lihat')
+const KUNCI_DAFTAR = 'penjualan.penawaran'
+
+/** Penawaran yang sudah dikonfirmasi pindah ke daftar Pesanan Penjualan. */
+const CAKUPAN = ['penawaran', 'dibatalkan'] as const
+
+export default async function HalamanPenawaran({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const sesi = await wajibIzin('penjualan.penawaran.lihat')
+
+  const sp = await searchParams
+  const params = new URLSearchParams()
+  for (const [kunci, nilai] of Object.entries(sp)) {
+    if (nilai === undefined) continue
+    for (const v of Array.isArray(nilai) ? nilai : [nilai]) params.append(kunci, v)
+  }
+  const param = uraikanParameterDaftar(params)
+
+  const favorit = await daftarFilter(sesi.penggunaId, KUNCI_DAFTAR)
+
   return (
     <>
       <KepalaHalaman
         judul="Penawaran"
-        deskripsi="Penawaran dan pesanan penjualan adalah dokumen yang sama pada tahap berbeda. Nomor diberikan saat dikonfirmasi."
-        aksi={
-          <Button asChild>
-            <Link href="/penjualan/pesanan/baru">
-              <Plus className="mr-2 h-4 w-4" />Buat Penawaran
-            </Link>
-          </Button>
-        }
+        deskripsi="Tawaran harga kepada pelanggan. Penawaran belum tentu berlanjut — yang disetujui dikonfirmasi menjadi pesanan penjualan, sisanya cukup ditolak."
+        aksi={<TombolBuat href="/penjualan/penawaran/baru">Buat Penawaran</TombolBuat>}
       />
-      <DaftarPesanan param={{ halaman: 1, ukuranHalaman: 20, filter: { status: ['penawaran'] } }} />
+      <PanelPencarian
+        kunciDaftar={KUNCI_DAFTAR}
+        kolomFilter={[
+          {
+            kunci: 'status',
+            label: 'Status',
+            opsi: [
+              { nilai: 'penawaran', label: 'Penawaran' },
+              { nilai: 'dibatalkan', label: 'Ditolak' },
+            ],
+          },
+        ]}
+        kolomGroupBy={[
+          { kunci: 'status', label: 'Status' },
+          { kunci: 'partnerId', label: 'Pelanggan' },
+        ]}
+        favorit={favorit.map((f) => ({ ...f, kriteria: f.kriteria as ParameterDaftar }))}
+      />
+      <DaftarPesanan
+        param={{ ...param, statusTermasuk: [...CAKUPAN], bernomor: false }}
+        basisRute="/penjualan/penawaran"
+        labelDitolak
+      />
     </>
   )
 }

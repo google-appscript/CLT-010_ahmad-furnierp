@@ -1,11 +1,11 @@
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { daftarPengguna, type BarisPengguna } from '@/modules/identitas/layanan/pengguna'
 import { daftarPeranDenganIzin } from '@/modules/identitas/repositori/peran'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { DialogPengguna, TombolStatusPengguna, type PilihanPeran } from './dialog-pengguna'
 
 export const metadata = { title: 'Pengguna' }
@@ -45,7 +45,7 @@ function kolomPengguna(peran: PilihanPeran[]): Kolom<BarisPengguna>[] {
           <DialogPengguna
             pengguna={{ id: p.id, email: p.email, nama: p.nama }}
             peran={peran}
-            pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+            pemicu={<TombolUbah />}
           />
           <TombolStatusPengguna id={p.id} isActive={p.isActive} />
         </>
@@ -67,7 +67,7 @@ export default async function HalamanPengguna() {
         aksi={
           <DialogPengguna
             peran={peran}
-            pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Pengguna</Button>}
+            pemicu={<TombolBuat>Tambah Pengguna</TombolBuat>}
           />
         }
       />

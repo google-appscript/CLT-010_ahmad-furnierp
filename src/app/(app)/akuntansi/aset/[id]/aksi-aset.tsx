@@ -11,6 +11,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TombolHapus } from '@/components/data/tombol-aksi'
 import { formatRupiah } from '@/lib/uang'
 import { aksiJalankanAset, aksiHapusAset, aksiLepaskanAset, aksiPostingBaris } from '../aksi'
 
@@ -47,12 +48,8 @@ export function AksiDraftAset({ id }: { id: string }) {
       >
         {bekerja ? 'Memproses…' : 'Jalankan Aset'}
       </Button>
-      <Button
-        variant="outline" disabled={bekerja}
-        onClick={() => jalankan(() => aksiHapusAset(id), 'Draft aset dihapus', true)}
-      >
-        Hapus
-      </Button>
+      <TombolHapus size="default" disabled={bekerja}
+        onClick={() => jalankan(() => aksiHapusAset(id), 'Draft aset dihapus', true)} />
     </div>
   )
 }

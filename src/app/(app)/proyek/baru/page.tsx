@@ -5,9 +5,19 @@ import { ambilDataPilihanProyek } from '../data-pilihan'
 
 export const metadata = { title: 'Proyek Baru' }
 
-export default async function HalamanProyekBaru() {
+export default async function HalamanProyekBaru({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   await wajibIzin('proyek.proyek.kelola')
   const { pesanan, pengguna } = await ambilDataPilihanProyek()
+
+  // Dibuka dari tombol "Buat Proyek" pada pesanan penjualan: pesanannya
+  // langsung terpilih supaya tidak perlu dicari ulang di daftar.
+  const params = await searchParams
+  const soAwal = Array.isArray(params.so) ? params.so[0] : params.so
+  const soTerpilih = soAwal && pesanan.some((p) => p.id === soAwal) ? soAwal : ''
 
   if (pesanan.length === 0) {
     return (
@@ -27,7 +37,7 @@ export default async function HalamanProyekBaru() {
   return (
     <FormulirProyek
       awal={{
-        kode: '', nama: '', soId: '',
+        kode: '', nama: '', soId: soTerpilih,
         tanggalMulai: new Date().toISOString().slice(0, 10),
         tanggalTarget: '', manajerId: '', tarifPerJam: '0', catatan: '',
       }}

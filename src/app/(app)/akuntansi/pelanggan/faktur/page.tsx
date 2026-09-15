@@ -1,12 +1,11 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { LABEL_STATUS_FAKTUR } from '@/modules/penjualan/validasi/pesanan'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DaftarFaktur } from '../daftar-faktur'
 
 export const metadata = { title: 'Faktur Penjualan' }
@@ -36,11 +35,7 @@ export default async function HalamanFaktur({
         judul="Faktur Penjualan"
         deskripsi="Mencatat pendapatan dan piutang. Harga pokok sudah dibebankan lebih dulu saat barang dikirim."
         aksi={
-          <Button asChild>
-            <Link href="/akuntansi/pelanggan/faktur/baru">
-              <Plus className="mr-2 h-4 w-4" />Buat Faktur
-            </Link>
-          </Button>
+          <TombolBuat href="/akuntansi/pelanggan/faktur/baru">Buat Faktur</TombolBuat>
         }
       />
       <PanelPencarian

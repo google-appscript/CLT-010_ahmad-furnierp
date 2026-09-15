@@ -1,12 +1,12 @@
 import { asc } from 'drizzle-orm'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { uoms } from '@/db/schema'
 import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { LABEL_KATEGORI_UOM } from '@/modules/gudang/validasi/uom'
 import { DialogUom, TombolStatusUom } from './dialog-satuan'
 
@@ -22,7 +22,7 @@ export default async function HalamanSatuan() {
       <KepalaHalaman
         judul="Satuan"
         deskripsi="Faktor menyatakan berapa satuan acuan yang setara dengan satu satuan ini. Konversi hanya diizinkan di dalam kategori yang sama."
-        aksi={<DialogUom pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Satuan</Button>} />}
+        aksi={<DialogUom pemicu={<TombolBuat>Tambah Satuan</TombolBuat>} />}
       />
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
@@ -49,7 +49,7 @@ export default async function HalamanSatuan() {
                   </Badge>
                 </td>
                 <td className="px-4 py-1.5 text-right">
-                  <DialogUom uom={u} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+                  <DialogUom uom={u} pemicu={<TombolUbah />} />
                   <TombolStatusUom id={u.id} isActive={u.isActive} />
                 </td>
               </tr>

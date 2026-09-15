@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { aksiBuatPackingList } from './aksi'
 
 export type PilihanPengiriman = { id: string; nomor: string; tanggal: string }
@@ -65,7 +66,7 @@ export function DialogPackingList({
   return (
     <Dialog open={terbuka} onOpenChange={setTerbuka}>
       <DialogTrigger asChild>
-        <Button><Plus className="mr-2 h-4 w-4" />Buat Packing List</Button>
+        <TombolBuat>Buat Packing List</TombolBuat>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
@@ -99,12 +100,9 @@ export function DialogPackingList({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <Label>Rincian Koli</Label>
-              <Button
+              <TombolBuat
                 type="button" variant="outline" size="sm"
-                onClick={() => setKoli((k) => [...k, { ...KOLI_KOSONG }])}
-              >
-                <Plus className="mr-2 h-4 w-4" />Tambah Koli
-              </Button>
+                onClick={() => setKoli((k) => [...k, { ...KOLI_KOSONG }])}>Tambah Koli</TombolBuat>
             </div>
             <div className="overflow-x-auto rounded-md border">
               <table className="w-full text-sm">

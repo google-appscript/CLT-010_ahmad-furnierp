@@ -1,11 +1,11 @@
 import { asc } from 'drizzle-orm'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { locations, warehouses } from '@/db/schema'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { LABEL_TIPE_LOKASI } from '@/modules/gudang/validasi/lokasi'
 import { DialogWarehouse, TombolStatusWarehouse } from './dialog-gudang'
 import { DialogLokasi, TombolStatusLokasi } from './dialog-lokasi'
@@ -33,7 +33,7 @@ export default async function HalamanLokasi() {
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-medium text-muted-foreground">Gudang</h2>
-          <DialogWarehouse pemicu={<Button size="sm"><Plus className="mr-2 h-4 w-4" />Tambah Gudang</Button>} />
+          <DialogWarehouse pemicu={<TombolBuat size="sm">Tambah Gudang</TombolBuat>} />
         </div>
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-sm">
@@ -58,7 +58,7 @@ export default async function HalamanLokasi() {
                     </Badge>
                   </td>
                   <td className="px-4 py-1.5 text-right">
-                    <DialogWarehouse gudang={g} pemicu={<Button variant="ghost" size="sm">Ubah</Button>} />
+                    <DialogWarehouse gudang={g} pemicu={<TombolUbah />} />
                     <TombolStatusWarehouse id={g.id} isActive={g.isActive} />
                   </td>
                 </tr>
@@ -74,7 +74,7 @@ export default async function HalamanLokasi() {
           <DialogLokasi
             gudang={gudangAktif}
             lokasiLain={pilihanLokasi}
-            pemicu={<Button size="sm"><Plus className="mr-2 h-4 w-4" />Tambah Lokasi</Button>}
+            pemicu={<TombolBuat size="sm">Tambah Lokasi</TombolBuat>}
           />
         </div>
         <div className="overflow-x-auto rounded-md border">
@@ -112,7 +112,7 @@ export default async function HalamanLokasi() {
                       lokasi={l}
                       gudang={gudangAktif}
                       lokasiLain={pilihanLokasi}
-                      pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+                      pemicu={<TombolUbah />}
                     />
                     <TombolStatusLokasi id={l.id} isActive={l.isActive} />
                   </td>

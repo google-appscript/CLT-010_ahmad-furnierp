@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { asc, eq } from 'drizzle-orm'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { products, productCategories, uoms } from '@/db/schema'
@@ -8,6 +8,7 @@ import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { LABEL_TIPE_PRODUK } from '@/modules/gudang/validasi/produk'
 import { DialogProduk, TombolStatusProduk } from './dialog-produk'
 
@@ -49,7 +50,7 @@ export default async function HalamanProduk() {
       <KepalaHalaman
         judul="Produk"
         deskripsi="Harga pokok rata-rata diperbarui otomatis setiap kali barang diterima."
-        aksi={<DialogProduk kategori={kategori} uom={uom} pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Produk</Button>} />}
+        aksi={<DialogProduk kategori={kategori} uom={uom} pemicu={<TombolBuat>Tambah Produk</TombolBuat>} />}
       />
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
@@ -98,7 +99,7 @@ export default async function HalamanProduk() {
                     produk={p}
                     kategori={kategori}
                     uom={uom}
-                    pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+                    pemicu={<TombolUbah />}
                   />
                   <TombolStatusProduk id={p.id} isActive={p.isActive} />
                 </td>

@@ -1,13 +1,13 @@
 import { asc, eq, inArray } from 'drizzle-orm'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { accounts } from '@/db/schema'
 import { daftarPemilik, daftarSusunan } from '@/modules/kepemilikan/layanan/pemilik'
 import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import {
   DialogPemilik, TombolStatusPemilik, DialogSusunan, TombolHapusSusunan,
 } from './panel-pemilik'
@@ -41,7 +41,7 @@ export default async function HalamanPemilik() {
         aksi={
           <DialogPemilik
             akun={akunEkuitas}
-            pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Pemilik</Button>}
+            pemicu={<TombolBuat>Tambah Pemilik</TombolBuat>}
           />
         }
       />
@@ -91,7 +91,7 @@ export default async function HalamanPemilik() {
                         catatan: p.catatan ?? '',
                       }}
                       akun={akunEkuitas}
-                      pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+                      pemicu={<TombolUbah />}
                     />
                     <TombolStatusPemilik id={p.id} isActive={p.isActive} />
                   </td>
@@ -109,9 +109,7 @@ export default async function HalamanPemilik() {
             <DialogSusunan
               pemilik={pemilikAktif.map((p) => ({ id: p.id, kode: p.kode, nama: p.nama }))}
               pemicu={
-                <Button variant="outline" size="sm">
-                  <Plus className="mr-2 h-4 w-4" />Susunan Baru
-                </Button>
+                <TombolBuat variant="outline" size="sm">Susunan Baru</TombolBuat>
               }
             />
           )}
@@ -162,7 +160,7 @@ export default async function HalamanPemilik() {
                             pemilik={pemilikAktif.map((p) => ({
                               id: p.id, kode: p.kode, nama: p.nama,
                             }))}
-                            pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+                            pemicu={<TombolUbah />}
                           />
                           <TombolHapusSusunan id={s.id} />
                         </>

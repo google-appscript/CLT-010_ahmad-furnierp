@@ -1,12 +1,12 @@
 import { asc, eq } from 'drizzle-orm'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { locations } from '@/db/schema'
 import { daftarPosBiaya, daftarPosBawaanLokasi } from '@/modules/akuntansi/layanan/pos-biaya'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
 import { DialogPosBiaya, TombolStatusPos, PemilihPosLokasi } from './panel-pos'
 
 export const metadata = { title: 'Pos Biaya' }
@@ -31,7 +31,7 @@ export default async function HalamanPosBiaya() {
         deskripsi="Unit kerja yang menanggung beban operasional. Berbeda dari proyek yang punya awal dan akhir, pos biaya adalah pembagian permanen perusahaan — keduanya berdampingan sebagai dua dimensi terpisah pada item jurnal."
         aksi={
           <DialogPosBiaya
-            pemicu={<Button><Plus className="mr-2 h-4 w-4" />Tambah Pos Biaya</Button>}
+            pemicu={<TombolBuat>Tambah Pos Biaya</TombolBuat>}
           />
         }
       />
@@ -71,7 +71,7 @@ export default async function HalamanPosBiaya() {
                       pos={{
                         id: p.id, kode: p.kode, nama: p.nama, deskripsi: p.deskripsi ?? '',
                       }}
-                      pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+                      pemicu={<TombolUbah />}
                     />
                     <TombolStatusPos id={p.id} isActive={p.isActive} />
                   </td>

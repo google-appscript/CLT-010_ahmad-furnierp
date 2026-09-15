@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { wajibIzin } from '@/lib/sesi'
 import {
-  buatPesanan, ubahPesanan, konfirmasiPesanan, batalkanPesanan, hapusPenawaran,
+  buatPesanan, buatPesananLangsung, ubahPesanan, konfirmasiPesanan,
+  batalkanPesanan, hapusPenawaran,
 } from '@/modules/penjualan/layanan/pesanan'
 import { kirimDariPesanan } from '@/modules/penjualan/layanan/pengiriman'
 import { catatAudit } from '@/modules/identitas/layanan/audit'
@@ -40,6 +41,22 @@ export async function aksiSimpanPesanan(
     await catatAudit({
       penggunaId: sesi.penggunaId, entitas: 'sales_orders', entitasId: pesanan.id,
       aksi: id ? 'ubah' : 'buat', dataBaru: { tanggal: masukan.tanggal },
+    })
+    segarkan()
+    return { berhasil: true, id: pesanan.id }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+/** Membuat pesanan penjualan langsung, tanpa melewati tahap penawaran. */
+export async function aksiSimpanPesananLangsung(masukan: MasukanPesanan): Promise<HasilAksi> {
+  const sesi = await wajibIzin(IZIN)
+  try {
+    const pesanan = await buatPesananLangsung(masukan, sesi.penggunaId)
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'sales_orders', entitasId: pesanan.id,
+      aksi: 'posting', dataBaru: { nomor: pesanan.nomor, tanggal: masukan.tanggal },
     })
     segarkan()
     return { berhasil: true, id: pesanan.id }

@@ -1,12 +1,11 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { LABEL_STATUS_PERINTAH_PRODUKSI } from '@/modules/manufaktur/validasi/produksi'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DaftarPerintah } from '../daftar-perintah'
 
 export const metadata = { title: 'Perintah Produksi' }
@@ -36,11 +35,7 @@ export default async function HalamanPerintahProduksi({
         judul="Perintah Produksi"
         deskripsi="Bahan keluar ke lokasi virtual Produksi, biaya konversi diserap, lalu barang jadi masuk gudang senilai seluruh biaya itu."
         aksi={
-          <Button asChild>
-            <Link href="/manufaktur/perintah-produksi/baru">
-              <Plus className="mr-2 h-4 w-4" />Buat Perintah
-            </Link>
-          </Button>
+          <TombolBuat href="/manufaktur/perintah-produksi/baru">Buat Perintah</TombolBuat>
         }
       />
       <PanelPencarian

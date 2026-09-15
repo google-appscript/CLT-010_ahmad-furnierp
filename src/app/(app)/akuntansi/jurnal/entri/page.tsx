@@ -1,16 +1,15 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { daftarEntri } from '@/modules/akuntansi/layanan/entri'
 import { daftarJurnal } from '@/modules/akuntansi/layanan/jurnal'
 import { LABEL_STATUS } from '@/modules/akuntansi/validasi/entri'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 
 export const metadata = { title: 'Entri Jurnal' }
 
@@ -72,11 +71,7 @@ export default async function HalamanEntriJurnal({
         judul="Entri Jurnal"
         deskripsi="Nomor diberikan saat posting. Entri yang sudah diposting dikoreksi lewat entri pembalik."
         aksi={
-          <Button asChild>
-            <Link href="/akuntansi/jurnal/entri/baru">
-              <Plus className="mr-2 h-4 w-4" />Buat Entri
-            </Link>
-          </Button>
+          <TombolBuat href="/akuntansi/jurnal/entri/baru">Buat Entri</TombolBuat>
         }
       />
       <PanelPencarian

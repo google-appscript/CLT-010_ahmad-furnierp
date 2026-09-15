@@ -1,5 +1,5 @@
 import {
-  and, asc, desc, eq, ilike, inArray, or, sql,
+  and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or, sql,
 } from 'drizzle-orm'
 import { db } from '@/db/klien'
 import {
@@ -39,7 +39,23 @@ function kolomUrutPesanan(kolom?: string) {
 }
 
 export async function daftarPesanan(
-  param: ParameterDaftar & { status?: Pesanan['status'] },
+  param: ParameterDaftar & {
+    status?: Pesanan['status']
+    /**
+     * Cakupan status yang boleh muncul di layar ini — dipakai memisahkan
+     * daftar Penawaran dari daftar Pesanan Penjualan. Berbeda dari
+     * `filter.status` yang dipilih pengguna, cakupan ini selalu berlaku dan
+     * mempersempit hasilnya, bukan menambah.
+     */
+    statusTermasuk?: Pesanan['status'][]
+    /**
+     * Memisahkan penawaran dari pesanan secara struktural: nomor baru terbit
+     * saat dikonfirmasi, jadi dokumen tanpa nomor selalu penawaran. Ini yang
+     * membedakan penawaran ditolak dari pesanan dibatalkan — keduanya
+     * berstatus `dibatalkan`, tetapi hanya pesanan yang pernah bernomor.
+     */
+    bernomor?: boolean
+  },
 ): Promise<HasilDaftar<Pesanan>> {
   const halaman = param.halaman || 1
   const ukuranHalaman = param.ukuranHalaman || 20
@@ -50,6 +66,14 @@ export async function daftarPesanan(
       ilike(salesOrders.nomor, `%${param.cari}%`),
       ilike(partners.nama, `%${param.cari}%`),
     ))
+  }
+
+  if (param.statusTermasuk && param.statusTermasuk.length > 0) {
+    kondisi.push(inArray(salesOrders.status, param.statusTermasuk))
+  }
+
+  if (param.bernomor !== undefined) {
+    kondisi.push(param.bernomor ? isNotNull(salesOrders.nomor) : isNull(salesOrders.nomor))
   }
 
   const statusDisaring = [
@@ -144,6 +168,58 @@ export async function buatPesanan(
       mataUangId: data.mataUangId,
       referensi: data.referensi,
       catatan: data.catatan,
+      dibuatOleh,
+    }).returning({ id: salesOrders.id })
+
+    await tx.insert(salesOrderLines).values(
+      data.baris.map((b, i) => ({
+        soId: pesanan.id,
+        urutan: i + 1,
+        produkId: b.produkId,
+        deskripsi: b.deskripsi,
+        kuantitas: b.kuantitas,
+        uomId: b.uomId,
+        hargaSatuan: b.hargaSatuan,
+        taxId: b.taxId,
+      })),
+    )
+
+    return pesanan.id
+  })
+
+  return (await ambilPesanan(id))!
+}
+
+/**
+ * Membuat pesanan penjualan tanpa melewati tahap penawaran, untuk pesanan yang
+ * memang sudah pasti sejak awal. Pembuatan dan konfirmasinya terjadi dalam satu
+ * transaksi supaya tidak pernah ada pesanan tanpa nomor bila salah satu gagal —
+ * nomornya tetap diambil lewat `ambilNomorBerikut()` seperti jalur penawaran.
+ */
+export async function buatPesananLangsung(
+  masukan: MasukanPesanan, dibuatOleh: string,
+): Promise<PesananLengkap> {
+  const data = urai(masukan)
+  await wajibLokasiInternal(data.lokasiAsalId)
+
+  const id = await db.transaction(async (tx) => {
+    const nomor = await ambilNomorBerikut(
+      tx, KODE_URUTAN, new Date(`${data.tanggal}T00:00:00Z`),
+    )
+
+    const [pesanan] = await tx.insert(salesOrders).values({
+      nomor,
+      status: 'dikonfirmasi',
+      partnerId: data.partnerId,
+      tanggal: data.tanggal,
+      tanggalPengiriman: data.tanggalPengiriman,
+      lokasiAsalId: data.lokasiAsalId,
+      syaratPembayaranId: data.syaratPembayaranId,
+      mataUangId: data.mataUangId,
+      referensi: data.referensi,
+      catatan: data.catatan,
+      dikonfirmasiPada: new Date(),
+      dikonfirmasiOleh: dibuatOleh,
       dibuatOleh,
     }).returning({ id: salesOrders.id })
 

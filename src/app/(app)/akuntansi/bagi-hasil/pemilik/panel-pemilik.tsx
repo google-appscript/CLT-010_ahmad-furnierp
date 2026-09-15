@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TombolBuat, TombolHapus } from '@/components/data/tombol-aksi'
 import {
   aksiSimpanPemilik, aksiUbahStatusPemilik, aksiSimpanSusunan, aksiHapusSusunan,
 } from '../aksi'
@@ -300,12 +301,9 @@ export function DialogSusunan({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button
+            <TombolBuat
               type="button" variant="outline" size="sm"
-              onClick={() => setPorsi((l) => [...l, { ownerId: '', persentase: '' }])}
-            >
-              <Plus className="mr-2 h-4 w-4" />Tambah Pemilik
-            </Button>
+              onClick={() => setPorsi((l) => [...l, { ownerId: '', persentase: '' }])}>Tambah Pemilik</TombolBuat>
             <Button type="button" variant="outline" size="sm" onClick={ratakan}>
               Ratakan
             </Button>
@@ -342,15 +340,11 @@ export function TombolHapusSusunan({ id }: { id: string }) {
   const [bekerja, mulai] = useTransition()
 
   return (
-    <Button
-      variant="ghost" size="sm" disabled={bekerja}
+    <TombolHapus size="sm" disabled={bekerja}
       onClick={() => mulai(async () => {
         const hasil = await aksiHapusSusunan(id)
         if (hasil.berhasil) { toast.success('Susunan dihapus'); router.refresh() }
         else toast.error(hasil.pesan)
-      })}
-    >
-      Hapus
-    </Button>
+      })} />
   )
 }

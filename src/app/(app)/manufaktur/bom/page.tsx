@@ -1,11 +1,10 @@
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+
 import { wajibIzin } from '@/lib/sesi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
-import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
+import { TombolBuat } from '@/components/data/tombol-aksi'
 import { DaftarBom } from '../daftar-bom'
 
 export const metadata = { title: 'Bill of Materials' }
@@ -35,9 +34,7 @@ export default async function HalamanBom({
         judul="Bill of Materials"
         deskripsi="Resep bahan untuk setiap produk. Perintah produksi menyalin resep saat dibuat, sehingga mengubah resep tidak mengusik perintah yang sudah berjalan."
         aksi={
-          <Button asChild>
-            <Link href="/manufaktur/bom/baru"><Plus className="mr-2 h-4 w-4" />Buat Resep</Link>
-          </Button>
+          <TombolBuat href="/manufaktur/bom/baru">Buat Resep</TombolBuat>
         }
       />
       <PanelPencarian

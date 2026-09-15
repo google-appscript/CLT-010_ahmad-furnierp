@@ -14,7 +14,7 @@ import {
 } from '@/modules/proyek/validasi/proyek'
 import { formatAngka, formatRupiah } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { TombolUbah } from '@/components/data/tombol-aksi'
 import { FormulirProyek } from '../formulir-proyek'
 import { ambilDataPilihanProyek } from '../data-pilihan'
 import { AksiProyek, DialogTugas, AksiTugas, AksiPenguncian } from './aksi-proyek'
@@ -187,7 +187,7 @@ export default async function HalamanDetailProyek({
                             tanggalMulai: t.tanggalMulai, tenggat: t.tenggat,
                             estimasiJam: t.estimasiJam,
                           }}
-                          pemicu={<Button variant="ghost" size="sm">Ubah</Button>}
+                          pemicu={<TombolUbah />}
                         />
                         <AksiTugas
                           id={t.id} status={t.status}
