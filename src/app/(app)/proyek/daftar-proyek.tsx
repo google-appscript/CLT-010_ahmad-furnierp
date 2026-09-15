@@ -6,14 +6,9 @@ import { daftarProyekBerhalaman } from '@/modules/proyek/layanan/proyek'
 import { profitabilitasProyek } from '@/modules/proyek/layanan/laporan'
 import { LABEL_STATUS_PROYEK } from '@/modules/proyek/validasi/proyek'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import type { ParameterDaftar } from '@/lib/daftar'
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', terkunci: 'default',
-  draft: 'secondary', dibatalkan: 'outline',
-}
 
 export async function DaftarProyek({ param }: { param: ParameterDaftar }) {
   const [{ data: proyek, totalBaris }, semuaMitra, semuaPesanan, semuaPengguna] = await Promise.all([
@@ -59,7 +54,7 @@ export async function DaftarProyek({ param }: { param: ParameterDaftar }) {
     },
     {
       kunci: 'status', judul: 'Status',
-      render: ({ p }) => <Badge variant={VARIAN[p.status]}>{LABEL_STATUS_PROYEK[p.status]}</Badge>,
+      render: ({ p }) => <LencanaStatus status={p.status} label={LABEL_STATUS_PROYEK[p.status]} />,
     },
   ]
 

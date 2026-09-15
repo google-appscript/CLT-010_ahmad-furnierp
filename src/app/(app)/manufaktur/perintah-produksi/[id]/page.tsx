@@ -12,16 +12,14 @@ import {
 import { LABEL_STATUS_PERINTAH_PRODUKSI } from '@/modules/manufaktur/validasi/produksi'
 import { labelTipeOperasi, TIPE_KE_SLUG } from '@/modules/gudang/validasi/operasi'
 import { formatRupiah } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { FormulirPerintah } from '../../formulir-perintah'
 import { ambilDataPilihanManufaktur } from '../../data-pilihan'
 import { AksiDraftPerintah, AksiPerintahDikonfirmasi } from './aksi-perintah'
+import { LencanaStatus } from '@/components/data/lencana-status'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
+import { aksiDuplikatPerintah } from '../../aksi'
 
 export const metadata = { title: 'Detail Perintah Produksi' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  selesai: 'default', dikonfirmasi: 'default', draft: 'secondary', dibatalkan: 'outline',
-}
 
 export default async function HalamanDetailPerintah({
   params,
@@ -64,6 +62,13 @@ export default async function HalamanDetailPerintah({
         awal={awal}
         {...pilihan}
         aksiTambahan={<AksiDraftPerintah key="aksi-draft" id={perintah.id} />}
+        menu={
+          <MenuFormulir
+            labelDokumen="Perintah produksi"
+            onDuplikat={aksiDuplikatPerintah.bind(null, perintah.id)}
+            ruteDuplikat="/manufaktur/perintah-produksi/:id"
+          />
+        }
       />
     )
   }
@@ -175,8 +180,15 @@ export default async function HalamanDetailPerintah({
       resep={semuaResep}
       readOnly
       nomor={perintah.nomor ?? 'Perintah Produksi'}
-      statusBadge={<Badge variant={VARIAN[perintah.status]}>{LABEL_STATUS_PERINTAH_PRODUKSI[perintah.status]}</Badge>}
+      statusBadge={<LencanaStatus status={perintah.status} label={LABEL_STATUS_PERINTAH_PRODUKSI[perintah.status]} />}
       aksiTambahan={perintah.status === 'dikonfirmasi' ? <AksiPerintahDikonfirmasi key="aksi-dikonfirmasi" id={perintah.id} /> : undefined}
+      menu={
+        <MenuFormulir
+            labelDokumen="Perintah produksi"
+            onDuplikat={aksiDuplikatPerintah.bind(null, perintah.id)}
+            ruteDuplikat="/manufaktur/perintah-produksi/:id"
+          />
+      }
       dokumenTerkait={dokumenTerkait}
     />
   )

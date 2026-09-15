@@ -4,13 +4,9 @@ import { partners } from '@/db/schema'
 import { daftarFaktur, ringkasanFaktur, type Faktur } from '@/modules/penjualan/layanan/faktur'
 import { LABEL_STATUS_FAKTUR } from '@/modules/penjualan/validasi/pesanan'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import type { ParameterDaftar } from '@/lib/daftar'
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
-}
 
 /**
  * Faktur terposting masih punya perjalanan sendiri sesudahnya: pembayaran boleh
@@ -19,9 +15,9 @@ const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
  */
 function statusBayar(f: { status: string; terbayar: string; sisa: string }) {
   if (f.status !== 'diposting') return null
-  if (Number(f.terbayar) <= 0) return { label: 'Belum Dibayar', varian: 'outline' as const }
-  if (Number(f.sisa) > 0) return { label: 'Lunas Sebagian', varian: 'secondary' as const }
-  return { label: 'Lunas', varian: 'default' as const }
+  if (Number(f.terbayar) <= 0) return { label: 'Belum Dibayar', nada: 'perhatian' as const }
+  if (Number(f.sisa) > 0) return { label: 'Lunas Sebagian', nada: 'proses' as const }
+  return { label: 'Lunas', nada: 'tuntas' as const }
 }
 
 export async function DaftarFaktur({
@@ -61,8 +57,8 @@ export async function DaftarFaktur({
         const bayar = statusBayar(f)
         return (
           <span className="flex flex-wrap gap-1">
-            <Badge variant={VARIAN[f.status]}>{LABEL_STATUS_FAKTUR[f.status]}</Badge>
-            {bayar && <Badge variant={bayar.varian}>{bayar.label}</Badge>}
+            <LencanaStatus status={f.status} label={LABEL_STATUS_FAKTUR[f.status]} />
+            {bayar && <LencanaStatus nada={bayar.nada} label={bayar.label} />}
           </span>
         )
       },

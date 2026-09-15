@@ -55,6 +55,12 @@ export async function daftarPesanan(
      * berstatus `dibatalkan`, tetapi hanya pesanan yang pernah bernomor.
      */
     bernomor?: boolean
+    /**
+     * Menyaring dokumen yang pernah menjadi penawaran. Dipakai daftar Penawaran
+     * supaya penawaran yang sudah dikonfirmasi tetap tercatat di sana — riwayat
+     * penawarannya hilang bila dokumennya pindah daftar begitu berlanjut.
+     */
+    lewatPenawaran?: boolean
   },
 ): Promise<HasilDaftar<Pesanan>> {
   const halaman = param.halaman || 1
@@ -74,6 +80,10 @@ export async function daftarPesanan(
 
   if (param.bernomor !== undefined) {
     kondisi.push(param.bernomor ? isNotNull(salesOrders.nomor) : isNull(salesOrders.nomor))
+  }
+
+  if (param.lewatPenawaran !== undefined) {
+    kondisi.push(eq(salesOrders.lewatPenawaran, param.lewatPenawaran))
   }
 
   const statusDisaring = [
@@ -210,6 +220,7 @@ export async function buatPesananLangsung(
     const [pesanan] = await tx.insert(salesOrders).values({
       nomor,
       status: 'dikonfirmasi',
+      lewatPenawaran: false,
       partnerId: data.partnerId,
       tanggal: data.tanggal,
       tanggalPengiriman: data.tanggalPengiriman,
@@ -389,4 +400,36 @@ export async function perbaruiStatusPenyelesaian(soId: string): Promise<void> {
       .set({ status: 'selesai', diubahPada: new Date() })
       .where(and(eq(salesOrders.id, soId), eq(salesOrders.status, 'dikonfirmasi')))
   }
+}
+
+/**
+ * Menggandakan dokumen menjadi penawaran baru. Hasilnya selalu penawaran tanpa
+ * nomor, apa pun status asalnya — menggandakan pesanan yang sudah dikirim tidak
+ * boleh ikut menyalin pengiriman maupun fakturnya, karena yang digandakan
+ * adalah maksud pesanannya, bukan riwayat pelaksanaannya.
+ */
+export async function duplikatPesanan(
+  id: string, dibuatOleh: string, tanggal: string,
+): Promise<PesananLengkap> {
+  const lama = await ambilPesanan(id)
+  if (!lama) throw new ValidasiError('Pesanan tidak ditemukan')
+
+  return buatPesanan({
+    partnerId: lama.partnerId,
+    tanggal,
+    tanggalPengiriman: null,
+    lokasiAsalId: lama.lokasiAsalId,
+    syaratPembayaranId: lama.syaratPembayaranId,
+    mataUangId: lama.mataUangId,
+    referensi: lama.referensi,
+    catatan: lama.catatan,
+    baris: lama.baris.map((b) => ({
+      produkId: b.produkId,
+      deskripsi: b.deskripsi,
+      kuantitas: String(Number(b.kuantitas)),
+      uomId: b.uomId,
+      hargaSatuan: String(Number(b.hargaSatuan)),
+      taxId: b.taxId,
+    })),
+  }, dibuatOleh)
 }

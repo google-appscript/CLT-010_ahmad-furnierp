@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { DialogPajak, TombolStatusPajak, type PilihanAkun } from './dialog-pajak'
 
 export const metadata = { title: 'Pajak' }
@@ -46,9 +47,7 @@ function kolomPajak(akunPajak: PilihanAkun[]): Kolom<Pajak>[] {
     {
       kunci: 'status', judul: 'Status', lebar: '100px',
       render: (p) => (
-        <Badge variant={p.isActive ? 'secondary' : 'outline'}>
-          {p.isActive ? 'Aktif' : 'Nonaktif'}
-        </Badge>
+        <LencanaStatus status={p.isActive ? 'aktif' : 'nonaktif'} label={p.isActive ? 'Aktif' : 'Nonaktif'} />
       ),
     },
     {

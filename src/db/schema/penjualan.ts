@@ -1,5 +1,5 @@
 import {
-  pgTable, uuid, text, integer, numeric, date, timestamp,
+  pgTable, uuid, text, integer, numeric, date, timestamp, boolean,
   uniqueIndex, index, check,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
@@ -17,6 +17,13 @@ export const salesOrders = pgTable('sales_orders', {
   // Nomor diberikan saat penawaran dikonfirmasi menjadi pesanan.
   nomor: text('nomor'),
   status: statusPenjualanEnum('status').notNull().default('penawaran'),
+  /**
+   * Menandai dokumen ini pernah menjadi penawaran. Statusnya sendiri tidak bisa
+   * dipakai: begitu penawaran dikonfirmasi, statusnya sama persis dengan pesanan
+   * yang dibuat langsung. Tanpa penanda ini, penawaran yang sudah berlanjut akan
+   * hilang dari daftar Penawaran dan riwayat penawarannya tidak dapat ditelusuri.
+   */
+  lewatPenawaran: boolean('lewat_penawaran').notNull().default(true),
   partnerId: uuid('partner_id').notNull().references(() => partners.id),
   tanggal: date('tanggal').notNull(),
   tanggalPengiriman: date('tanggal_pengiriman'),

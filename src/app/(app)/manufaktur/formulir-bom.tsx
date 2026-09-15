@@ -43,13 +43,15 @@ type KolomBaris = {
 }
 
 export function FormulirBom({
-  awal, produk, satuan, statusBadge, aksiTambahan,
+  awal, produk, satuan, statusBadge, aksiTambahan, menu,
 }: {
   awal: NilaiAwalBom
   produk: PilihanProduk[]
   satuan: PilihanSatuan[]
   statusBadge?: React.ReactNode
   aksiTambahan?: React.ReactNode
+  /** Menu roda gigi dokumen. */
+  menu?: React.ReactNode
 }) {
   const router = useRouter()
   const [bekerja, mulai] = useTransition()
@@ -150,6 +152,7 @@ export function FormulirBom({
         ]}
         nomor={awal.nama || 'Resep Baru'}
         status={statusBadge}
+        menu={menu}
         aksi={
           <div className="flex gap-3">
             {aksiTambahan}

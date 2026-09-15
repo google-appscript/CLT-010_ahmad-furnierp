@@ -661,6 +661,31 @@ describe('daftarPesanan', () => {
     expect(daftarPesananSaja.data.map((p) => p.id)).toEqual([pesananBatal.id])
   })
 
+  it('penawaran yang dikonfirmasi tetap tercatat di daftar penawaran', async () => {
+    const penawaran = await buatPesanan(pesananDasar(), penggunaId)
+    const langsung = await buatPesananLangsung(
+      pesananDasar({ partnerId: pelangganKeduaId }), penggunaId,
+    )
+    expect(penawaran.lewatPenawaran).toBe(true)
+    expect(langsung.lewatPenawaran).toBe(false)
+
+    await konfirmasiPesanan(penawaran.id, penggunaId)
+
+    // Sudah menjadi pesanan bernomor, tetapi riwayat penawarannya tidak hilang.
+    const riwayat = await daftarPesanan({
+      halaman: 1, ukuranHalaman: 20, lewatPenawaran: true,
+    })
+    expect(riwayat.data.map((p) => p.id)).toEqual([penawaran.id])
+    expect(riwayat.data[0].nomor).toBe('SO/2026/06/0001')
+
+    // Pesanan langsung tidak pernah menjadi penawaran, jadi tidak ikut muncul.
+    const semuaPesanan = await daftarPesanan({
+      halaman: 1, ukuranHalaman: 20, bernomor: true,
+    })
+    expect(semuaPesanan.data.map((p) => p.id).sort())
+      .toEqual([penawaran.id, langsung.id].sort())
+  })
+
   it('statusTermasuk mempersempit cakupan, bukan menambah', async () => {
     const so1 = await buatPesananLangsung(pesananDasar(), penggunaId)
     const penawaran = await buatPesanan(pesananDasar({ partnerId: pelangganKeduaId }), penggunaId)

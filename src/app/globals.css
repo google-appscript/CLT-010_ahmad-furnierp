@@ -146,3 +146,52 @@
     @apply font-sans;
   }
 }
+/**
+ * Tampilan cetak. Dialog cetak peramban sekaligus menjadi jalan menyimpan
+ * dokumen sebagai PDF, jadi yang perlu dibuang hanyalah kerangka aplikasi —
+ * sidebar, bilah atas, dan tombol — sehingga yang tercetak tinggal lembar
+ * dokumennya sendiri.
+ */
+@media print {
+  nav,
+  header,
+  aside,
+  [data-cetak='sembunyi'],
+  button,
+  [role='toolbar'] {
+    display: none !important;
+  }
+
+  /* Bilah kendali menempel saat dilihat, tetapi tidak boleh mengambang di kertas. */
+  .sticky {
+    position: static !important;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* Lembar dokumen tampil polos: tanpa bingkai, bayangan, maupun latar. */
+  [data-lembar] {
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  table {
+    break-inside: auto;
+  }
+  tr {
+    break-inside: avoid;
+  }
+}

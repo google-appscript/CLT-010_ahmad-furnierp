@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { FormulirPesanan } from '../../formulir-pesanan'
 import { ambilDataPilihanPenjualan } from '../../data-pilihan'
 import { AksiPenawaran } from './aksi-penawaran'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
+import { aksiDuplikatPesanan, aksiHapusPenawaran } from '../../aksi'
 
 export const metadata = { title: 'Detail Penawaran' }
 
@@ -68,6 +70,14 @@ export default async function HalamanDetailPenawaran({
       readOnly={!draf}
       statusBadge={!draf && <Badge variant="outline">Ditolak</Badge>}
       aksiTambahan={draf ? <AksiPenawaran key="aksi" id={penawaran.id} /> : undefined}
+      menu={
+        <MenuFormulir
+          labelDokumen="Penawaran"
+          onDuplikat={aksiDuplikatPesanan.bind(null, penawaran.id)}
+          ruteDuplikat="/penjualan/penawaran/:id"
+          onHapus={aksiHapusPenawaran.bind(null, penawaran.id)}
+        />
+      }
     />
   )
 }

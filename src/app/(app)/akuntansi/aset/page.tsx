@@ -5,17 +5,13 @@ import { LABEL_STATUS_ASET, LABEL_METODE } from '@/modules/aset/validasi/aset'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
 import { BarisKlik } from '@/components/data/tabel-data-interaktif'
 import { TombolBuat } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 
 export const metadata = { title: 'Daftar Aset' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', draft: 'secondary', dilepas: 'outline',
-}
 
 const KUNCI_DAFTAR = 'akuntansi.aset'
 
@@ -113,7 +109,7 @@ export default async function HalamanDaftarAset({
                     {a.status === 'dilepas' ? '—' : formatAngka(a.nilaiBuku)}
                   </td>
                   <td className="px-4 py-1.5">
-                    <Badge variant={VARIAN[a.status]}>{LABEL_STATUS_ASET[a.status]}</Badge>
+                    <LencanaStatus status={a.status} label={LABEL_STATUS_ASET[a.status]} />
                   </td>
                 </BarisKlik>
               ))}

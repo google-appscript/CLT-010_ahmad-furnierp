@@ -11,14 +11,11 @@ import {
   SLUG_KE_TIPE, labelTipeOperasi, LABEL_STATUS_OPERASI,
 } from '@/modules/gudang/validasi/operasi'
 import { formatAngka, formatRupiah } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { FormulirOperasi } from '../../formulir-operasi'
 import { ambilDataPilihan } from '../../data-pilihan'
 import { AksiDraftOperasi } from './aksi-operasi'
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  selesai: 'default', draft: 'secondary', dibatalkan: 'outline',
-}
+import { LencanaStatus } from '@/components/data/lencana-status'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
 
 const IZIN: Record<string, string> = {
   penerimaan: 'gudang.penerimaan.kelola',
@@ -74,6 +71,9 @@ export default async function HalamanDetailOperasi({
         satuan={daftarSatuan}
         mitra={daftarMitra}
         aksiTambahan={<AksiDraftOperasi key="aksi-draft" id={operasi.id} tipe={tipe} />}
+        menu={
+          <MenuFormulir labelDokumen="Operasi" />
+        }
       />
     )
   }
@@ -185,7 +185,7 @@ export default async function HalamanDetailOperasi({
       mitra={semuaMitra}
       readOnly
       nomor={operasi.nomor ?? labelTipeOperasi(tipe)}
-      statusBadge={<Badge variant={VARIAN[operasi.status]}>{LABEL_STATUS_OPERASI[operasi.status]}</Badge>}
+      statusBadge={<LencanaStatus status={operasi.status} label={LABEL_STATUS_OPERASI[operasi.status]} />}
       dokumenTerkait={dokumenTerkait}
     />
   )

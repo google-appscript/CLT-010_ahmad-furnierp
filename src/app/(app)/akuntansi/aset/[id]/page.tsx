@@ -6,16 +6,13 @@ import { assetCategories, partners, journalEntries, accounts } from '@/db/schema
 import { ringkasanAset } from '@/modules/aset/layanan/aset'
 import { LABEL_STATUS_ASET } from '@/modules/aset/validasi/aset'
 import { formatRupiah } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { FormulirAset, type BarisJadwal } from '../formulir-aset'
 import { ambilDataPilihanAset } from '../data-pilihan'
 import { AksiDraftAset, DialogPelepasan, TombolPostingBaris } from './aksi-aset'
+import { LencanaStatus } from '@/components/data/lencana-status'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
 
 export const metadata = { title: 'Detail Aset' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', draft: 'secondary', dilepas: 'outline',
-}
 
 export default async function HalamanDetailAset({
   params,
@@ -53,6 +50,9 @@ export default async function HalamanDetailAset({
         kategori={kategori}
         mitra={mitra}
         aksiTambahan={<AksiDraftAset key="aksi-draft" id={aset.id} />}
+        menu={
+          <MenuFormulir labelDokumen="Aset" />
+        }
       />
     )
   }
@@ -126,10 +126,13 @@ export default async function HalamanDetailAset({
       kategori={semuaKategori}
       mitra={semuaMitra}
       readOnly
-      statusBadge={<Badge variant={VARIAN[aset.status]}>{LABEL_STATUS_ASET[aset.status]}</Badge>}
+      statusBadge={<LencanaStatus status={aset.status} label={LABEL_STATUS_ASET[aset.status]} />}
       aksiTambahan={aset.status !== 'dilepas' ? (
         <DialogPelepasan key="aksi-pelepasan" id={aset.id} nilaiBuku={aset.nilaiBuku} akunKas={akunKas} />
       ) : undefined}
+      menu={
+        <MenuFormulir labelDokumen="Aset" />
+      }
       ringkasanTambahan={ringkasanTambahan}
       jadwal={aset.baris.length > 0 ? jadwal : []}
     />

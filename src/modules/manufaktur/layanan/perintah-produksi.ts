@@ -562,3 +562,36 @@ export async function operasiPerintahProduksi(id: string): Promise<OperasiPerint
     ))
     .orderBy(asc(stockOperations.dibuatPada))
 }
+
+/**
+ * Menggandakan perintah produksi menjadi draft baru. Bahan disalin apa adanya
+ * dari perintah asal, bukan dibaca ulang dari resepnya — salinan perintah lama
+ * harus memproduksi barang yang sama persis meski resepnya sudah berubah.
+ */
+export async function duplikatPerintahProduksi(
+  id: string, dibuatOleh: string, tanggal: string,
+): Promise<PerintahProduksiLengkap> {
+  const lama = await ambilPerintahProduksi(id)
+  if (!lama) throw new ValidasiError('Perintah produksi tidak ditemukan')
+
+  return buatPerintahProduksi({
+    produkId: lama.produkId,
+    bomId: lama.bomId,
+    kuantitas: String(Number(lama.kuantitas)),
+    uomId: lama.uomId,
+    tanggal,
+    tanggalTarget: null,
+    lokasiSumberId: lama.lokasiSumberId,
+    lokasiTujuanId: lama.lokasiTujuanId,
+    biayaTenagaKerja: String(Number(lama.biayaTenagaKerja)),
+    biayaOverhead: String(Number(lama.biayaOverhead)),
+    referensi: lama.referensi,
+    catatan: lama.catatan,
+    baris: lama.baris.map((b) => ({
+      produkId: b.produkId,
+      kuantitas: String(Number(b.kuantitas)),
+      uomId: b.uomId,
+      catatan: b.catatan,
+    })),
+  }, dibuatOleh)
+}

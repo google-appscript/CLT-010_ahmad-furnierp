@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation'
 import { wajibIzin } from '@/lib/sesi'
 import { ambilBom } from '@/modules/manufaktur/layanan/bom'
-import { Badge } from '@/components/ui/badge'
 import { FormulirBom } from '../../formulir-bom'
 import { ambilDataPilihanManufaktur } from '../../data-pilihan'
 import { TombolStatusBom } from './tombol-status'
+import { LencanaStatus } from '@/components/data/lencana-status'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
+import { aksiDuplikatBom } from '../../aksi'
 
 export const metadata = { title: 'Detail Resep' }
 
@@ -38,8 +40,15 @@ export default async function HalamanDetailBom({
       }}
       produk={produk}
       satuan={satuan}
-      statusBadge={<Badge variant={bom.isActive ? 'default' : 'outline'}>{bom.isActive ? 'Aktif' : 'Nonaktif'}</Badge>}
+      statusBadge={<LencanaStatus status={bom.isActive ? 'aktif' : 'nonaktif'} label={bom.isActive ? 'Aktif' : 'Nonaktif'} />}
       aksiTambahan={<TombolStatusBom key="status" id={bom.id} isActive={bom.isActive} />}
+      menu={
+        <MenuFormulir
+          labelDokumen="Resep"
+          onDuplikat={aksiDuplikatBom.bind(null, bom.id)}
+          ruteDuplikat="/manufaktur/bom/:id"
+        />
+      }
     />
   )
 }

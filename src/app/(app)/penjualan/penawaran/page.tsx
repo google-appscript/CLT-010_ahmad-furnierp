@@ -10,8 +10,12 @@ export const metadata = { title: 'Penawaran' }
 
 const KUNCI_DAFTAR = 'penjualan.penawaran'
 
-/** Penawaran yang sudah dikonfirmasi pindah ke daftar Pesanan Penjualan. */
-const CAKUPAN = ['penawaran', 'dibatalkan'] as const
+/**
+ * Penawaran yang sudah dikonfirmasi tetap tercatat di sini. Daftar ini adalah
+ * riwayat penawaran, jadi menghilangkan yang berhasil justru menyembunyikan
+ * kabar baiknya — statusnya yang menerangkan sudah sampai mana.
+ */
+const CAKUPAN = ['penawaran', 'dikonfirmasi', 'selesai', 'dibatalkan'] as const
 
 export default async function HalamanPenawaran({
   searchParams,
@@ -34,7 +38,7 @@ export default async function HalamanPenawaran({
     <>
       <KepalaHalaman
         judul="Penawaran"
-        deskripsi="Tawaran harga kepada pelanggan. Penawaran belum tentu berlanjut — yang disetujui dikonfirmasi menjadi pesanan penjualan, sisanya cukup ditolak."
+        deskripsi="Riwayat tawaran harga kepada pelanggan. Yang disetujui dikonfirmasi menjadi pesanan penjualan dan tetap tercatat di sini, sisanya ditolak."
         aksi={<TombolBuat href="/penjualan/penawaran/baru">Buat Penawaran</TombolBuat>}
       />
       <PanelPencarian
@@ -44,7 +48,9 @@ export default async function HalamanPenawaran({
             kunci: 'status',
             label: 'Status',
             opsi: [
-              { nilai: 'penawaran', label: 'Penawaran' },
+              { nilai: 'penawaran', label: 'Menunggu Keputusan' },
+              { nilai: 'dikonfirmasi', label: 'Jadi Pesanan' },
+              { nilai: 'selesai', label: 'Jadi Pesanan (Selesai)' },
               { nilai: 'dibatalkan', label: 'Ditolak' },
             ],
           },
@@ -56,7 +62,7 @@ export default async function HalamanPenawaran({
         favorit={favorit.map((f) => ({ ...f, kriteria: f.kriteria as ParameterDaftar }))}
       />
       <DaftarPesanan
-        param={{ ...param, statusTermasuk: [...CAKUPAN], bernomor: false }}
+        param={{ ...param, statusTermasuk: [...CAKUPAN], lewatPenawaran: true }}
         basisRute="/penjualan/penawaran"
         labelDitolak
       />

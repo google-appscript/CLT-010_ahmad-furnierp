@@ -456,3 +456,36 @@ export async function tagihanBelumLunas(partnerId?: string): Promise<RingkasanTa
 }
 
 export { hitungJatuhTempo, tambah }
+
+/**
+ * Menggandakan tagihan menjadi draft baru. Kaitan ke pesanan pembelian tidak
+ * ikut disalin supaya barang yang sama tidak tertagih dua kali terhadap
+ * penerimaan yang sama.
+ */
+export async function duplikatTagihan(
+  id: string, dibuatOleh: string, tanggal: string,
+): Promise<TagihanLengkap> {
+  const lama = await ambilTagihan(id)
+  if (!lama) throw new ValidasiError('Tagihan tidak ditemukan')
+
+  return buatTagihan({
+    tipe: lama.tipe,
+    partnerId: lama.partnerId,
+    poId: null,
+    tanggal,
+    tanggalJatuhTempo: null,
+    referensiPemasok: lama.referensiPemasok,
+    mataUangId: lama.mataUangId,
+    catatan: lama.catatan,
+    baris: lama.baris.map((b) => ({
+      produkId: b.produkId,
+      poLineId: null,
+      deskripsi: b.deskripsi,
+      kuantitas: String(Number(b.kuantitas)),
+      uomId: b.uomId,
+      hargaSatuan: String(Number(b.hargaSatuan)),
+      taxId: b.taxId,
+      akunId: b.akunId,
+    })),
+  }, dibuatOleh)
+}

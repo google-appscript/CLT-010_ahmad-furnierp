@@ -7,17 +7,15 @@ import { accounts, journalEntries, partners, purchaseOrders, taxes } from '@/db/
 import { ambilTagihan, ringkasanTagihan } from '@/modules/pembelian/layanan/tagihan'
 import { LABEL_STATUS_TAGIHAN, LABEL_TIPE_TAGIHAN } from '@/modules/pembelian/validasi/pesanan'
 import { formatRupiah } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { FormulirTagihan } from '../../formulir-tagihan'
 import { ambilDataPilihanTagihan } from '../../data-pilihan'
 import { AksiDraftTagihan } from './aksi-tagihan'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
+import { aksiDuplikatTagihan, aksiHapusTagihan } from '../../aksi'
 
 export const metadata = { title: 'Detail Tagihan' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
-}
 
 export default async function HalamanDetailTagihan({
   params,
@@ -58,6 +56,14 @@ export default async function HalamanDetailTagihan({
         awal={awal}
         {...pilihan}
         aksiTambahan={<AksiDraftTagihan key="aksi-draft" id={tagihan.id} />}
+        menu={
+          <MenuFormulir
+            labelDokumen="Tagihan"
+            onDuplikat={aksiDuplikatTagihan.bind(null, tagihan.id)}
+            ruteDuplikat="/akuntansi/pemasok/tagihan/:id"
+            onHapus={aksiHapusTagihan.bind(null, tagihan.id)}
+          />
+        }
       />
     )
   }
@@ -99,12 +105,19 @@ export default async function HalamanDetailTagihan({
       pajak={semuaPajak}
       readOnly
       nomor={tagihan.nomor ?? LABEL_TIPE_TAGIHAN[tagihan.tipe]}
-      statusBadge={<Badge variant={VARIAN[tagihan.status]}>{LABEL_STATUS_TAGIHAN[tagihan.status]}</Badge>}
+      statusBadge={<LencanaStatus status={tagihan.status} label={LABEL_STATUS_TAGIHAN[tagihan.status]} />}
       aksiTambahan={ringkasan && Number(ringkasan.sisa) > 0 ? (
         <Button key="bayar" asChild>
           <Link href={`/akuntansi/pemasok/pembayaran?tagihan=${id}`}>Bayar</Link>
         </Button>
       ) : undefined}
+      menu={
+        <MenuFormulir
+          labelDokumen="Tagihan"
+          onDuplikat={aksiDuplikatTagihan.bind(null, tagihan.id)}
+          ruteDuplikat="/akuntansi/pemasok/tagihan/:id"
+        />
+      }
       dokumenTerkait={{
         jurnal: jurnal ? { id: jurnal.id, nomor: jurnal.nomor ?? '—' } : undefined,
         pesanan: pesanan ? { id: pesanan.id, nomor: pesanan.nomor ?? '—' } : undefined,

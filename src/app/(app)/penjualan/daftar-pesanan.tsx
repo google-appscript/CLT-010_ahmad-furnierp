@@ -4,14 +4,9 @@ import { partners } from '@/db/schema'
 import { daftarPesanan, totalPesanan, type Pesanan } from '@/modules/penjualan/layanan/pesanan'
 import { LABEL_STATUS_PENJUALAN } from '@/modules/penjualan/validasi/pesanan'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import type { ParameterDaftar } from '@/lib/daftar'
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  dikonfirmasi: 'default', selesai: 'default',
-  penawaran: 'secondary', dibatalkan: 'outline',
-}
 
 type BarisPesanan = Pesanan & { totalTagihan: string }
 
@@ -24,14 +19,23 @@ export async function DaftarPesanan({
     status?: Pesanan['status']
     statusTermasuk?: Pesanan['status'][]
     bernomor?: boolean
+    lewatPenawaran?: boolean
   }
   /** Rute detail dokumen; penawaran dan pesanan dibuka di layar berbeda. */
   basisRute?: string
-  /** Pada daftar penawaran, status `dibatalkan` dibaca sebagai penawaran yang ditolak. */
+  /**
+   * Pada daftar penawaran, status dibaca dari sudut pandang penawaran: yang
+   * dibatalkan tanpa pernah bernomor berarti ditolak, dan yang sudah bernomor
+   * berarti penawarannya berhasil menjadi pesanan.
+   */
   labelDitolak?: boolean
 }) {
-  const labelStatus = (status: string) =>
-    labelDitolak && status === 'dibatalkan' ? 'Ditolak' : LABEL_STATUS_PENJUALAN[status] ?? status
+  const labelStatus = (p: { status: string; nomor: string | null }) => {
+    if (!labelDitolak) return LABEL_STATUS_PENJUALAN[p.status] ?? p.status
+    if (p.status === 'dibatalkan') return p.nomor ? 'Pesanan Dibatalkan' : 'Ditolak'
+    if (p.status === 'penawaran') return 'Menunggu Keputusan'
+    return `Jadi Pesanan${p.status === 'selesai' ? ' (Selesai)' : ''}`
+  }
 
   const [{ data: pesanan, totalBaris }, semuaMitra] = await Promise.all([
     daftarPesanan(param),
@@ -64,14 +68,15 @@ export async function DaftarPesanan({
     {
       kunci: 'status',
       judul: 'Status',
-      render: (p) => <Badge variant={VARIAN[p.status]}>{labelStatus(p.status)}</Badge>,
+      render: (p) => <LencanaStatus status={p.status} label={labelStatus(p)} />,
     },
   ]
 
   const pengelompokan = param.kelompokkan === 'status'
     ? {
         kelompokkanDari: (p: BarisPesanan) => p.status,
-        label: labelStatus,
+        label: (nilaiGrup: string) =>
+          LABEL_STATUS_PENJUALAN[nilaiGrup] ?? nilaiGrup,
       }
     : param.kelompokkan === 'partnerId'
       ? {

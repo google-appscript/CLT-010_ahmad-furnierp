@@ -4,9 +4,9 @@ import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { accounts } from '@/db/schema'
 import { daftarKategoriProduk } from '@/modules/gudang/layanan/kategori'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { DialogKategoriProduk, TombolStatusKategoriProduk } from './dialog-kategori'
 
 export const metadata = { title: 'Kategori Produk' }
@@ -62,9 +62,7 @@ export default async function HalamanKategoriProduk() {
                 <td className="px-4 py-1.5 text-muted-foreground">{akunLewatId.get(k.akunSelisihId)}</td>
                 <td className="px-4 py-1.5 text-muted-foreground">{akunLewatId.get(k.akunBarangRusakId)}</td>
                 <td className="px-4 py-1.5">
-                  <Badge variant={k.isActive ? 'default' : 'outline'}>
-                    {k.isActive ? 'Aktif' : 'Nonaktif'}
-                  </Badge>
+                  <LencanaStatus status={k.isActive ? 'aktif' : 'nonaktif'} label={k.isActive ? 'Aktif' : 'Nonaktif'} />
                 </td>
                 <td className="px-4 py-1.5 text-right">
                   <DialogKategoriProduk

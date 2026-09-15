@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { wajibIzin } from '@/lib/sesi'
-import { buatBom, ubahBom, ubahStatusBom, kebutuhanBahan } from '@/modules/manufaktur/layanan/bom'
+import { buatBom, duplikatBom, ubahBom, ubahStatusBom, kebutuhanBahan } from '@/modules/manufaktur/layanan/bom'
 import {
-  buatPerintahProduksi, ubahPerintahProduksi, konfirmasiPerintahProduksi,
+  buatPerintahProduksi, duplikatPerintahProduksi, ubahPerintahProduksi, konfirmasiPerintahProduksi,
   selesaikanPerintahProduksi, batalkanPerintahProduksi, hapusPerintahProduksi,
 } from '@/modules/manufaktur/layanan/perintah-produksi'
 import { catatAudit } from '@/modules/identitas/layanan/audit'
@@ -150,6 +150,43 @@ export async function aksiHapusPerintah(id: string): Promise<HasilAksi> {
     })
     segarkan()
     return { berhasil: true }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+/** Tanggal hari ini; salinan selalu bertanggal saat digandakan. */
+function hariIni(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** Menggandakan resep; kodenya diberi akhiran agar tetap unik. */
+export async function aksiDuplikatBom(id: string): Promise<HasilAksi> {
+  const sesi = await wajibIzin('manufaktur.bom.lihat')
+  try {
+    const salinan = await duplikatBom(id, sesi.penggunaId)
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'bill_of_materials', entitasId: salinan.id,
+      aksi: 'buat', dataBaru: { duplikatDari: id },
+    })
+    segarkan()
+    return { berhasil: true, id: salinan.id }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+/** Menggandakan perintah produksi menjadi draft baru. */
+export async function aksiDuplikatPerintah(id: string): Promise<HasilAksi> {
+  const sesi = await wajibIzin('manufaktur.mo.lihat')
+  try {
+    const salinan = await duplikatPerintahProduksi(id, sesi.penggunaId, hariIni())
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'work_orders', entitasId: salinan.id,
+      aksi: 'buat', dataBaru: { duplikatDari: id },
+    })
+    segarkan()
+    return { berhasil: true, id: salinan.id }
   } catch (galat) {
     return keHasil(galat)
   }

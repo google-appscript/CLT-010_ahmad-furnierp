@@ -5,17 +5,13 @@ import { daftarJurnal } from '@/modules/akuntansi/layanan/jurnal'
 import { LABEL_STATUS } from '@/modules/akuntansi/validasi/entri'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
 import { TombolBuat } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 
 export const metadata = { title: 'Entri Jurnal' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
-}
 
 const KUNCI_DAFTAR = 'akuntansi.jurnal.entri'
 
@@ -49,7 +45,7 @@ export default async function HalamanEntriJurnal({
     { kunci: 'referensi', judul: 'Referensi', render: (e) => <span className="text-muted-foreground">{e.referensi ?? '—'}</span> },
     {
       kunci: 'status', judul: 'Status',
-      render: (e) => <Badge variant={VARIAN[e.status]}>{LABEL_STATUS[e.status]}</Badge>,
+      render: (e) => <LencanaStatus status={e.status} label={LABEL_STATUS[e.status]} />,
     },
   ]
 

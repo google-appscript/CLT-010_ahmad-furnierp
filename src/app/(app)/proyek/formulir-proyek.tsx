@@ -35,7 +35,7 @@ const TANPA_MANAJER = 'tanpa-manajer'
 
 export function FormulirProyek({
   awal, pesanan, pengguna,
-  readOnly = false, nomor, statusBadge, aksiTambahan, bannerTambahan, tabTambahan,
+  readOnly = false, nomor, statusBadge, aksiTambahan, menu, bannerTambahan, tabTambahan,
 }: {
   awal: NilaiAwalProyek
   pesanan: PilihanPesanan[]
@@ -44,6 +44,8 @@ export function FormulirProyek({
   nomor?: string
   statusBadge?: React.ReactNode
   aksiTambahan?: React.ReactNode
+  /** Menu roda gigi dokumen. */
+  menu?: React.ReactNode
   bannerTambahan?: React.ReactNode
   tabTambahan?: { id: string; label: string; children: React.ReactNode }[]
 }) {
@@ -180,6 +182,7 @@ export function FormulirProyek({
         ]}
         nomor={nomor ?? 'Proyek Baru'}
         status={statusBadge}
+        menu={menu}
         aksi={
           <div className="flex gap-3">
             {aksiTambahan}

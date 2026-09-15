@@ -4,14 +4,9 @@ import { partners } from '@/db/schema'
 import { daftarPesanan, totalPesanan, type Pesanan } from '@/modules/pembelian/layanan/pesanan'
 import { LABEL_STATUS_PEMBELIAN } from '@/modules/pembelian/validasi/pesanan'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import type { ParameterDaftar } from '@/lib/daftar'
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  dikonfirmasi: 'default', selesai: 'default',
-  permintaan: 'secondary', dibatalkan: 'outline',
-}
 
 type BarisPesanan = Pesanan & { totalTagihan: string }
 
@@ -37,7 +32,7 @@ export async function DaftarPesanan({
     { kunci: 'total', judul: 'Total Tagihan', rataKanan: true, render: (p) => formatAngka(p.totalTagihan) },
     {
       kunci: 'status', judul: 'Status',
-      render: (p) => <Badge variant={VARIAN[p.status]}>{LABEL_STATUS_PEMBELIAN[p.status]}</Badge>,
+      render: (p) => <LencanaStatus status={p.status} label={LABEL_STATUS_PEMBELIAN[p.status]} />,
     },
   ]
 

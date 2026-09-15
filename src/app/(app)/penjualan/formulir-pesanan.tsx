@@ -87,7 +87,7 @@ type KolomBaris = {
 export function FormulirPesanan({
   awal, produk, satuan, pajak, pelanggan, lokasi, syaratPembayaran,
   mode = 'penawaran',
-  readOnly = false, nomor, statusBadge, aksiTambahan, dokumenTerkait,
+  readOnly = false, nomor, statusBadge, aksiTambahan, menu, dokumenTerkait,
 }: {
   awal: NilaiAwalPesanan
   produk: PilihanProduk[]
@@ -101,6 +101,8 @@ export function FormulirPesanan({
   nomor?: string
   statusBadge?: React.ReactNode
   aksiTambahan?: React.ReactNode
+  /** Menu roda gigi dokumen. */
+  menu?: React.ReactNode
   dokumenTerkait?: {
     pengiriman: { operasiId: string; nomor: string; tanggal: string }[]
     faktur: { id: string; nomor: string | null; status: string }[]
@@ -315,6 +317,7 @@ export function FormulirPesanan({
         ]}
         nomor={nomor ?? teks.judulBaru}
         status={statusBadge}
+        menu={menu}
         aksi={
           <div className="flex gap-3">
             {aksiTambahan}

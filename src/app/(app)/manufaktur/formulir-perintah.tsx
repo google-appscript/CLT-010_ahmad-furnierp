@@ -57,7 +57,7 @@ const TANPA_RESEP = 'tanpa-resep'
 
 export function FormulirPerintah({
   awal, produk, satuan, lokasi, resep,
-  readOnly = false, nomor, statusBadge, aksiTambahan, dokumenTerkait,
+  readOnly = false, nomor, statusBadge, aksiTambahan, menu, dokumenTerkait,
 }: {
   awal: NilaiAwalPerintah
   produk: PilihanProduk[]
@@ -68,6 +68,8 @@ export function FormulirPerintah({
   nomor?: string
   statusBadge?: React.ReactNode
   aksiTambahan?: React.ReactNode
+  /** Menu roda gigi dokumen. */
+  menu?: React.ReactNode
   dokumenTerkait?: React.ReactNode
 }) {
   const router = useRouter()
@@ -222,6 +224,7 @@ export function FormulirPerintah({
         ]}
         nomor={nomor ?? 'Draft Baru'}
         status={statusBadge}
+        menu={menu}
         aksi={
           <div className="flex gap-3">
             {aksiTambahan}

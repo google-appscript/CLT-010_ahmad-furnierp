@@ -5,10 +5,10 @@ import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { products, productCategories, uoms } from '@/db/schema'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { LABEL_TIPE_PRODUK } from '@/modules/gudang/validasi/produk'
 import { DialogProduk, TombolStatusProduk } from './dialog-produk'
 
@@ -87,9 +87,7 @@ export default async function HalamanProduk() {
                   {formatAngka(p.hargaPokokRataRata, 2)}
                 </td>
                 <td className="px-4 py-1.5">
-                  <Badge variant={p.isActive ? 'secondary' : 'outline'}>
-                    {p.isActive ? 'Aktif' : 'Nonaktif'}
-                  </Badge>
+                  <LencanaStatus status={p.isActive ? 'aktif' : 'nonaktif'} label={p.isActive ? 'Aktif' : 'Nonaktif'} />
                 </td>
                 <td className="px-4 py-1.5 text-right">
                   <Button variant="ghost" size="sm" asChild>

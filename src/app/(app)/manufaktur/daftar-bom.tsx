@@ -3,8 +3,8 @@ import { db } from '@/db/klien'
 import { products, uoms, bomLines } from '@/db/schema'
 import { daftarBom } from '@/modules/manufaktur/layanan/bom'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import type { ParameterDaftar } from '@/lib/daftar'
 
 export async function DaftarBom({ param }: { param: ParameterDaftar }) {
@@ -36,7 +36,7 @@ export async function DaftarBom({ param }: { param: ParameterDaftar }) {
     { kunci: 'jumlahBahan', judul: 'Jumlah Bahan', rataKanan: true, render: (r) => jumlahBahan.get(r.id) ?? 0 },
     {
       kunci: 'status', judul: 'Status',
-      render: (r) => <Badge variant={r.isActive ? 'default' : 'outline'}>{r.isActive ? 'Aktif' : 'Nonaktif'}</Badge>,
+      render: (r) => <LencanaStatus status={r.isActive ? 'aktif' : 'nonaktif'} label={r.isActive ? 'Aktif' : 'Nonaktif'} />,
     },
   ]
 

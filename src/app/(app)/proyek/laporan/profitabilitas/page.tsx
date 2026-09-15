@@ -3,15 +3,10 @@ import { wajibIzin } from '@/lib/sesi'
 import { profitabilitasSeluruhProyek } from '@/modules/proyek/layanan/laporan'
 import { LABEL_STATUS_PROYEK } from '@/modules/proyek/validasi/proyek'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { LencanaStatus } from '@/components/data/lencana-status'
 
 export const metadata = { title: 'Profitabilitas Proyek' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', terkunci: 'default',
-  draft: 'secondary', dibatalkan: 'outline',
-}
 
 export default async function HalamanProfitabilitas() {
   await wajibIzin('proyek.laporan.profitabilitas')
@@ -73,7 +68,7 @@ export default async function HalamanProfitabilitas() {
                     <span className="ml-2">{b.nama}</span>
                   </td>
                   <td className="px-4 py-1.5">
-                    <Badge variant={VARIAN[b.status]}>{LABEL_STATUS_PROYEK[b.status]}</Badge>
+                    <LencanaStatus status={b.status} label={LABEL_STATUS_PROYEK[b.status]} />
                   </td>
                   <td className="px-4 py-1.5 text-right tabular-nums">
                     {formatAngka(b.pendapatan)}

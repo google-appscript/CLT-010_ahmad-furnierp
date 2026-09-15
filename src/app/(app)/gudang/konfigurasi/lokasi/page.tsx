@@ -6,6 +6,7 @@ import { locations, warehouses } from '@/db/schema'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { LABEL_TIPE_LOKASI } from '@/modules/gudang/validasi/lokasi'
 import { DialogWarehouse, TombolStatusWarehouse } from './dialog-gudang'
 import { DialogLokasi, TombolStatusLokasi } from './dialog-lokasi'
@@ -53,9 +54,7 @@ export default async function HalamanLokasi() {
                   <td className="px-4 py-1.5">{g.nama}</td>
                   <td className="px-4 py-1.5 text-muted-foreground">{g.alamat ?? '—'}</td>
                   <td className="px-4 py-1.5">
-                    <Badge variant={g.isActive ? 'secondary' : 'outline'}>
-                      {g.isActive ? 'Aktif' : 'Nonaktif'}
-                    </Badge>
+                    <LencanaStatus status={g.isActive ? 'aktif' : 'nonaktif'} label={g.isActive ? 'Aktif' : 'Nonaktif'} />
                   </td>
                   <td className="px-4 py-1.5 text-right">
                     <DialogWarehouse gudang={g} pemicu={<TombolUbah />} />
@@ -103,9 +102,7 @@ export default async function HalamanLokasi() {
                     {l.warehouseId ? gudangLewatId.get(l.warehouseId) ?? '—' : '—'}
                   </td>
                   <td className="px-4 py-1.5">
-                    <Badge variant={l.isActive ? 'secondary' : 'outline'}>
-                      {l.isActive ? 'Aktif' : 'Nonaktif'}
-                    </Badge>
+                    <LencanaStatus status={l.isActive ? 'aktif' : 'nonaktif'} label={l.isActive ? 'Aktif' : 'Nonaktif'} />
                   </td>
                   <td className="px-4 py-1.5 text-right">
                     <DialogLokasi

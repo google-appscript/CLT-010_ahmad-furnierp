@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { wajibIzin } from '@/lib/sesi'
 import {
-  buatFaktur, ubahFaktur, postingFaktur, batalkanFaktur, hapusFaktur,
+  buatFaktur, duplikatFaktur, ubahFaktur, postingFaktur, batalkanFaktur, hapusFaktur,
 } from '@/modules/penjualan/layanan/faktur'
 import {
   buatPembayaran, postingPembayaran, hapusPembayaran,
@@ -132,6 +132,27 @@ export async function aksiHapusPembayaran(id: string): Promise<HasilAksi> {
     })
     segarkan()
     return { berhasil: true }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+/** Tanggal hari ini; salinan selalu bertanggal saat digandakan. */
+function hariIni(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** Menggandakan faktur menjadi draft baru yang belum bernomor. */
+export async function aksiDuplikatFaktur(id: string): Promise<HasilAksi> {
+  const sesi = await wajibIzin('akuntansi.faktur.lihat')
+  try {
+    const salinan = await duplikatFaktur(id, sesi.penggunaId, hariIni())
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'customer_invoices', entitasId: salinan.id,
+      aksi: 'buat', dataBaru: { duplikatDari: id },
+    })
+    segarkan()
+    return { berhasil: true, id: salinan.id }
   } catch (galat) {
     return keHasil(galat)
   }

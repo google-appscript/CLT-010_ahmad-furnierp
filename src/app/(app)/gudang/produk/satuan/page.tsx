@@ -4,9 +4,9 @@ import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { uoms } from '@/db/schema'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { LABEL_KATEGORI_UOM } from '@/modules/gudang/validasi/uom'
 import { DialogUom, TombolStatusUom } from './dialog-satuan'
 
@@ -44,9 +44,7 @@ export default async function HalamanSatuan() {
                 <td className="px-4 py-1.5 text-muted-foreground">{LABEL_KATEGORI_UOM[u.kategori]}</td>
                 <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(u.faktor, 3)}</td>
                 <td className="px-4 py-1.5">
-                  <Badge variant={u.isActive ? 'secondary' : 'outline'}>
-                    {u.isActive ? 'Aktif' : 'Nonaktif'}
-                  </Badge>
+                  <LencanaStatus status={u.isActive ? 'aktif' : 'nonaktif'} label={u.isActive ? 'Aktif' : 'Nonaktif'} />
                 </td>
                 <td className="px-4 py-1.5 text-right">
                   <DialogUom uom={u} pemicu={<TombolUbah />} />

@@ -12,17 +12,13 @@ import { daftarProyek } from '@/modules/proyek/layanan/proyek'
 import { daftarPosBiaya, alokasiEntri } from '@/modules/akuntansi/layanan/pos-biaya'
 import { LABEL_STATUS } from '@/modules/akuntansi/validasi/entri'
 import { formatAngka, tambah } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { FormulirEntri } from '../formulir-entri'
 import { AksiDraft, AksiBalik } from './aksi-entri'
 
 export const metadata = { title: 'Detail Entri Jurnal' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
-}
 
 export default async function HalamanDetailEntri({
   params,
@@ -119,7 +115,7 @@ export default async function HalamanDetailEntri({
 
       <dl className="mb-6 grid gap-4 rounded-md border p-4 sm:grid-cols-4">
         <Bidang label="Status">
-          <Badge variant={VARIAN[entri.status]}>{LABEL_STATUS[entri.status]}</Badge>
+          <LencanaStatus status={entri.status} label={LABEL_STATUS[entri.status]} />
         </Bidang>
         <Bidang label="Tanggal">{entri.tanggal}</Bidang>
         <Bidang label="Jurnal">{kodeJurnal}</Bidang>

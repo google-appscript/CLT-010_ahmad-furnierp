@@ -59,7 +59,7 @@ type KolomBaris = {
 
 export function FormulirFaktur({
   awal, pelanggan, akun, pajak,
-  readOnly = false, nomor, statusBadge, aksiTambahan, dokumenTerkait,
+  readOnly = false, nomor, statusBadge, aksiTambahan, menu, dokumenTerkait,
 }: {
   awal: NilaiAwalFaktur
   pelanggan: PilihanUmum[]
@@ -69,6 +69,8 @@ export function FormulirFaktur({
   nomor?: string
   statusBadge?: React.ReactNode
   aksiTambahan?: React.ReactNode
+  /** Menu roda gigi dokumen. */
+  menu?: React.ReactNode
   dokumenTerkait?: { jurnal?: { id: string; nomor: string }; pesanan?: { id: string; nomor: string }; ringkasan?: React.ReactNode }
 }) {
   const router = useRouter()
@@ -210,6 +212,7 @@ export function FormulirFaktur({
         ]}
         nomor={nomor ?? 'Draft Baru'}
         status={statusBadge}
+        menu={menu}
         aksi={
           <div className="flex gap-3">
             {aksiTambahan}

@@ -8,6 +8,7 @@ import { formatAngka } from '@/lib/uang'
 import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import {
   DialogPemilik, TombolStatusPemilik, DialogSusunan, TombolHapusSusunan,
 } from './panel-pemilik'
@@ -79,9 +80,7 @@ export default async function HalamanPemilik() {
                     {p.akunPriveId ? akunLewatId.get(p.akunPriveId) ?? '—' : '—'}
                   </td>
                   <td className="px-4 py-1.5">
-                    <Badge variant={p.isActive ? 'default' : 'outline'}>
-                      {p.isActive ? 'Aktif' : 'Nonaktif'}
-                    </Badge>
+                    <LencanaStatus status={p.isActive ? 'aktif' : 'nonaktif'} label={p.isActive ? 'Aktif' : 'Nonaktif'} />
                   </td>
                   <td className="px-4 py-1.5 text-right">
                     <DialogPemilik

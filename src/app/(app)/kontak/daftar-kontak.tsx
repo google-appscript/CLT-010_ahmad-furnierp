@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { DialogPartner, TombolStatusPartner } from './dialog-partner'
 
 /** NPWP disimpan sebagai angka; pemformatan hanya untuk tampilan. */
@@ -37,9 +38,7 @@ const kolom: Kolom<Partner>[] = [
   {
     kunci: 'status', judul: 'Status', lebar: '100px',
     render: (m) => (
-      <Badge variant={m.isActive ? 'secondary' : 'outline'}>
-        {m.isActive ? 'Aktif' : 'Nonaktif'}
-      </Badge>
+      <LencanaStatus status={m.isActive ? 'aktif' : 'nonaktif'} label={m.isActive ? 'Aktif' : 'Nonaktif'} />
     ),
   },
   {

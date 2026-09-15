@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { wajibIzin } from '@/lib/sesi'
 import {
-  buatPesanan, ubahPesanan, konfirmasiPesanan, batalkanPesanan, hapusPermintaan,
+  buatPesanan, duplikatPesanan, ubahPesanan, konfirmasiPesanan, batalkanPesanan, hapusPermintaan,
 } from '@/modules/pembelian/layanan/pesanan'
 import { terimaDariPesanan } from '@/modules/pembelian/layanan/penerimaan'
 import { catatAudit } from '@/modules/identitas/layanan/audit'
@@ -104,6 +104,27 @@ export async function aksiTerimaBarang(
     })
     segarkan()
     return { berhasil: true, id: hasil.operasiId }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+/** Tanggal hari ini; salinan selalu bertanggal saat digandakan. */
+function hariIni(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** Menggandakan dokumen menjadi permintaan penawaran baru. */
+export async function aksiDuplikatPesanan(id: string): Promise<HasilAksi> {
+  const sesi = await wajibIzin(IZIN_LIHAT)
+  try {
+    const salinan = await duplikatPesanan(id, sesi.penggunaId, hariIni())
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'purchase_orders', entitasId: salinan.id,
+      aksi: 'buat', dataBaru: { duplikatDari: id },
+    })
+    segarkan()
+    return { berhasil: true, id: salinan.id }
   } catch (galat) {
     return keHasil(galat)
   }

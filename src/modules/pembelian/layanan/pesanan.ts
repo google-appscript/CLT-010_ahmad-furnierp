@@ -336,3 +336,33 @@ export async function perbaruiStatusPenyelesaian(poId: string): Promise<void> {
 }
 
 export { hitungTotal, sisaKuantitas }
+
+/**
+ * Menggandakan dokumen menjadi permintaan penawaran baru, tanpa nomor dan
+ * tanpa riwayat penerimaan maupun tagihan dokumen asalnya.
+ */
+export async function duplikatPesanan(
+  id: string, dibuatOleh: string, tanggal: string,
+): Promise<PesananLengkap> {
+  const lama = await ambilPesanan(id)
+  if (!lama) throw new ValidasiError('Pesanan tidak ditemukan')
+
+  return buatPesanan({
+    partnerId: lama.partnerId,
+    tanggal,
+    tanggalDiharapkan: null,
+    lokasiTujuanId: lama.lokasiTujuanId,
+    syaratPembayaranId: lama.syaratPembayaranId,
+    mataUangId: lama.mataUangId,
+    referensi: lama.referensi,
+    catatan: lama.catatan,
+    baris: lama.baris.map((b) => ({
+      produkId: b.produkId,
+      deskripsi: b.deskripsi,
+      kuantitas: String(Number(b.kuantitas)),
+      uomId: b.uomId,
+      hargaSatuan: String(Number(b.hargaSatuan)),
+      taxId: b.taxId,
+    })),
+  }, dibuatOleh)
+}

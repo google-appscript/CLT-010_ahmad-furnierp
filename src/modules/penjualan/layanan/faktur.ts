@@ -429,3 +429,36 @@ export async function hapusFaktur(id: string): Promise<void> {
   }
   await db.delete(customerInvoices).where(eq(customerInvoices.id, id))
 }
+
+/**
+ * Menggandakan faktur menjadi draft baru. Kaitan ke pesanan penjualan sengaja
+ * tidak ikut disalin: kuantitas yang boleh difakturkan dihitung dari sisa
+ * pesanan itu, dan menyalinnya akan menagih barang yang sama dua kali.
+ */
+export async function duplikatFaktur(
+  id: string, dibuatOleh: string, tanggal: string,
+): Promise<FakturLengkap> {
+  const lama = await ambilFaktur(id)
+  if (!lama) throw new ValidasiError('Faktur tidak ditemukan')
+
+  return buatFaktur({
+    tipe: lama.tipe,
+    partnerId: lama.partnerId,
+    soId: null,
+    tanggal,
+    tanggalJatuhTempo: null,
+    referensi: lama.referensi,
+    mataUangId: lama.mataUangId,
+    catatan: lama.catatan,
+    baris: lama.baris.map((b) => ({
+      produkId: b.produkId,
+      soLineId: null,
+      deskripsi: b.deskripsi,
+      kuantitas: String(Number(b.kuantitas)),
+      uomId: b.uomId,
+      hargaSatuan: String(Number(b.hargaSatuan)),
+      taxId: b.taxId,
+      akunId: b.akunId,
+    })),
+  }, dibuatOleh)
+}

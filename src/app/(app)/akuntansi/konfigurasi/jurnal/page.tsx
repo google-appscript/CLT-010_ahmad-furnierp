@@ -1,10 +1,10 @@
 
 import { wajibIzin } from '@/lib/sesi'
 import { daftarJurnal, labelTipeJurnal, type Jurnal } from '@/modules/akuntansi/layanan/jurnal'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { DialogJurnal, TombolStatusJurnal } from './dialog-jurnal'
 
 export const metadata = { title: 'Jurnal' }
@@ -19,9 +19,7 @@ const kolom: Kolom<Jurnal>[] = [
   {
     kunci: 'status', judul: 'Status', lebar: '100px',
     render: (j) => (
-      <Badge variant={j.isActive ? 'secondary' : 'outline'}>
-        {j.isActive ? 'Aktif' : 'Nonaktif'}
-      </Badge>
+      <LencanaStatus status={j.isActive ? 'aktif' : 'nonaktif'} label={j.isActive ? 'Aktif' : 'Nonaktif'} />
     ),
   },
   {

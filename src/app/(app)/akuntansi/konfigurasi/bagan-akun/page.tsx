@@ -2,10 +2,10 @@
 import { wajibIzin } from '@/lib/sesi'
 import { daftarAkun, type Akun } from '@/modules/akuntansi/layanan/akun'
 import { labelTipeAkun } from '@/modules/akuntansi/validasi/akun'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { DialogAkun, TombolStatusAkun } from './dialog-akun'
 
 export const metadata = { title: 'Bagan Akun' }
@@ -24,9 +24,7 @@ const kolom: Kolom<Akun>[] = [
   {
     kunci: 'status', judul: 'Status', lebar: '100px',
     render: (a) => (
-      <Badge variant={a.isActive ? 'secondary' : 'outline'}>
-        {a.isActive ? 'Aktif' : 'Nonaktif'}
-      </Badge>
+      <LencanaStatus status={a.isActive ? 'aktif' : 'nonaktif'} label={a.isActive ? 'Aktif' : 'Nonaktif'} />
     ),
   },
   {

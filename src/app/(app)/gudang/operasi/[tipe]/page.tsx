@@ -12,15 +12,11 @@ import {
 } from '@/modules/gudang/validasi/operasi'
 import { uraikanParameterDaftar, type ParameterDaftar } from '@/lib/daftar'
 import { daftarFilter } from '@/modules/preferensi/layanan/filter-tersimpan'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { PanelPencarian } from '@/components/data/panel-pencarian'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
 import { TombolBuat } from '@/components/data/tombol-aksi'
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  selesai: 'default', draft: 'secondary', dibatalkan: 'outline',
-}
+import { LencanaStatus } from '@/components/data/lencana-status'
 
 const IZIN: Record<string, string> = {
   penerimaan: 'gudang.penerimaan.kelola',
@@ -79,7 +75,7 @@ export default async function HalamanDaftarOperasi({
     { kunci: 'referensi', judul: 'Referensi', render: (o) => <span className="text-muted-foreground">{o.referensi ?? '—'}</span> },
     {
       kunci: 'status', judul: 'Status',
-      render: (o) => <Badge variant={VARIAN[o.status]}>{LABEL_STATUS_OPERASI[o.status]}</Badge>,
+      render: (o) => <LencanaStatus status={o.status} label={LABEL_STATUS_OPERASI[o.status]} />,
     },
   ]
 

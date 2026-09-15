@@ -55,7 +55,7 @@ type KolomBaris = {
 
 export function FormulirOperasi({
   awal, produk, lokasi, satuan, mitra,
-  readOnly = false, nomor, statusBadge, aksiTambahan, dokumenTerkait,
+  readOnly = false, nomor, statusBadge, aksiTambahan, menu, dokumenTerkait,
 }: {
   awal: NilaiAwalOperasi
   produk: PilihanProduk[]
@@ -66,6 +66,8 @@ export function FormulirOperasi({
   nomor?: string
   statusBadge?: React.ReactNode
   aksiTambahan?: React.ReactNode
+  /** Menu roda gigi dokumen. */
+  menu?: React.ReactNode
   dokumenTerkait?: React.ReactNode
 }) {
   const router = useRouter()
@@ -209,6 +211,7 @@ export function FormulirOperasi({
         ]}
         nomor={nomor ?? 'Draft Baru'}
         status={statusBadge}
+        menu={menu}
         aksi={
           <div className="flex gap-3">
             {aksiTambahan}

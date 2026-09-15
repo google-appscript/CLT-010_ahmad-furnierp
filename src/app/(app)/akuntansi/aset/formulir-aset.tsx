@@ -58,7 +58,7 @@ const TANPA_MITRA = 'tanpa-mitra'
 
 export function FormulirAset({
   awal, kategori, mitra,
-  readOnly = false, statusBadge, aksiTambahan, ringkasanTambahan, jadwal,
+  readOnly = false, statusBadge, aksiTambahan, menu, ringkasanTambahan, jadwal,
 }: {
   awal: NilaiAwalAset
   kategori: PilihanKategori[]
@@ -66,6 +66,8 @@ export function FormulirAset({
   readOnly?: boolean
   statusBadge?: React.ReactNode
   aksiTambahan?: React.ReactNode
+  /** Menu roda gigi dokumen. */
+  menu?: React.ReactNode
   ringkasanTambahan?: React.ReactNode
   jadwal?: BarisJadwal[]
 }) {
@@ -127,6 +129,7 @@ export function FormulirAset({
         ]}
         nomor={awal.id ? `${awal.kode} — ${awal.nama}` : 'Aset Baru'}
         status={statusBadge}
+        menu={menu}
         aksi={
           <div className="flex gap-3">
             {aksiTambahan}

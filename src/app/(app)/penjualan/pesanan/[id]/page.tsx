@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { asc, eq } from 'drizzle-orm'
-import { FolderKanban } from 'lucide-react'
+import { FolderKanban, FileText } from 'lucide-react'
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import {
@@ -10,16 +10,13 @@ import {
 import { ambilPesanan, barisDenganSisa } from '@/modules/penjualan/layanan/pesanan'
 import { pengirimanPesanan } from '@/modules/penjualan/layanan/pengiriman'
 import { LABEL_STATUS_PENJUALAN } from '@/modules/penjualan/validasi/pesanan'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { LencanaStatus } from '@/components/data/lencana-status'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
 import { FormulirPesanan } from '../../formulir-pesanan'
 import { ambilDataPilihanPenjualan } from '../../data-pilihan'
 import { DialogKirimBarang } from './aksi-pesanan'
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  dikonfirmasi: 'default', selesai: 'default',
-  penawaran: 'secondary', dibatalkan: 'outline',
-}
+import { aksiDuplikatPesanan } from '../../aksi'
 
 export const metadata = { title: 'Detail Pesanan Penjualan' }
 
@@ -87,8 +84,32 @@ export default async function HalamanDetailPesanan({
     </Button>
   )
 
+  /**
+   * Tombol faktur berdampingan dengan Kirim Barang supaya seluruh langkah
+   * berikutnya terlihat sekaligus. Yang boleh difakturkan tetap hanya yang
+   * sudah dikirim, jadi selama belum ada pengiriman tombolnya mati beserta
+   * alasannya — menagih barang yang belum keluar gudang akan mencatat
+   * pendapatan sebelum ada penyerahan.
+   */
+  const aksiFaktur = adaSisaDifakturkan ? (
+    <Button key="buat-faktur" asChild variant="outline">
+      <Link href={`/akuntansi/pelanggan/faktur/baru?so=${id}`}>
+        <FileText />
+        Buat Faktur
+      </Link>
+    </Button>
+  ) : (
+    <Button
+      key="buat-faktur" variant="outline" disabled
+      title="Kirim barangnya dahulu — yang boleh difakturkan hanya yang sudah dikirim."
+    >
+      <FileText />
+      Buat Faktur
+    </Button>
+  )
+
   const aksiTambahan = pesanan.status === 'dikonfirmasi' ? (
-    <div key="aksi-dikonfirmasi" className="flex gap-3">
+    <div key="aksi-dikonfirmasi" className="flex flex-wrap gap-3">
       <DialogKirimBarang
         soId={id}
         baris={sisa.map((b) => ({
@@ -96,11 +117,7 @@ export default async function HalamanDetailPesanan({
           namaUom: b.namaUom, sisaDikirim: b.sisaDikirim,
         }))}
       />
-      {adaSisaDifakturkan && (
-        <Button key="buat-faktur" asChild variant="outline">
-          <Link href={`/akuntansi/pelanggan/faktur/baru?so=${id}`}>Buat Faktur</Link>
-        </Button>
-      )}
+      {aksiFaktur}
       {aksiProyek}
     </div>
   ) : aksiProyek ? (
@@ -138,9 +155,16 @@ export default async function HalamanDetailPesanan({
       readOnly
       nomor={pesanan.nomor ?? undefined}
       statusBadge={
-        <Badge variant={VARIAN[pesanan.status]}>{LABEL_STATUS_PENJUALAN[pesanan.status]}</Badge>
+        <LencanaStatus status={pesanan.status} label={LABEL_STATUS_PENJUALAN[pesanan.status]} />
       }
       aksiTambahan={aksiTambahan}
+      menu={
+        <MenuFormulir
+          labelDokumen="Pesanan"
+          onDuplikat={aksiDuplikatPesanan.bind(null, id)}
+          ruteDuplikat="/penjualan/penawaran/:id"
+        />
+      }
       dokumenTerkait={{
         pengiriman: pengiriman.map((p) => ({
           operasiId: p.operasiId,

@@ -4,9 +4,9 @@ import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
 import { locations } from '@/db/schema'
 import { daftarPosBiaya, daftarPosBawaanLokasi } from '@/modules/akuntansi/layanan/pos-biaya'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
 import { TombolBuat, TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { DialogPosBiaya, TombolStatusPos, PemilihPosLokasi } from './panel-pos'
 
 export const metadata = { title: 'Pos Biaya' }
@@ -62,9 +62,7 @@ export default async function HalamanPosBiaya() {
                   <td className="px-4 py-1.5">{p.nama}</td>
                   <td className="px-4 py-1.5 text-muted-foreground">{p.deskripsi ?? '—'}</td>
                   <td className="px-4 py-1.5">
-                    <Badge variant={p.isActive ? 'default' : 'outline'}>
-                      {p.isActive ? 'Aktif' : 'Nonaktif'}
-                    </Badge>
+                    <LencanaStatus status={p.isActive ? 'aktif' : 'nonaktif'} label={p.isActive ? 'Aktif' : 'Nonaktif'} />
                   </td>
                   <td className="px-4 py-1.5 text-right">
                     <DialogPosBiaya

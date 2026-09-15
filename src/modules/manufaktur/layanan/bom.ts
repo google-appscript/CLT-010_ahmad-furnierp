@@ -231,3 +231,34 @@ export async function ubahStatusBom(id: string, isActive: boolean): Promise<void
     .set({ isActive, diubahPada: new Date() })
     .where(eq(billOfMaterials.id, id))
 }
+
+/**
+ * Menggandakan resep. Kodenya wajib unik, jadi salinan mendapat akhiran
+ * bernomor sampai menemukan kode yang belum terpakai — resep yang digandakan
+ * berkali-kali tidak saling menimpa.
+ */
+export async function duplikatBom(id: string, dibuatOleh: string): Promise<BomLengkap> {
+  const lama = await ambilBom(id)
+  if (!lama) throw new ValidasiError('Resep tidak ditemukan')
+
+  const terpakai = new Set(
+    (await db.select({ kode: billOfMaterials.kode }).from(billOfMaterials)).map((b) => b.kode),
+  )
+  let kode = `${lama.kode}-SALINAN`
+  for (let i = 2; terpakai.has(kode); i += 1) kode = `${lama.kode}-SALINAN-${i}`
+
+  return buatBom({
+    kode,
+    nama: `${lama.nama} (salinan)`,
+    produkId: lama.produkId,
+    kuantitas: String(Number(lama.kuantitas)),
+    uomId: lama.uomId,
+    catatan: lama.catatan,
+    baris: lama.baris.map((b) => ({
+      produkId: b.produkId,
+      kuantitas: String(Number(b.kuantitas)),
+      uomId: b.uomId,
+      catatan: b.catatan,
+    })),
+  }, dibuatOleh)
+}

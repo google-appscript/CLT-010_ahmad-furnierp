@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { wajibIzin } from '@/lib/sesi'
 import {
-  buatTagihan, ubahTagihan, postingTagihan, batalkanTagihan, hapusTagihan,
+  buatTagihan, duplikatTagihan, ubahTagihan, postingTagihan, batalkanTagihan, hapusTagihan,
 } from '@/modules/pembelian/layanan/tagihan'
 import { buatPembayaran, postingPembayaran, hapusPembayaran } from '@/modules/pembelian/layanan/pembayaran'
 import { catatAudit } from '@/modules/identitas/layanan/audit'
@@ -129,6 +129,27 @@ export async function aksiHapusPembayaran(id: string): Promise<HasilAksi> {
     })
     segarkan()
     return { berhasil: true }
+  } catch (galat) {
+    return keHasil(galat)
+  }
+}
+
+/** Tanggal hari ini; salinan selalu bertanggal saat digandakan. */
+function hariIni(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** Menggandakan tagihan menjadi draft baru yang belum bernomor. */
+export async function aksiDuplikatTagihan(id: string): Promise<HasilAksi> {
+  const sesi = await wajibIzin('akuntansi.tagihan.lihat')
+  try {
+    const salinan = await duplikatTagihan(id, sesi.penggunaId, hariIni())
+    await catatAudit({
+      penggunaId: sesi.penggunaId, entitas: 'vendor_bills', entitasId: salinan.id,
+      aksi: 'buat', dataBaru: { duplikatDari: id },
+    })
+    segarkan()
+    return { berhasil: true, id: salinan.id }
   } catch (galat) {
     return keHasil(galat)
   }

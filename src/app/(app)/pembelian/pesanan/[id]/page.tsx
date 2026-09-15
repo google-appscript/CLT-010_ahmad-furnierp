@@ -7,18 +7,15 @@ import { locations, partners, paymentTerms, taxes, vendorBills } from '@/db/sche
 import { ambilPesanan, barisDenganSisa } from '@/modules/pembelian/layanan/pesanan'
 import { penerimaanPesanan } from '@/modules/pembelian/layanan/penerimaan'
 import { LABEL_STATUS_PEMBELIAN } from '@/modules/pembelian/validasi/pesanan'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { FormulirPesanan } from '../../formulir-pesanan'
 import { ambilDataPilihanPembelian } from '../../data-pilihan'
 import { AksiPermintaan, DialogTerimaBarang } from './aksi-pesanan'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
+import { aksiDuplikatPesanan } from '../../aksi'
 
 export const metadata = { title: 'Detail Pesanan Pembelian' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  dikonfirmasi: 'default', selesai: 'default',
-  permintaan: 'secondary', dibatalkan: 'outline',
-}
 
 export default async function HalamanDetailPesanan({
   params,
@@ -115,9 +112,16 @@ export default async function HalamanDetailPesanan({
       readOnly={!draf}
       nomor={pesanan.nomor ?? undefined}
       statusBadge={!draf && (
-        <Badge variant={VARIAN[pesanan.status]}>{LABEL_STATUS_PEMBELIAN[pesanan.status]}</Badge>
+        <LencanaStatus status={pesanan.status} label={LABEL_STATUS_PEMBELIAN[pesanan.status]} />
       )}
       aksiTambahan={aksiTambahan}
+      menu={
+        <MenuFormulir
+          labelDokumen="Pesanan"
+          onDuplikat={aksiDuplikatPesanan.bind(null, id)}
+          ruteDuplikat="/pembelian/pesanan/:id"
+        />
+      }
       dokumenTerkait={
         draf
           ? undefined

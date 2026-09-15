@@ -4,13 +4,9 @@ import { partners } from '@/db/schema'
 import { daftarTagihan, ringkasanTagihan, type Tagihan } from '@/modules/pembelian/layanan/tagihan'
 import { LABEL_STATUS_TAGIHAN } from '@/modules/pembelian/validasi/pesanan'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { TabelData, type Kolom } from '@/components/data/tabel-data'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import type { ParameterDaftar } from '@/lib/daftar'
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  diposting: 'default', draft: 'secondary', dibatalkan: 'outline',
-}
 
 export async function DaftarTagihan({
   tipe, param,
@@ -38,7 +34,7 @@ export async function DaftarTagihan({
     },
     {
       kunci: 'status', judul: 'Status',
-      render: (t) => <Badge variant={VARIAN[t.status]}>{LABEL_STATUS_TAGIHAN[t.status]}</Badge>,
+      render: (t) => <LencanaStatus status={t.status} label={LABEL_STATUS_TAGIHAN[t.status]} />,
     },
   ]
 

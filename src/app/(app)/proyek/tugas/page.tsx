@@ -3,14 +3,10 @@ import { wajibIzin } from '@/lib/sesi'
 import { daftarTugas } from '@/modules/proyek/layanan/tugas'
 import { LABEL_STATUS_TUGAS } from '@/modules/proyek/validasi/proyek'
 import { formatAngka } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { KepalaHalaman } from '@/components/data/kepala-halaman'
+import { LencanaStatus } from '@/components/data/lencana-status'
 
 export const metadata = { title: 'Tugas' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', belum_mulai: 'secondary', dibatalkan: 'outline',
-}
 
 export default async function HalamanTugas({
   searchParams,
@@ -97,7 +93,7 @@ export default async function HalamanTugas({
                       {formatAngka(t.jamTercatat, 2)}
                     </td>
                     <td className="px-4 py-1.5">
-                      <Badge variant={VARIAN[t.status]}>{LABEL_STATUS_TUGAS[t.status]}</Badge>
+                      <LencanaStatus status={t.status} label={LABEL_STATUS_TUGAS[t.status]} />
                     </td>
                   </tr>
                 )

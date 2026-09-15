@@ -13,18 +13,14 @@ import {
   LABEL_STATUS_PROYEK, LABEL_STATUS_TUGAS,
 } from '@/modules/proyek/validasi/proyek'
 import { formatAngka, formatRupiah } from '@/lib/uang'
-import { Badge } from '@/components/ui/badge'
 import { TombolUbah } from '@/components/data/tombol-aksi'
+import { LencanaStatus } from '@/components/data/lencana-status'
 import { FormulirProyek } from '../formulir-proyek'
 import { ambilDataPilihanProyek } from '../data-pilihan'
 import { AksiProyek, DialogTugas, AksiTugas, AksiPenguncian } from './aksi-proyek'
+import { MenuFormulir } from '@/components/formulir/menu-formulir'
 
 export const metadata = { title: 'Detail Proyek' }
-
-const VARIAN: Record<string, 'default' | 'secondary' | 'outline'> = {
-  berjalan: 'default', selesai: 'default', terkunci: 'default',
-  draft: 'secondary', dibatalkan: 'outline', belum_mulai: 'secondary',
-}
 
 export default async function HalamanDetailProyek({
   params,
@@ -57,6 +53,9 @@ export default async function HalamanDetailProyek({
         pesanan={pesanan}
         pengguna={pengguna}
         aksiTambahan={<AksiProyek key="aksi-draft" id={proyek.id} status={proyek.status} />}
+        menu={
+          <MenuFormulir labelDokumen="Proyek" />
+        }
       />
     )
   }
@@ -171,9 +170,7 @@ export default async function HalamanDetailProyek({
                     {formatAngka(t.jamTercatat, 2)}
                   </td>
                   <td className="px-4 py-1.5">
-                    <Badge variant={VARIAN[t.status] ?? 'outline'}>
-                      {LABEL_STATUS_TUGAS[t.status]}
-                    </Badge>
+                    <LencanaStatus status={t.status} label={LABEL_STATUS_TUGAS[t.status]} />
                   </td>
                   {terbuka && (
                     <td className="px-4 py-1.5">
@@ -256,8 +253,11 @@ export default async function HalamanDetailProyek({
       pengguna={semuaPengguna}
       readOnly
       nomor={`${proyek.kode} — ${proyek.nama}`}
-      statusBadge={<Badge variant={VARIAN[proyek.status]}>{LABEL_STATUS_PROYEK[proyek.status]}</Badge>}
+      statusBadge={<LencanaStatus status={proyek.status} label={LABEL_STATUS_PROYEK[proyek.status]} />}
       aksiTambahan={terbuka ? <AksiProyek key="aksi-berjalan" id={proyek.id} status={proyek.status} /> : undefined}
+      menu={
+        <MenuFormulir labelDokumen="Proyek" />
+      }
       bannerTambahan={
         (proyek.status === 'selesai' || proyek.status === 'terkunci') ? (
           <div className="rounded-md border p-4">
