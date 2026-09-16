@@ -18,10 +18,13 @@ export function DialogPartner({
 }: {
   partner?: Partner
   pemicu: React.ReactNode
-  peranAwal?: 'pelanggan' | 'pemasok'
+  peranAwal?: 'pelanggan' | 'pemasok' | 'pegawai'
 }) {
   const [terbuka, setTerbuka] = useState(false)
   const [menyimpan, mulai] = useTransition()
+  // Kolom upah hanya berguna bila mitra ini pegawai, jadi ditampilkan mengikuti
+  // centangnya alih-alih selalu terpampang.
+  const [pegawai, setPegawai] = useState(partner?.isPegawai ?? peranAwal === 'pegawai')
 
   function simpan(data: FormData) {
     mulai(async () => {
@@ -32,6 +35,9 @@ export function DialogPartner({
         tipe: String(data.get('tipe') ?? 'badan') as 'perorangan' | 'badan',
         isPelanggan: data.get('isPelanggan') === 'on',
         isPemasok: data.get('isPemasok') === 'on',
+        isPegawai: data.get('isPegawai') === 'on',
+        tarif: String(data.get('tarif') ?? '0') || '0',
+        satuanTarif: String(data.get('satuanTarif') ?? 'harian') as 'harian' | 'jam',
         npwp: teks('npwp'), nik: teks('nik'), alamat: teks('alamat'),
         kota: teks('kota'), provinsi: teks('provinsi'), kodePos: teks('kodePos'),
         telepon: teks('telepon'), email: teks('email'), kontakPerson: teks('kontakPerson'),
@@ -91,7 +97,46 @@ export function DialogPartner({
               />
               <Label htmlFor="isPemasok" className="font-normal">Pemasok</Label>
             </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="isPegawai" name="isPegawai"
+                checked={pegawai}
+                onCheckedChange={(v) => setPegawai(v === true)}
+              />
+              <Label htmlFor="isPegawai" className="font-normal">Pegawai</Label>
+            </div>
           </div>
+
+          {pegawai && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="tarif">Upah</Label>
+                <Input
+                  id="tarif" name="tarif" inputMode="decimal"
+                  defaultValue={partner?.tarif ?? '0'}
+                  placeholder="150000"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Dibekukan ke setiap baris timesheet saat dicatat, sehingga menaikkan
+                  upah tidak mengubah biaya pekerjaan yang sudah lewat.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="satuanTarif">Satuan Upah</Label>
+                <Select name="satuanTarif" defaultValue={partner?.satuanTarif ?? 'harian'}>
+                  <SelectTrigger id="satuanTarif" className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="harian">Per Hari</SelectItem>
+                    <SelectItem value="jam">Per Jam</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Tukang harian menerima upah satu hari penuh; setengah hari ditulis 0,5.
+                </p>
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="npwp">NPWP</Label>

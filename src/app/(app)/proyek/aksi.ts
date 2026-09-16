@@ -168,10 +168,10 @@ export async function aksiHapusTugas(id: string): Promise<HasilAksi> {
 export async function aksiCatatTimesheet(masukan: MasukanTimesheet): Promise<HasilAksi> {
   const sesi = await wajibIzin('proyek.timesheet.kelola')
   try {
-    const baris = await catatTimesheet(masukan)
+    const baris = await catatTimesheet(masukan, sesi.penggunaId)
     await catatAudit({
       penggunaId: sesi.penggunaId, entitas: 'timesheets', entitasId: baris.id,
-      aksi: 'buat', dataBaru: { jam: masukan.jam, tanggal: masukan.tanggal },
+      aksi: 'buat', dataBaru: { kuantitas: masukan.kuantitas, tanggal: masukan.tanggal },
     })
     segarkan()
     return { berhasil: true, id: baris.id }
@@ -186,7 +186,7 @@ export async function aksiUbahTimesheet(id: string, masukan: MasukanTimesheet): 
     const baris = await ubahTimesheet(id, masukan)
     await catatAudit({
       penggunaId: sesi.penggunaId, entitas: 'timesheets', entitasId: baris.id,
-      aksi: 'ubah', dataBaru: { jam: masukan.jam, tanggal: masukan.tanggal },
+      aksi: 'ubah', dataBaru: { kuantitas: masukan.kuantitas, tanggal: masukan.tanggal },
     })
     segarkan()
     return { berhasil: true, id: baris.id }

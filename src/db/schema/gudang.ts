@@ -1,6 +1,6 @@
 import {
   pgTable, uuid, text, integer, numeric, date, timestamp, boolean,
-  uniqueIndex, index, check,
+  uniqueIndex, index, check, type AnyPgColumn,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import {
@@ -10,6 +10,7 @@ import {
 import { accounts, partners } from './akuntansi'
 import { journalEntries } from './jurnal'
 import { users } from './identitas'
+import { projects } from './proyek'
 
 /**
  * Satuan dikelompokkan per kategori. `faktor` menyatakan berapa satuan acuan
@@ -104,6 +105,14 @@ export const stockOperations = pgTable('stock_operations', {
   lokasiAsalId: uuid('lokasi_asal_id').notNull().references(() => locations.id),
   lokasiTujuanId: uuid('lokasi_tujuan_id').notNull().references(() => locations.id),
   partnerId: uuid('partner_id').references(() => partners.id),
+  /**
+   * Proyek yang menanggung beban dari operasi ini. Dipakai saat penyelesaian
+   * untuk menandai sisi beban jurnalnya, sehingga harga pokok pengiriman dan
+   * bahan yang dikonsumsi produksi terbaca di laporan proyek tanpa ada yang
+   * perlu menjurnalnya dengan tangan. Referensinya lazy karena proyek merujuk
+   * pesanan penjualan yang merujuk kembali ke jurnal.
+   */
+  proyekId: uuid('proyek_id').references((): AnyPgColumn => projects.id),
   referensi: text('referensi'),
   catatan: text('catatan'),
   jurnalEntryId: uuid('jurnal_entry_id').references(() => journalEntries.id),

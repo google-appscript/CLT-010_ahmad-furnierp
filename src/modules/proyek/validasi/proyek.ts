@@ -5,10 +5,17 @@ const tanggalIso = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal harus
 const rupiahTidakNegatif = z.string().trim()
   .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), { message: 'Nilai harus berupa angka rupiah' })
 
-const jamPositif = z.string().trim()
-  .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), { message: 'Jam harus berupa angka' })
-  .refine((v) => Number(v) > 0, { message: 'Jam harus lebih besar dari nol' })
-  .refine((v) => Number(v) <= 24, { message: 'Jam dalam satu hari tidak boleh lebih dari 24' })
+/**
+ * Batas atasnya longgar di sini — berapa maksimum satu baris bergantung pada
+ * satuan tarif pegawainya (satu hari, atau dua puluh empat jam), dan satuan
+ * itu baru diketahui layanan setelah pegawainya dibaca.
+ */
+const kuantitasPositif = z.string().trim()
+  .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), { message: 'Jumlah pekerjaan harus berupa angka' })
+  .refine((v) => Number(v) > 0, { message: 'Jumlah pekerjaan harus lebih besar dari nol' })
+  .refine((v) => Number(v) <= 24, {
+    message: 'Jumlah pekerjaan satu baris tidak boleh lebih dari 24',
+  })
 
 export const skemaProyek = z.object({
   kode: z.string().trim().min(1, 'Kode proyek wajib diisi').max(30),
@@ -17,7 +24,6 @@ export const skemaProyek = z.object({
   tanggalMulai: tanggalIso,
   tanggalTarget: tanggalIso.nullable().default(null),
   manajerId: z.uuid().nullable().default(null),
-  tarifPerJam: rupiahTidakNegatif.default('0'),
   catatan: z.string().trim().max(500).nullable().default(null)
     .transform((v) => (v === '' ? null : v)),
 }).refine(
@@ -42,9 +48,15 @@ export const skemaTugas = z.object({
 export const skemaTimesheet = z.object({
   proyekId: z.uuid('Proyek wajib dipilih'),
   tugasId: z.uuid().nullable().default(null),
-  penggunaId: z.uuid('Pelaksana wajib dipilih'),
+  pegawaiId: z.uuid('Pegawai wajib dipilih'),
+  /**
+   * Perintah produksi yang menyerap upah baris ini. Diisi bila pekerjaannya
+   * memang bagian dari produksi di bengkel; dikosongkan untuk pekerjaan yang
+   * tidak melewati perintah produksi seperti pemasangan di lokasi pelanggan.
+   */
+  woId: z.uuid().nullable().default(null),
   tanggal: tanggalIso,
-  jam: jamPositif,
+  kuantitas: kuantitasPositif,
   deskripsi: z.string().trim().min(1, 'Uraian pekerjaan wajib diisi').max(300),
 })
 
@@ -65,4 +77,9 @@ export const LABEL_STATUS_TUGAS: Record<string, string> = {
   berjalan: 'Berjalan',
   selesai: 'Selesai',
   dibatalkan: 'Dibatalkan',
+}
+
+export const LABEL_SATUAN_TARIF: Record<string, string> = {
+  harian: 'Hari',
+  jam: 'Jam',
 }

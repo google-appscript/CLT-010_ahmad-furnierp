@@ -338,8 +338,9 @@ describe('pengiriman atas pesanan', () => {
     const sisa = await barisDenganSisa(so.id)
     expect(Number(sisa[0].kuantitasDikirim)).toBe(12)
     expect(Number(sisa[0].sisaDikirim)).toBe(8)
-    // Yang boleh difakturkan hanya yang sudah dikirim.
-    expect(Number(sisa[0].sisaDifakturkan)).toBe(12)
+    // Faktur tidak menunggu pengiriman: seluruh isi pesanan boleh ditagih sejak
+    // pesanan dikonfirmasi, karena pembayaran pertama ditagih di muka.
+    expect(Number(sisa[0].sisaDifakturkan)).toBe(20)
   })
 
   it('menolak pembatalan pesanan yang sudah mengirim barang', async () => {

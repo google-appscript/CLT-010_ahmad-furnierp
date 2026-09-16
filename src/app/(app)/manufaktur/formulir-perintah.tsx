@@ -32,6 +32,7 @@ export type NilaiAwalPerintah = {
   id?: string
   produkId: string
   bomId: string
+  proyekId: string
   kuantitas: string
   uomId: string
   tanggal: string
@@ -54,9 +55,10 @@ type KolomBaris = {
 }
 
 const TANPA_RESEP = 'tanpa-resep'
+const TANPA_PROYEK = 'tanpa-proyek'
 
 export function FormulirPerintah({
-  awal, produk, satuan, lokasi, resep,
+  awal, produk, satuan, lokasi, resep, proyek,
   readOnly = false, nomor, statusBadge, aksiTambahan, menu, dokumenTerkait,
 }: {
   awal: NilaiAwalPerintah
@@ -64,6 +66,7 @@ export function FormulirPerintah({
   satuan: PilihanSatuan[]
   lokasi: PilihanLokasi[]
   resep: PilihanResep[]
+  proyek: { id: string; kode: string; nama: string }[]
   readOnly?: boolean
   nomor?: string
   statusBadge?: React.ReactNode
@@ -76,6 +79,7 @@ export function FormulirPerintah({
   const [bekerja, mulai] = useTransition()
   const [produkId, setProdukId] = useState(awal.produkId)
   const [bomId, setBomId] = useState(awal.bomId || TANPA_RESEP)
+  const [proyekId, setProyekId] = useState(awal.proyekId || TANPA_PROYEK)
   const [kuantitas, setKuantitas] = useState(awal.kuantitas)
   const [uomId, setUomId] = useState(awal.uomId)
   const [lokasiSumberId, setLokasiSumberId] = useState(awal.lokasiSumberId)
@@ -135,6 +139,7 @@ export function FormulirPerintah({
       const hasil = await aksiSimpanPerintah(awal.id ?? null, {
         produkId,
         bomId: bomId === TANPA_RESEP ? null : bomId,
+        proyekId: proyekId === TANPA_PROYEK ? null : proyekId,
         kuantitas,
         uomId,
         tanggal: String(data.get('tanggal') ?? ''),
@@ -292,6 +297,26 @@ export function FormulirPerintah({
                     <SelectItem value={TANPA_RESEP}>Tanpa resep</SelectItem>
                     {resepProduk.map((r) => (
                       <SelectItem key={r.id} value={r.id}>{r.kode} — {r.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormulirField>
+              <FormulirField
+                label="Proyek" htmlFor="proyekId" readOnly={readOnly}
+                valueTampilan={
+                  proyek.find((p) => p.id === proyekId)
+                    ? `${proyek.find((p) => p.id === proyekId)!.kode} — ${proyek.find((p) => p.id === proyekId)!.nama}`
+                    : 'Produksi stok'
+                }
+              >
+                <Select value={proyekId} onValueChange={setProyekId}>
+                  <SelectTrigger id="proyekId" className="w-full">
+                    <SelectValue placeholder="Produksi stok" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TANPA_PROYEK}>Produksi stok</SelectItem>
+                    {proyek.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.kode} — {p.nama}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

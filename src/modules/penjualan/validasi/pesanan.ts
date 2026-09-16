@@ -49,6 +49,7 @@ export const skemaFaktur = z.object({
   partnerId: z.uuid('Pelanggan wajib dipilih'),
   soId: z.uuid().nullable().default(null),
   tanggal: tanggalIso,
+  syaratPembayaranId: z.uuid().nullable().default(null),
   tanggalJatuhTempo: tanggalIso.nullable().default(null),
   referensi: z.string().trim().max(100).nullable().default(null)
     .transform((v) => (v === '' ? null : v)),

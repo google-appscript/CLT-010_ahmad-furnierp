@@ -47,6 +47,7 @@ export default async function HalamanDetailTagihan({
       hargaSatuan: String(Number(b.hargaSatuan)),
       taxId: b.taxId ?? '',
       akunId: b.akunId,
+      proyekId: b.proyekId ?? '',
     })),
   }
 
@@ -103,6 +104,7 @@ export default async function HalamanDetailTagihan({
       pemasok={semuaMitra}
       akun={semuaAkun}
       pajak={semuaPajak}
+      proyek={pilihan.proyek}
       readOnly
       nomor={tagihan.nomor ?? LABEL_TIPE_TAGIHAN[tagihan.tipe]}
       statusBadge={<LencanaStatus status={tagihan.status} label={LABEL_STATUS_TAGIHAN[tagihan.status]} />}

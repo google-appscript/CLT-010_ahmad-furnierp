@@ -40,6 +40,7 @@ export default async function HalamanTagihanBaru({
         hargaSatuan: String(Number(b.hargaSatuan)),
         taxId: b.taxId ?? '',
         akunId: pengaturan?.akunPenerimaanBelumDitagihId ?? '',
+        proyekId: '',
       }))
   }
 

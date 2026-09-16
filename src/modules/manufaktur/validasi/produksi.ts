@@ -39,6 +39,11 @@ export const skemaBarisPerintahProduksi = z.object({
 export const skemaPerintahProduksi = z.object({
   produkId: z.uuid('Produk yang diproduksi wajib dipilih'),
   bomId: z.uuid().nullable().default(null),
+  /**
+   * Proyek yang dikerjakan perintah ini. Kosong untuk produksi stok yang tidak
+   * dipesan pelanggan tertentu.
+   */
+  proyekId: z.uuid().nullable().default(null),
   kuantitas: kuantitasPositif,
   uomId: z.uuid('Satuan wajib dipilih'),
   tanggal: tanggalIso,

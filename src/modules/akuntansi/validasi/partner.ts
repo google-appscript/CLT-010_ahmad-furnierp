@@ -14,6 +14,13 @@ export const skemaPartner = z.object({
   tipe: z.enum(['perorangan', 'badan'], { message: 'Tipe mitra tidak dikenali' }),
   isPelanggan: z.boolean().default(false),
   isPemasok: z.boolean().default(false),
+  isPegawai: z.boolean().default(false),
+  /** Upah pegawai beserta satuannya; tidak dipakai mitra yang bukan pegawai. */
+  tarif: z.string().trim()
+    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), { message: 'Tarif harus berupa angka rupiah' })
+    .default('0'),
+  satuanTarif: z.enum(['harian', 'jam'], { message: 'Satuan tarif tidak dikenali' })
+    .default('harian'),
   npwp: z.string().nullable().default(null)
     .transform((v) => (v ? normalkanNpwp(v) : null))
     .transform((v) => (v === '' ? null : v))
@@ -38,9 +45,12 @@ export const skemaPartner = z.object({
   syaratPembayaranId: z.uuid().nullable().default(null),
   akunPiutangId: z.uuid().nullable().default(null),
   akunUtangId: z.uuid().nullable().default(null),
-}).refine((d) => d.isPelanggan || d.isPemasok, {
-  message: 'Mitra harus ditandai sebagai pelanggan, pemasok, atau keduanya',
+}).refine((d) => d.isPelanggan || d.isPemasok || d.isPegawai, {
+  message: 'Mitra harus ditandai sebagai pelanggan, pemasok, pegawai, atau gabungannya',
   path: ['isPelanggan'],
+}).refine((d) => !d.isPegawai || Number(d.tarif) > 0, {
+  message: 'Pegawai wajib punya tarif upah agar biayanya dapat dihitung',
+  path: ['tarif'],
 })
 
 export type MasukanPartner = z.input<typeof skemaPartner>

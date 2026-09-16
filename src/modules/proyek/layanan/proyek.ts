@@ -145,7 +145,6 @@ export async function buatProyek(masukan: MasukanProyek, dibuatOleh: string): Pr
       tanggalMulai: data.tanggalMulai,
       tanggalTarget: data.tanggalTarget,
       manajerId: data.manajerId,
-      tarifPerJam: data.tarifPerJam,
       catatan: data.catatan,
       dibuatOleh,
     }).returning({ id: projects.id })
@@ -173,7 +172,6 @@ export async function ubahProyek(id: string, masukan: MasukanProyek): Promise<Pr
       tanggalMulai: data.tanggalMulai,
       tanggalTarget: data.tanggalTarget,
       manajerId: data.manajerId,
-      tarifPerJam: data.tarifPerJam,
       catatan: data.catatan,
       diubahPada: new Date(),
     }).where(eq(projects.id, id))

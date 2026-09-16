@@ -5,7 +5,13 @@ import {
   users, accounts, journals, sequences, companySettings, currencies,
   uoms, productCategories, products, warehouses, locations, partners, taxes,
 } from '@/db/schema'
-import { buatPesanan, konfirmasiPesanan } from '@/modules/penjualan/layanan/pesanan'
+import {
+  buatPesanan, konfirmasiPesanan, barisDenganSisa,
+} from '@/modules/penjualan/layanan/pesanan'
+import {
+  buatPerintahProduksi, konfirmasiPerintahProduksi, selesaikanPerintahProduksi,
+  biayaProduksi,
+} from '@/modules/manufaktur/layanan/perintah-produksi'
 import { kirimDariPesanan } from '@/modules/penjualan/layanan/pengiriman'
 import { buatFaktur, postingFaktur } from '@/modules/penjualan/layanan/faktur'
 import { buatOperasi, selesaikanOperasi } from '@/modules/gudang/layanan/operasi'
@@ -28,7 +34,7 @@ import { bersihkanTabel, tutupKoneksi } from '../bantuan/db'
 import { seedPemetaanJurnal } from '../bantuan/pemetaan'
 
 const TABEL = [
-  'timesheets', 'project_tasks', 'projects',
+  'timesheets', 'work_order_lines', 'work_orders', 'project_tasks', 'projects',
   'customer_payment_allocations', 'customer_payments',
   'customer_invoice_lines', 'customer_invoices',
   'sales_order_lines', 'sales_orders',
@@ -40,10 +46,13 @@ const TABEL = [
 ]
 
 let penggunaId: string
+let pegawaiId: string
 let pelangganId: string
 let produkId: string
 let lokasiGudangId: string
 let lokasiPemasokId: string
+let lokasiBahanId: string
+let produkBahanId: string
 let satuanUnitId: string
 let pajakPpnId: string
 const akun: Record<string, string> = {}
@@ -63,11 +72,19 @@ beforeEach(async () => {
     { kode: '5105', nama: 'Selisih Persediaan', tipeAkun: 'beban_hpp' },
     { kode: '5106', nama: 'Kerugian Barang Rusak', tipeAkun: 'beban_hpp' },
     { kode: '6101', nama: 'Beban Angkut', tipeAkun: 'beban_operasional' },
+    { kode: '1135', nama: 'Barang Dalam Proses', tipeAkun: 'aset_persediaan' },
+    { kode: '5201', nama: 'Tenaga Kerja Langsung', tipeAkun: 'beban_operasional' },
+    { kode: '5202', nama: 'Overhead Pabrik', tipeAkun: 'beban_operasional' },
+    { kode: '7901', nama: 'Selisih Pembulatan', tipeAkun: 'beban_lain' },
   ]).returning()
   for (const a of dibuatAkun) akun[a.kode] = a.id
 
   await db.insert(companySettings).values({
     nama: 'PT Uji', akunPenerimaanBelumDitagihId: akun['2151'],
+    akunBarangDalamProsesId: akun['1135'],
+    akunTenagaKerjaLangsungId: akun['5201'],
+    akunOverheadPabrikId: akun['5202'],
+    akunPembulatanId: akun['7901'],
   })
 
   const dibuatPengguna = await db.insert(users).values([
@@ -82,6 +99,9 @@ beforeEach(async () => {
     { kode: 'jurnal:JU', prefix: 'JU', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'gudang:penerimaan', prefix: 'GRN', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'gudang:pengiriman', prefix: 'DO', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
+    { kode: 'gudang:konsumsi-produksi', prefix: 'KP', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
+    { kode: 'gudang:hasil-produksi', prefix: 'HP', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
+    { kode: 'manufaktur:perintah-produksi', prefix: 'PK', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:pesanan', prefix: 'SO', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:faktur', prefix: 'FJ', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:nota-kredit', prefix: 'NK', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
@@ -115,19 +135,35 @@ beforeEach(async () => {
   }).returning()
   produkId = produk.id
 
+  const [bahan] = await db.insert(products).values({
+    kode: 'BB-KAYU', nama: 'Kayu Jati', kategoriId: kategori.id, uomId: satuan.id,
+    hargaJual: '0',
+  }).returning()
+  produkBahanId = bahan.id
+
   const [gudang] = await db.insert(warehouses).values({ kode: 'GU', nama: 'Gudang Utama' }).returning()
   const dibuatLokasi = await db.insert(locations).values([
     { kode: 'GU/BJ', nama: 'Gudang Barang Jadi', tipe: 'internal', warehouseId: gudang.id },
     { kode: 'VIR/PEMASOK', nama: 'Pemasok', tipe: 'pemasok' },
     { kode: 'VIR/PELANGGAN', nama: 'Pelanggan', tipe: 'pelanggan' },
+    { kode: 'GU/BB', nama: 'Gudang Bahan Baku', tipe: 'internal', warehouseId: gudang.id },
+    { kode: 'VIR/PRODUKSI', nama: 'Produksi', tipe: 'produksi' },
   ]).returning()
   lokasiGudangId = dibuatLokasi[0].id
   lokasiPemasokId = dibuatLokasi[1].id
+  lokasiBahanId = dibuatLokasi[3].id
 
   const [pelanggan] = await db.insert(partners).values({
     kode: 'CUST-001', nama: 'PT Mebel Sejahtera', isPelanggan: true,
   }).returning()
   pelangganId = pelanggan.id
+
+  // Tukang berupah jam supaya angka uji tetap terbaca sebagai jam × tarif.
+  const [pegawai] = await db.insert(partners).values({
+    kode: 'PEG-001', nama: 'Sutrisno', tipe: 'perorangan',
+    isPegawai: true, tarif: '75000', satuanTarif: 'jam',
+  }).returning()
+  pegawaiId = pegawai.id
 
   const [pajak] = await db.insert(taxes).values({
     kode: 'PPN-K-11', nama: 'PPN Keluaran 11%', ruangLingkup: 'penjualan',
@@ -171,10 +207,19 @@ function isiProyek(soId: string, ubah: Record<string, unknown> = {}) {
     tanggalMulai: '2026-02-01',
     tanggalTarget: '2026-04-30',
     manajerId: penggunaId,
-    tarifPerJam: '75000',
     catatan: null,
     ...ubah,
   }
+}
+
+/** Timesheet selalu dicatat oleh pengguna uji; pelaksananya pegawai. */
+function catat(masukan: Parameters<typeof catatTimesheet>[0]) {
+  return catatTimesheet(masukan, penggunaId)
+}
+
+/** Mengubah upah pegawai, untuk menguji bahwa tarif lama tetap beku. */
+async function ubahUpahPegawai(tarif: string) {
+  await db.update(partners).set({ tarif }).where(eq(partners.id, pegawaiId))
 }
 
 // ── Proyek ───────────────────────────────────────────────────────────────────
@@ -347,13 +392,13 @@ describe('tugas proyek', () => {
       proyekId: proyek.id, nama: 'Potong kayu', deskripsi: null, penanggungJawabId: null,
       tanggalMulai: null, tenggat: null, estimasiJam: '16',
     })
-    await catatTimesheet({
-      proyekId: proyek.id, tugasId: tugas.id, penggunaId,
-      tanggal: '2026-02-10', jam: '6', deskripsi: 'Memotong papan',
+    await catat({
+      proyekId: proyek.id, tugasId: tugas.id, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '6', deskripsi: 'Memotong papan',
     })
-    await catatTimesheet({
-      proyekId: proyek.id, tugasId: tugas.id, penggunaId,
-      tanggal: '2026-02-11', jam: '4.5', deskripsi: 'Lanjutan',
+    await catat({
+      proyekId: proyek.id, tugasId: tugas.id, woId: null, pegawaiId,
+      tanggal: '2026-02-11', kuantitas: '4.5', deskripsi: 'Lanjutan',
     })
 
     const daftar = await daftarTugas({ proyekId: proyek.id })
@@ -366,9 +411,9 @@ describe('tugas proyek', () => {
       proyekId: proyek.id, nama: 'Potong kayu', deskripsi: null, penanggungJawabId: null,
       tanggalMulai: null, tenggat: null, estimasiJam: '16',
     })
-    await catatTimesheet({
-      proyekId: proyek.id, tugasId: tugas.id, penggunaId,
-      tanggal: '2026-02-10', jam: '6', deskripsi: 'Memotong papan',
+    await catat({
+      proyekId: proyek.id, tugasId: tugas.id, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '6', deskripsi: 'Memotong papan',
     })
 
     await expect(hapusTugas(tugas.id)).rejects.toThrow(/batalkan saja/)
@@ -379,28 +424,29 @@ describe('tugas proyek', () => {
 // ── Timesheet ────────────────────────────────────────────────────────────────
 
 describe('timesheet', () => {
-  async function proyekBerjalan(tarif = '75000') {
+  async function proyekBerjalan() {
     const so = await pesananDikonfirmasi()
-    const proyek = await buatProyek(isiProyek(so.id, { tarifPerJam: tarif }), penggunaId)
+    const proyek = await buatProyek(isiProyek(so.id), penggunaId)
     return mulaiProyek(proyek.id)
   }
 
-  it('membekukan tarif proyek saat dicatat', async () => {
-    const proyek = await proyekBerjalan('75000')
-    const baris = await catatTimesheet({
-      proyekId: proyek.id, tugasId: null, penggunaId,
-      tanggal: '2026-02-10', jam: '8', deskripsi: 'Perakitan',
+  it('membekukan tarif pegawai saat dicatat', async () => {
+    const proyek = await proyekBerjalan()
+    const baris = await catat({
+      proyekId: proyek.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '8', deskripsi: 'Perakitan',
     })
-    expect(Number(baris.tarifPerJam)).toBe(75_000)
+    expect(Number(baris.tarif)).toBe(75_000)
+    expect(baris.satuanTarif).toBe('jam')
 
-    // Menaikkan tarif proyek tidak boleh mengubah biaya yang sudah tercatat.
-    await ubahProyek(proyek.id, isiProyek(proyek.soId, { tarifPerJam: '100000' }))
+    // Menaikkan upah pegawai tidak boleh mengubah biaya yang sudah tercatat.
+    await ubahUpahPegawai('100000')
     const rekap = await rekapTimesheetProyek(proyek.id)
     expect(Number(rekap.totalBiaya)).toBe(600_000)
 
-    await catatTimesheet({
-      proyekId: proyek.id, tugasId: null, penggunaId,
-      tanggal: '2026-02-11', jam: '8', deskripsi: 'Perakitan lanjutan',
+    await catat({
+      proyekId: proyek.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-11', kuantitas: '8', deskripsi: 'Perakitan lanjutan',
     })
     const rekapBaru = await rekapTimesheetProyek(proyek.id)
     expect(Number(rekapBaru.totalJam)).toBe(16)
@@ -409,38 +455,38 @@ describe('timesheet', () => {
 
   it('menolak jam di luar batas satu hari', async () => {
     const proyek = await proyekBerjalan()
-    await expect(catatTimesheet({
-      proyekId: proyek.id, tugasId: null, penggunaId,
-      tanggal: '2026-02-10', jam: '25', deskripsi: 'Lembur ekstrem',
+    await expect(catat({
+      proyekId: proyek.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '25', deskripsi: 'Lembur ekstrem',
     })).rejects.toThrow(/tidak boleh lebih dari 24/)
 
-    await expect(catatTimesheet({
-      proyekId: proyek.id, tugasId: null, penggunaId,
-      tanggal: '2026-02-10', jam: '0', deskripsi: 'Kosong',
+    await expect(catat({
+      proyekId: proyek.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '0', deskripsi: 'Kosong',
     })).rejects.toThrow(/lebih besar dari nol/)
   })
 
   it('menolak tanggal sebelum proyek dimulai', async () => {
     const proyek = await proyekBerjalan()
-    await expect(catatTimesheet({
-      proyekId: proyek.id, tugasId: null, penggunaId,
-      tanggal: '2026-01-15', jam: '8', deskripsi: 'Terlalu awal',
+    await expect(catat({
+      proyekId: proyek.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-01-15', kuantitas: '8', deskripsi: 'Terlalu awal',
     })).rejects.toThrow(/mendahului tanggal mulai proyek/)
   })
 
   it('menolak proyek yang belum dimulai atau sudah ditutup', async () => {
     const so = await pesananDikonfirmasi()
     const draft = await buatProyek(isiProyek(so.id), penggunaId)
-    await expect(catatTimesheet({
-      proyekId: draft.id, tugasId: null, penggunaId,
-      tanggal: '2026-02-10', jam: '8', deskripsi: 'Belum mulai',
+    await expect(catat({
+      proyekId: draft.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '8', deskripsi: 'Belum mulai',
     })).rejects.toThrow(/belum dimulai/)
 
     await mulaiProyek(draft.id)
     await batalkanProyek(draft.id)
-    await expect(catatTimesheet({
-      proyekId: draft.id, tugasId: null, penggunaId,
-      tanggal: '2026-02-10', jam: '8', deskripsi: 'Sudah tutup',
+    await expect(catat({
+      proyekId: draft.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '8', deskripsi: 'Sudah tutup',
     })).rejects.toThrow(/sudah ditutup/)
   })
 
@@ -456,21 +502,118 @@ describe('timesheet', () => {
       (await buatProyek(isiProyek(soB.id, { kode: 'PRJ-002' }), penggunaId)).id,
     )
 
-    await expect(catatTimesheet({
-      proyekId: proyekB.id, tugasId: tugasA.id, penggunaId,
-      tanggal: '2026-02-10', jam: '8', deskripsi: 'Salah proyek',
+    await expect(catat({
+      proyekId: proyekB.id, tugasId: tugasA.id, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '8', deskripsi: 'Salah proyek',
     })).rejects.toThrow(/bukan milik proyek ini/)
   })
 
   it('baris timesheet dapat dihapus selama proyek masih terbuka', async () => {
     const proyek = await proyekBerjalan()
-    const baris = await catatTimesheet({
-      proyekId: proyek.id, tugasId: null, penggunaId,
-      tanggal: '2026-02-10', jam: '8', deskripsi: 'Perakitan',
+    const baris = await catat({
+      proyekId: proyek.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '8', deskripsi: 'Perakitan',
     })
 
     await hapusTimesheet(baris.id)
     expect(await daftarTimesheet({ proyekId: proyek.id })).toHaveLength(0)
+  })
+})
+
+// ── Produksi proyek ──────────────────────────────────────────────────────────
+
+describe('produksi proyek', () => {
+  async function proyekBerjalan() {
+    const so = await pesananDikonfirmasi()
+    const proyek = await buatProyek(isiProyek(so.id), penggunaId)
+    return mulaiProyek(proyek.id)
+  }
+
+  async function sediakanBahan(kuantitas = '40', harga = '50000') {
+    const op = await buatOperasi({
+      tipe: 'penerimaan', tanggal: '2026-01-05',
+      lokasiAsalId: lokasiPemasokId, lokasiTujuanId: lokasiBahanId,
+      partnerId: null, proyekId: null, referensi: null, catatan: null,
+      baris: [{
+        produkId: produkBahanId, kuantitas, uomId: satuanUnitId,
+        hargaSatuan: harga, catatan: null,
+      }],
+    }, penggunaId)
+    await selesaikanOperasi(op.id, penggunaId)
+  }
+
+  async function perintahProyek(proyekId: string) {
+    return buatPerintahProduksi({
+      produkId, bomId: null, proyekId, kuantitas: '10', uomId: satuanUnitId,
+      tanggal: '2026-02-05', tanggalTarget: null,
+      lokasiSumberId: lokasiBahanId, lokasiTujuanId: lokasiGudangId,
+      biayaTenagaKerja: '0', biayaOverhead: '0',
+      referensi: null, catatan: null,
+      baris: [{
+        produkId: produkBahanId, kuantitas: '20', uomId: satuanUnitId, catatan: null,
+      }],
+    }, penggunaId)
+  }
+
+  it('menahan pengiriman selama perintah produksinya belum tuntas', async () => {
+    await sediakanStok()
+    const proyek = await proyekBerjalan()
+    const pk = await perintahProyek(proyek.id)
+    await konfirmasiPerintahProduksi(pk.id, penggunaId)
+
+    const so = await ambilProyek(proyek.id)
+    const baris = await barisDenganSisa(so!.soId)
+
+    await expect(kirimDariPesanan({
+      soId: so!.soId, tanggal: '2026-02-20',
+      baris: [{ soLineId: baris[0].id, kuantitas: '10' }],
+    }, penggunaId)).rejects.toThrow(/Produksi proyek .* belum selesai/)
+  })
+
+  it('upah timesheet diserap menjadi biaya tenaga kerja perintah produksi', async () => {
+    await sediakanBahan()
+    const proyek = await proyekBerjalan()
+    const pk = await perintahProyek(proyek.id)
+    await konfirmasiPerintahProduksi(pk.id, penggunaId)
+
+    // 8 jam × 75.000 = 600.000, dicatat pada perintah produksinya.
+    await catat({
+      proyekId: proyek.id, tugasId: null, woId: pk.id, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '8', deskripsi: 'Merakit rangka',
+    })
+
+    const selesai = await selesaikanPerintahProduksi(pk.id, penggunaId)
+    expect(Number(selesai.biayaTenagaKerja)).toBe(600_000)
+
+    const biaya = await biayaProduksi(pk.id)
+    // 20 × 50.000 bahan + 600.000 upah = 1.600.000
+    expect(Number(biaya.bahan)).toBe(1_000_000)
+    expect(Number(biaya.tenagaKerja)).toBe(600_000)
+    expect(Number(biaya.total)).toBe(1_600_000)
+  })
+
+  it('upah yang sudah terserap tidak dihitung ulang sebagai beban proyek', async () => {
+    await sediakanBahan()
+    const proyek = await proyekBerjalan()
+    const pk = await perintahProyek(proyek.id)
+    await konfirmasiPerintahProduksi(pk.id, penggunaId)
+
+    await catat({
+      proyekId: proyek.id, tugasId: null, woId: pk.id, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '8', deskripsi: 'Merakit rangka',
+    })
+    // Pemasangan di lokasi tidak melewati bengkel, jadi tidak terserap.
+    await catat({
+      proyekId: proyek.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-11', kuantitas: '4', deskripsi: 'Pemasangan di lokasi',
+    })
+    await selesaikanPerintahProduksi(pk.id, penggunaId)
+
+    const hasil = await profitabilitasProyek(proyek.id)
+    // Yang mengurangi laba bersih hanya upah pemasangan: 4 × 75.000.
+    expect(Number(hasil.biayaTenagaKerja)).toBe(300_000)
+    // Upah bengkel ada di harga pokok, ditampilkan terpisah sebagai keterangan.
+    expect(Number(hasil.biayaTenagaKerjaTerserap)).toBe(600_000)
   })
 })
 
@@ -622,9 +765,9 @@ describe('profitabilitas proyek', () => {
 
   it('biaya timesheet terpisah dari angka buku besar', async () => {
     const proyek = await proyekDenganPenjualan()
-    await catatTimesheet({
-      proyekId: proyek.id, tugasId: null, penggunaId,
-      tanggal: '2026-02-10', jam: '20', deskripsi: 'Perakitan',
+    await catat({
+      proyekId: proyek.id, tugasId: null, woId: null, pegawaiId,
+      tanggal: '2026-02-10', kuantitas: '20', deskripsi: 'Perakitan',
     })
 
     const hasil = await profitabilitasProyek(proyek.id)

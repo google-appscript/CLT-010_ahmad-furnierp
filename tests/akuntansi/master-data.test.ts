@@ -201,7 +201,7 @@ describe('validasi mitra usaha', () => {
   it('menolak mitra yang bukan pelanggan maupun pemasok', () => {
     const hasil = skemaPartner.safeParse({ ...PELANGGAN, isPelanggan: false, isPemasok: false })
     expect(hasil.error!.issues[0].message)
-      .toBe('Mitra harus ditandai sebagai pelanggan, pemasok, atau keduanya')
+      .toBe('Mitra harus ditandai sebagai pelanggan, pemasok, pegawai, atau gabungannya')
   })
 
   it('menerima mitra yang sekaligus pelanggan dan pemasok', () => {

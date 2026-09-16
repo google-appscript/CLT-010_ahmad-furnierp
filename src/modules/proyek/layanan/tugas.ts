@@ -20,6 +20,7 @@ export type TugasLengkap = Tugas & {
   kodeProyek: string
   namaPenanggungJawab: string | null
   jamTercatat: Uang
+  hariTercatat: Uang
 }
 
 /** Tugas beserta jam yang sudah tercatat padanya. */
@@ -44,13 +45,23 @@ export async function daftarTugas(saring: {
     .where(syarat.length > 0 ? and(...syarat) : undefined)
     .orderBy(asc(projects.kode), asc(projectTasks.urutan))
 
-  const jam = await db
-    .select({ tugasId: timesheets.tugasId, jam: timesheets.jam })
+  // Hari dan jam dijumlahkan terpisah, tidak dikonversi satu sama lain:
+  // tukang harian diupah sehari penuh, sehingga membaginya dengan jam standar
+  // akan melaporkan angka yang tidak pernah benar-benar terjadi.
+  const dicatat = await db
+    .select({
+      tugasId: timesheets.tugasId,
+      kuantitas: timesheets.kuantitas,
+      satuanTarif: timesheets.satuanTarif,
+    })
     .from(timesheets)
+
   const jamPerTugas = new Map<string, string[]>()
-  for (const t of jam) {
+  const hariPerTugas = new Map<string, string[]>()
+  for (const t of dicatat) {
     if (!t.tugasId) continue
-    jamPerTugas.set(t.tugasId, [...(jamPerTugas.get(t.tugasId) ?? []), t.jam])
+    const peta = t.satuanTarif === 'jam' ? jamPerTugas : hariPerTugas
+    peta.set(t.tugasId, [...(peta.get(t.tugasId) ?? []), t.kuantitas])
   }
 
   return baris.map((b) => ({
@@ -59,6 +70,7 @@ export async function daftarTugas(saring: {
     namaProyek: b.namaProyek,
     namaPenanggungJawab: b.namaPenanggungJawab,
     jamTercatat: bulatkan(tambah(...(jamPerTugas.get(b.tugas.id) ?? ['0'])), DESIMAL_JAM),
+    hariTercatat: bulatkan(tambah(...(hariPerTugas.get(b.tugas.id) ?? ['0'])), DESIMAL_JAM),
   }))
 }
 

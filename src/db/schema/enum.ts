@@ -151,3 +151,11 @@ export const statusBagiHasilEnum = pgEnum('status_bagi_hasil', ['terbuka', 'terk
 export const statusTugasEnum = pgEnum('status_tugas', [
   'belum_mulai', 'berjalan', 'selesai', 'dibatalkan',
 ])
+
+/**
+ * Satuan tarif pegawai. Tukang di bengkel umumnya diupah harian dan menerima
+ * upah satu hari penuh tanpa diprorata per jam; tenaga lain kadang dihitung
+ * per jam. Satuannya ikut dibekukan ke setiap baris timesheet supaya biaya
+ * yang tercatat selalu sama dengan upah yang benar-benar dibayarkan.
+ */
+export const satuanTarifEnum = pgEnum('satuan_tarif', ['harian', 'jam'])

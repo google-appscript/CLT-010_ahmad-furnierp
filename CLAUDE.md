@@ -14,11 +14,31 @@ Indonesia, alur kerja mengikuti pola Odoo.
 ```bash
 pnpm dev              # server pengembangan
 pnpm test             # Vitest terhadap furnierp_test (migrasi berjalan otomatis)
+pnpm test:watch       # mode watch
 pnpm db:generate      # hasilkan migrasi dari perubahan skema
 pnpm db:migrate       # terapkan migrasi ke furnierp_dev
 pnpm db:seed          # data awal (idempoten)
+pnpm db:studio        # Drizzle Studio
 pnpm exec tsc --noEmit && pnpm build && pnpm lint
 ```
+
+Menjalankan sebagian uji saja:
+
+```bash
+pnpm exec vitest run tests/penjualan/alur.test.ts          # satu berkas
+pnpm exec vitest run tests/penjualan                       # satu folder
+pnpm exec vitest run -t 'pengiriman membebankan harga pokok'  # satu kasus
+```
+
+`pnpm build` menjalankan `db:migrate` lebih dulu, jadi build memerlukan
+basis data yang dapat dihubungi. Untuk sekadar memeriksa tipe tanpa
+menyentuh basis data, pakai `pnpm exec tsc --noEmit`.
+
+Berkas lingkungan: `.env.local` untuk pengembangan (dimuat Next.js sendiri;
+skrip `tsx` memuatnya lewat `muatEnv()` di `src/lib/env.ts`), `.env.test`
+untuk pengujian. `DATABASE_URL_UNPOOLED` dipakai `db:migrate` bila ada —
+DDL berjalan sebagai satu transaksi panjang dan pooler mode transaksi
+dapat memindahkannya ke sesi lain di tengah jalan.
 
 ## Aturan yang Tidak Boleh Dilanggar
 
@@ -27,10 +47,14 @@ maupun `number`. PostgreSQL memakai `numeric(18,2)` untuk IDR dan
 `numeric(18,6)` untuk valas serta kurs. TypeScript membawa nilai sebagai
 `string`; aritmatika hanya lewat `src/lib/uang.ts`.
 
-**Batas modul.** UI → Server Action → layanan → repositori. Komponen UI dan
-Server Action tidak boleh mengimpor repositori atau klien basis data secara
-langsung. Modul non-akuntansi tidak boleh menulis ke tabel jurnal; satu-satunya
-kanal adalah layanan akuntansi.
+**Batas modul.** Jalur tulis selalu UI → Server Action → layanan →
+(repositori) → basis data. Server Action tidak pernah menulis ke basis data
+sendiri; ia memanggil layanan. Jalur baca lebih longgar: komponen server
+(`page.tsx` dan `data-pilihan.ts`) boleh melakukan `select` langsung lewat
+`db` untuk daftar dan data pilihan formulir — yang tidak boleh adalah
+`insert`, `update`, `delete`, dan perhitungan bisnis di luar layanan. Modul
+non-akuntansi tidak boleh menulis ke tabel jurnal; satu-satunya kanal adalah
+layanan akuntansi.
 
 **Entri terposting tidak pernah diubah.** Koreksi hanya lewat entri pembalik.
 Nomor diberikan saat posting, bukan saat draft dibuat.
@@ -90,11 +114,48 @@ proyek dapat dihitung tanpa alokasi: apa pun yang difakturkan dan dikirim atas
 pesanan itu adalah pendapatan dan harga pokok proyeknya. Penegakannya struktural
 lewat indeks unik pada `projects.so_id`.
 
-**Timesheet bukan angka buku besar.** Tanpa modul penggajian, upah yang tercatat
-di timesheet belum menjadi transaksi. Laporan profitabilitas memisahkannya:
-laba kotor murni angka akuntansi, dan laba proyek adalah pandangan manajerial di
-atasnya. Tarif dibekukan ke setiap baris saat dicatat sehingga menaikkan tarif
-tidak mengubah biaya pekerjaan yang sudah lewat.
+**Faktur tidak menunggu pengiriman, pengiriman menunggu produksi.** Seluruh isi
+pesanan yang sudah dikonfirmasi boleh difakturkan kapan saja — pekerjaan
+pesanan berjalan berbulan-bulan dan pembayaran pertamanya ditagih di muka, jadi
+menunggu barang keluar gudang berarti tidak pernah bisa menerbitkan tagihan yang
+menjadi dasar uang muka. Yang ditahan adalah pengirimannya: selama proyek masih
+punya perintah produksi berstatus draft atau dikonfirmasi, `kirimDariPesanan()`
+menolak. Barangnya memang belum berwujud, dan harga pokoknya belum lengkap
+karena biaya konversi baru terserap saat perintah produksi diselesaikan.
+
+Uang muka tidak berupa tipe faktur tersendiri: satu proyek satu faktur, dan
+pembayarannya dipecah menjadi beberapa penerimaan parsial lewat
+`customer_payment_allocations`. Penerimaan yang belum dialokasikan jatuh ke akun
+Uang Muka Penjualan.
+
+**Upah tukang menjadi angka buku besar hanya lewat produksi.** Timesheet
+sendiri tidak memposting jurnal. Baris yang tertaut sebuah perintah produksi
+(`timesheets.wo_id`) diserap ke Barang Dalam Proses sebagai biaya tenaga kerja
+saat perintah diselesaikan, lalu menyatu ke harga pokok barang jadi — dan sejak
+saat itu **tidak boleh ditambahkan lagi** sebagai beban proyek, sebab itu
+berarti menghitung upah yang sama dua kali. Baris yang tidak tertaut tetap
+angka manajerial dan hanya mengurangi laba bersih.
+
+Upahnya berasal dari master Pegawai (`partners.is_pegawai`), bukan dari proyek.
+Tarif beserta satuannya — harian atau jam — dibekukan ke setiap baris saat
+dicatat, sehingga menaikkan upah tidak mengubah biaya pekerjaan yang sudah
+lewat. Satuan disimpan apa adanya dan tidak pernah dikonversi: tukang harian
+menerima upah satu hari penuh meski pulang lebih awal, jadi membagi tarif
+harian dengan jam standar akan melaporkan angka yang tidak pernah terjadi.
+
+**Laba proyek disajikan dua tingkat.** Laba kotor = pendapatan − harga pokok,
+seluruhnya angka buku besar dan dapat diadu dengan neraca. Laba bersih
+menguranginya dengan beban bertanda proyek dan upah yang belum terserap
+produksi. Harga pokok dikenali dari akun bertipe `beban_hpp`; beban lain
+sengaja mengecualikan tipe itu agar jurnal pengiriman yang bertanda proyek
+tidak terhitung dua kali.
+
+**Dimensi proyek mengalir dari dokumen, bukan diketik di jurnal.** Sama seperti
+pos biaya, penanda proyek diteruskan otomatis ke item jurnal oleh dokumen
+sumbernya: `stock_operations.proyek_id` (pengiriman atas pesanan berproyek,
+konsumsi dan hasil produksi) dan `vendor_bill_lines.proyek_id`. Penandanya
+hanya menempel pada sisi beban — menandai persediaan, PPN, atau utang tidak
+punya arti karena laporan proyek hanya membaca akun beban.
 
 **Job costing dikunci setelah lunas.** Selama proyek berjalan angkanya dihitung
 ulang dari dokumen sumbernya. Begitu seluruh faktur proyek diterima
@@ -146,8 +207,87 @@ nomor yang sudah terpakai di periode berjalan.
 **Kurs dibekukan.** Kurs diambil dari tanggal transaksi dan disimpan pada entri.
 Kurs bertanggal setelah tanggal transaksi tidak pernah dipakai.
 
+**Tempo diturunkan sekali lalu disimpan.** `tempoDokumenDalamTx()` di
+`src/modules/akuntansi/layanan/syarat-pembayaran.ts` mencari syarat pembayaran
+berjenjang — yang dipilih pada dokumen, lalu pesanan asalnya, lalu bawaan
+mitranya — menurunkan tanggal jatuh temponya, dan menyimpan keduanya pada
+faktur atau tagihan. Mengubah syarat tidak menggeser tempo dokumen yang sudah
+terbit, dan tempo yang diketik manual selalu menang.
+
 **Bahasa.** Label, pesan validasi, dan identifier domain berbahasa Indonesia
 dengan ejaan lengkap. Nama tabel tetap bahasa Inggris.
+
+## Susunan Kode
+
+```
+src/app/(app)/<area>/          # halaman mengikuti struktur navigasi
+  page.tsx                     # komponen server; wajibIzin() di baris pertama
+  aksi.ts                      # Server Action, satu berkas per area
+  data-pilihan.ts              # query pilihan untuk formulir
+src/modules/<domain>/
+  layanan/                     # logika bisnis dan transaksi
+  repositori/                  # query yang dipakai ulang (opsional — hanya
+                               #   akuntansi, gudang, identitas, preferensi)
+  validasi/                    # skema Zod, tipe masukan, label enum
+src/db/schema/                 # Drizzle, satu berkas per domain
+src/lib/                       # uang, navigasi, izin, sesi, daftar, galat, env
+src/components/{data,formulir,laporan,tata-letak,ui}/
+```
+
+Modul tanpa `repositori/` menaruh querinya langsung di `layanan/`; tidak perlu
+membuat lapisan itu hanya demi simetri.
+
+**Server Action.** Berkas `aksi.ts` di dalam folder rute, diawali
+`'use server'`. Polanya seragam dan harus diikuti: fungsi berawalan `aksi…`,
+memanggil `wajibIzin(IZIN)` sebagai langkah pertama, membungkus pemanggilan
+layanan dalam `try/catch`, mencatat `catatAudit()`, memanggil helper
+`segarkan()` berisi `revalidatePath()` untuk seluruh rute yang terpengaruh,
+lalu mengembalikan `HasilAksi` — `{ berhasil: true; id?: string }` atau
+`{ berhasil: false; pesan: string }`. Galat dikembalikan sebagai nilai, tidak
+dilempar ke klien.
+
+**Galat yang boleh dibaca pengguna.** Layanan melempar `ValidasiError`
+(`src/lib/galat.ts`) untuk pelanggaran aturan bisnis; pesannya ditulis
+lengkap dalam bahasa Indonesia karena tampil apa adanya di antarmuka.
+
+**Transaksi.** Fungsi berakhiran `…DalamTx(tx, …)` adalah varian yang ikut
+transaksi pemanggil; tipe `tx` adalah `Transaksi` dari `src/db/klien.ts`.
+Sediakan varian ini setiap kali sebuah operasi mungkin perlu segabung dengan
+posting jurnal atau pergerakan stok. Pasangan non-`DalamTx`-nya membuka
+transaksinya sendiri.
+
+**Daftar.** Pencarian, filter, pengelompokan, pengurutan, dan paginasi dibaca
+dari URL lewat `uraikanParameterDaftar()` di `src/lib/daftar.ts`
+(`ParameterDaftar` / `HasilDaftar<T>`), bukan state klien.
+
+## Skema dan Migrasi
+
+Nama tabel bahasa Inggris `snake_case` (`sales_orders`); properti TypeScript
+bahasa Indonesia `camelCase` (`lewatPenawaran`, `tanggalPengiriman`) dengan
+nama kolom `snake_case` sebagai argumennya. Kolom teknis seperti `isActive`
+tetap bahasa Inggris.
+
+Alurnya: ubah berkas di `src/db/schema/`, ekspor lewat `index.ts`, jalankan
+`pnpm db:generate`, baca SQL yang dihasilkan, lalu `pnpm db:migrate`. Berkas
+SQL di `drizzle/` adalah keluaran generator — jangan diedit tangan.
+
+## Pengujian
+
+Uji bersifat integrasi terhadap basis data `furnierp_test` yang sungguhan,
+bukan mock. `tests/setup-global.ts` menjalankan migrasi sekali di awal;
+`DATABASE_URL` diambil dari `.env.test`. Seluruh berkas berbagi satu basis
+data dan berjalan berurutan (`fileParallelism: false`) — jangan pernah
+menjalankan dua suite sekaligus terhadap basis data yang sama.
+
+Pola satu berkas uji: daftarkan `TABEL` dalam urutan aman terhadap foreign
+key, panggil `bersihkanTabel(TABEL)` di `beforeEach` (`tests/bantuan/db.ts`,
+`TRUNCATE … RESTART IDENTITY CASCADE`), dan `tutupKoneksi()` di `afterAll`.
+Fixture yang memicu posting otomatis wajib memanggil `seedPemetaanJurnal()`
+dari `tests/bantuan/pemetaan.ts` lebih dulu — tanpa itu posting gagal karena
+jurnal tujuannya adalah data, bukan kode.
+
+Uji memanggil layanan secara langsung, bukan Server Action, sehingga tidak
+memerlukan sesi maupun izin.
 
 ## Navigasi dan Izin
 
@@ -165,6 +305,33 @@ berfungsi.
 Saat ini hanya peran `superuser` (wildcard `*`) yang dipakai. Memecah peran
 nanti tidak menyentuh kode UI — cukup mengisi tabel `role_permissions`.
 
+## Antarmuka
+
+Halaman disusun dari komponen bersama, bukan markup sendiri-sendiri:
+`KepalaHalaman`, `TabelData`/`TabelDataInteraktif` (kolom dideklarasikan
+sebagai `Kolom<T>`), `PanelPencarian`, `TombolBuat`/`TombolUbah`/`TombolHapus`,
+serta keluarga `Formulir*` (`FormulirBingkai`, `FormulirNotebook`,
+`FormulirGrid`, `FormulirField`, `FormulirBarisTabel`). Komponen `src/components/ui/`
+berasal dari shadcn dan tidak diubah tangan.
+
+**Warna status mengikuti makna, bukan nama.** `LencanaStatus`
+(`src/components/data/lencana-status.tsx`) memetakan status seluruh modul ke
+enam nada: `netral` (belum mengikat), `proses` (berjalan), `tuntas`, `beku`,
+`batal`, `perhatian`. `selesai` di gudang dan `diposting` di akuntansi
+sama-sama tuntas sehingga warnanya sama. Status baru didaftarkan di peta
+`NADA` di berkas itu — jangan menulis kelas warna di halaman.
+
+## Catatan Lingkungan Kerja
+
+`AGENTS.md` ditulis ulang oleh `next dev`; blok isinya mengingatkan bahwa
+Next.js 16 berbeda dari versi yang dikenal model, dan dokumentasinya ada di
+`node_modules/next/dist/docs/`. Commit berkas itu bersama pekerjaan lain
+alih-alih mengembalikannya.
+
+Folder `.claude/` berisi worktree sesi kerja lain di dalam repositori ini dan
+dikecualikan dari Vitest maupun ESLint. Tanpa pengecualian itu, uji dari dua
+worktree berjalan terhadap satu basis data yang sama.
+
 ## Status
 
 Ketujuh fase selesai, ditambah empat kebutuhan spesifik pemilik usaha:
@@ -178,11 +345,13 @@ resep sampai barang jadi bernilai harga pokok penuh, aset tetap dari
 pendaftaran sampai pelepasan, serta proyek dari pembukaan sampai laporan
 profitabilitasnya.
 
-Urutan dokumen penjualan menegakkan satu aturan: yang boleh difakturkan hanya
-yang sudah dikirim. Pengiriman membebankan harga pokok rata-rata lawan
-persediaan; faktur baru mencatat pendapatan, PPN Keluaran, dan piutang.
-Pembayaran yang melunasi seluruh piutang seorang pelanggan memicu rekonsiliasi
-otomatis; pelunasan sebagian sengaja dibiarkan terbuka agar sisanya terlihat.
+Urutan dokumen penjualan menegakkan satu aturan: pengiriman menunggu produksi
+selesai, sedangkan faktur tidak menunggu pengiriman. Pengiriman membebankan
+harga pokok rata-rata lawan persediaan; faktur mencatat pendapatan, PPN
+Keluaran, dan piutang. Pembayaran yang melunasi seluruh piutang seorang
+pelanggan memicu rekonsiliasi otomatis; pelunasan sebagian sengaja dibiarkan
+terbuka agar sisanya terlihat — itulah yang membuat uang muka dan termin
+berjalan tanpa dokumen khusus.
 
 Manufaktur memakai mekanisme pergerakan stok yang sama seperti modul lain:
 bahan keluar gudang menuju lokasi virtual Produksi, biaya konversi diserap ke

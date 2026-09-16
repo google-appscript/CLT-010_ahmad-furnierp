@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
-  vendorBills, vendorBillLines,
+  vendorBills, vendorBillLines, purchaseOrders,
   purchaseOrderLines, taxes, accounts, partners,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
@@ -12,7 +12,9 @@ import { postingJurnalDalamTx } from '@/modules/akuntansi/layanan/entri'
 import {
   jurnalUntukDalamTx, PEMETAAN_JURNAL,
 } from '@/modules/akuntansi/layanan/pemetaan'
-import { hitungJatuhTempo } from '@/modules/akuntansi/layanan/syarat-pembayaran'
+import {
+  hitungJatuhTempo, tempoDokumenDalamTx,
+} from '@/modules/akuntansi/layanan/syarat-pembayaran'
 import { skemaTagihan, type MasukanTagihan } from '../validasi/pesanan'
 import { hitungTotal, type BarisHitung, type HasilTotal } from '@/modules/akuntansi/layanan/hitung-dokumen'
 import { perbaruiStatusPenyelesaian } from './pesanan'
@@ -164,13 +166,22 @@ export async function buatTagihan(
   const data = urai(masukan)
 
   const id = await db.transaction(async (tx) => {
+    const tempo = await tempoDokumenDalamTx(tx, {
+      tanggal: data.tanggal,
+      partnerId: data.partnerId,
+      syaratPembayaranId: data.syaratPembayaranId,
+      syaratPesananId: await syaratPesananDalamTx(tx, data.poId),
+      tanggalJatuhTempo: data.tanggalJatuhTempo,
+    })
+
     const [tagihan] = await tx.insert(vendorBills).values({
       tipe: data.tipe,
       status: 'draft',
       partnerId: data.partnerId,
       poId: data.poId,
       tanggal: data.tanggal,
-      tanggalJatuhTempo: data.tanggalJatuhTempo,
+      syaratPembayaranId: tempo.syaratPembayaranId,
+      tanggalJatuhTempo: tempo.tanggalJatuhTempo,
       referensiPemasok: data.referensiPemasok,
       mataUangId: data.mataUangId,
       catatan: data.catatan,
@@ -189,6 +200,7 @@ export async function buatTagihan(
         hargaSatuan: b.hargaSatuan,
         taxId: b.taxId,
         akunId: b.akunId,
+        proyekId: b.proyekId,
       })),
     )
 
@@ -211,12 +223,21 @@ export async function ubahTagihan(
   }
 
   await db.transaction(async (tx) => {
+    const tempo = await tempoDokumenDalamTx(tx, {
+      tanggal: data.tanggal,
+      partnerId: data.partnerId,
+      syaratPembayaranId: data.syaratPembayaranId,
+      syaratPesananId: await syaratPesananDalamTx(tx, data.poId),
+      tanggalJatuhTempo: data.tanggalJatuhTempo,
+    })
+
     await tx.update(vendorBills).set({
       tipe: data.tipe,
       partnerId: data.partnerId,
       poId: data.poId,
       tanggal: data.tanggal,
-      tanggalJatuhTempo: data.tanggalJatuhTempo,
+      syaratPembayaranId: tempo.syaratPembayaranId,
+      tanggalJatuhTempo: tempo.tanggalJatuhTempo,
       referensiPemasok: data.referensiPemasok,
       mataUangId: data.mataUangId,
       catatan: data.catatan,
@@ -236,6 +257,7 @@ export async function ubahTagihan(
         hargaSatuan: b.hargaSatuan,
         taxId: b.taxId,
         akunId: b.akunId,
+        proyekId: b.proyekId,
       })),
     )
   })
@@ -308,7 +330,7 @@ export async function postingTagihan(
     const item: {
       accountId: string; partnerId: string | null; label: string
       debit: string; kredit: string
-      nilaiMataUang: null; taxId: string | null; projectId: null
+      nilaiMataUang: null; taxId: string | null; projectId: string | null
     }[] = []
 
     baris.forEach((b, i) => {
@@ -319,7 +341,9 @@ export async function postingTagihan(
         partnerId: tagihan.partnerId,
         label: b.deskripsi,
         ...sisiBiaya(dpp),
-        nilaiMataUang: null, taxId: b.taxId, projectId: null,
+        // Penanda proyek ikut dari barisnya. PPN dan utang tidak ditandai:
+        // keduanya bukan biaya proyek melainkan urusan pajak dan pemasok.
+        nilaiMataUang: null, taxId: b.taxId, projectId: b.proyekId,
       })
     })
 
@@ -456,6 +480,16 @@ export async function tagihanBelumLunas(partnerId?: string): Promise<RingkasanTa
 }
 
 export { hitungJatuhTempo, tambah }
+
+/** Syarat pembayaran yang tertulis pada pesanan pembelian asalnya. */
+async function syaratPesananDalamTx(
+  tx: Transaksi, poId: string | null | undefined,
+): Promise<string | null> {
+  if (!poId) return null
+  const [pesanan] = await tx.select({ syaratPembayaranId: purchaseOrders.syaratPembayaranId })
+    .from(purchaseOrders).where(eq(purchaseOrders.id, poId)).limit(1)
+  return pesanan?.syaratPembayaranId ?? null
+}
 
 /**
  * Menggandakan tagihan menjadi draft baru. Kaitan ke pesanan pembelian tidak

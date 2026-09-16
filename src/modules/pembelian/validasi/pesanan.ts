@@ -23,6 +23,11 @@ export const skemaPesanan = z.object({
   tanggal: tanggalIso,
   tanggalDiharapkan: tanggalIso.nullable().default(null),
   lokasiTujuanId: z.uuid('Lokasi tujuan wajib dipilih'),
+  /**
+   * Pesanan penjualan yang menjadi alasan pembelian ini. Satu pesanan
+   * penjualan boleh dirujuk beberapa permintaan pembelian sekaligus.
+   */
+  soId: z.uuid().nullable().default(null),
   syaratPembayaranId: z.uuid().nullable().default(null),
   mataUangId: z.string().trim().length(3).default('IDR'),
   referensi: z.string().trim().max(100).nullable().default(null)
@@ -41,6 +46,11 @@ export const skemaBarisTagihan = z.object({
   hargaSatuan: hargaTidakNegatif,
   taxId: z.uuid().nullable().default(null),
   akunId: z.uuid('Akun wajib dipilih'),
+  /**
+   * Proyek yang menanggung baris ini. Hanya berlaku untuk baris berakun beban;
+   * baris persediaan sampai ke proyek lewat harga pokok saat barangnya dikirim.
+   */
+  proyekId: z.uuid().nullable().default(null),
 })
 
 export const skemaTagihan = z.object({
@@ -48,6 +58,7 @@ export const skemaTagihan = z.object({
   partnerId: z.uuid('Pemasok wajib dipilih'),
   poId: z.uuid().nullable().default(null),
   tanggal: tanggalIso,
+  syaratPembayaranId: z.uuid().nullable().default(null),
   tanggalJatuhTempo: tanggalIso.nullable().default(null),
   referensiPemasok: z.string().trim().max(100).nullable().default(null)
     .transform((v) => (v === '' ? null : v)),

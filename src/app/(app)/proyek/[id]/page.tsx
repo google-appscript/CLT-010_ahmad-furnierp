@@ -9,8 +9,10 @@ import { daftarTugas } from '@/modules/proyek/layanan/tugas'
 import { daftarTimesheet } from '@/modules/proyek/layanan/timesheet'
 import { profitabilitasProyek } from '@/modules/proyek/layanan/laporan'
 import { kesiapanKunci } from '@/modules/proyek/layanan/penguncian'
+import { perintahProduksiProyek } from '@/modules/manufaktur/layanan/perintah-produksi'
+import { LABEL_STATUS_PERINTAH_PRODUKSI } from '@/modules/manufaktur/validasi/produksi'
 import {
-  LABEL_STATUS_PROYEK, LABEL_STATUS_TUGAS,
+  LABEL_STATUS_PROYEK, LABEL_STATUS_TUGAS, LABEL_SATUAN_TARIF,
 } from '@/modules/proyek/validasi/proyek'
 import { formatAngka, formatRupiah } from '@/lib/uang'
 import { TombolUbah } from '@/components/data/tombol-aksi'
@@ -42,7 +44,6 @@ export default async function HalamanDetailProyek({
     tanggalMulai: proyek.tanggalMulai,
     tanggalTarget: proyek.tanggalTarget ?? '',
     manajerId: proyek.manajerId ?? '',
-    tarifPerJam: String(Number(proyek.tarifPerJam)),
     catatan: proyek.catatan ?? '',
   }
 
@@ -63,10 +64,13 @@ export default async function HalamanDetailProyek({
   // Dokumen non-draft dapat merujuk pelanggan/pengguna yang sejak itu
   // dinonaktifkan — `pilihan` hanya berisi yang masih aktif, jadi tampilan
   // readonly memakai daftar tanpa filter aktif supaya nama tetap terlihat.
-  const [tugas, timesheet, laba, semuaPengguna, semuaMitra, semuaPesanan, kesiapan] = await Promise.all([
+  const [
+    tugas, timesheet, laba, produksi, semuaPengguna, semuaMitra, semuaPesanan, kesiapan,
+  ] = await Promise.all([
     daftarTugas({ proyekId: id }),
     daftarTimesheet({ proyekId: id }),
     profitabilitasProyek(id),
+    perintahProduksiProyek(id),
     db.select({ id: users.id, nama: users.nama }).from(users).orderBy(asc(users.nama)),
     db.select({ id: partners.id, nama: partners.nama }).from(partners).orderBy(asc(partners.nama)),
     db.select({ id: salesOrders.id, nomor: salesOrders.nomor, tanggal: salesOrders.tanggal, partnerId: salesOrders.partnerId })
@@ -86,19 +90,36 @@ export default async function HalamanDetailProyek({
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
           <tbody>
+            <tr className="border-b bg-muted/20">
+              <td colSpan={2} className="px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Laba Kotor — angka buku besar
+              </td>
+            </tr>
             <BarisAngka label="Pendapatan (dasar pengenaan pajak)" nilai={laba.pendapatan} />
             <BarisAngka label="Harga Pokok Penjualan" nilai={laba.hargaPokok} />
             <tr className="border-t-2 bg-muted/40 font-semibold">
               <td className="px-4 py-2">Laba Kotor</td>
               <td className="px-4 py-2 text-right tabular-nums">{formatRupiah(laba.labaKotor)}</td>
             </tr>
+            <tr className="border-b">
+              <td className="px-4 py-1.5 text-muted-foreground">Margin Kotor</td>
+              <td className="px-4 py-1.5 text-right tabular-nums text-muted-foreground">
+                {laba.marginKotorPersen === null ? '—' : `${formatAngka(laba.marginKotorPersen, 2)}%`}
+              </td>
+            </tr>
+
+            <tr className="border-b bg-muted/20">
+              <td colSpan={2} className="px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Laba Bersih — pandangan manajerial
+              </td>
+            </tr>
             <BarisAngka label="Beban Bertanda Proyek" nilai={laba.bebanLain} />
             <BarisAngka
-              label={`Biaya Tenaga Kerja (${formatAngka(laba.totalJam, 2)} jam)`}
+              label="Upah Belum Terserap Produksi"
               nilai={laba.biayaTenagaKerja}
             />
             <tr className="border-t-2 bg-muted/40 font-semibold">
-              <td className="px-4 py-2">Laba Proyek</td>
+              <td className="px-4 py-2">Laba Bersih</td>
               <td className={`px-4 py-2 text-right tabular-nums ${
                 Number(laba.laba) < 0 ? 'text-destructive' : ''
               }`}>
@@ -106,7 +127,7 @@ export default async function HalamanDetailProyek({
               </td>
             </tr>
             <tr className="border-t">
-              <td className="px-4 py-2">Margin</td>
+              <td className="px-4 py-2">Margin Bersih</td>
               <td className="px-4 py-2 text-right tabular-nums">
                 {laba.marginPersen === null ? '—' : `${formatAngka(laba.marginPersen, 2)}%`}
               </td>
@@ -115,13 +136,83 @@ export default async function HalamanDetailProyek({
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Laba kotor murni angka buku besar. Biaya tenaga kerja berasal dari timesheet dan belum
-        diposting ke buku besar, jadi laba proyek adalah pandangan manajerial di atasnya.
+        Laba kotor murni angka buku besar dan dapat diadu dengan neraca; harga pokoknya
+        sudah memuat bahan, upah, dan overhead yang terserap lewat perintah produksi
+        {Number(laba.biayaTenagaKerjaTerserap) > 0 && (
+          <> — termasuk {formatRupiah(laba.biayaTenagaKerjaTerserap)} upah tukang</>
+        )}
+        . Laba bersih menguranginya dengan beban bertanda proyek dan upah yang tidak
+        melewati produksi, yang belum menjadi transaksi buku besar.
         {laba.terkunci
           ? ' Angka ini dibekukan saat proyek dikunci dan tidak lagi dihitung ulang.'
           : ` Difakturkan ${formatRupiah(kesiapan.totalDifakturkan)}, diterima ` +
             `${formatRupiah(kesiapan.totalDiterima)}, sisa piutang ` +
             `${formatRupiah(kesiapan.sisaPiutang)}.`}
+      </p>
+    </div>
+  )
+
+  const tabProduksi = produksi.length === 0 ? (
+    <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
+      Belum ada perintah produksi untuk proyek ini.{' '}
+      {terbuka && (
+        <Link href="/manufaktur/perintah-produksi/baru" className="underline">
+          Buat perintah produksi
+        </Link>
+      )}
+    </div>
+  ) : (
+    <div className="space-y-2">
+      <div className="overflow-x-auto rounded-md border">
+        <table className="w-full text-sm">
+          <thead className="border-b bg-muted/40">
+            <tr>
+              <th className="px-4 py-2 text-left font-medium">Nomor</th>
+              <th className="px-4 py-2 text-left font-medium">Produk</th>
+              <th className="px-4 py-2 text-right font-medium">Kuantitas</th>
+              <th className="px-4 py-2 text-left font-medium">Target</th>
+              <th className="px-4 py-2 text-right font-medium">Tenaga Kerja</th>
+              <th className="px-4 py-2 text-right font-medium">Overhead</th>
+              <th className="px-4 py-2 text-left font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {produksi.map((w) => (
+              <tr key={w.id} className="border-b">
+                <td className="px-4 py-1.5">
+                  <Link
+                    href={`/manufaktur/perintah-produksi/${w.id}`}
+                    className="font-mono text-xs underline"
+                  >
+                    {w.nomor ?? 'Draft'}
+                  </Link>
+                </td>
+                <td className="px-4 py-1.5">{w.namaProduk}</td>
+                <td className="px-4 py-1.5 text-right tabular-nums">
+                  {formatAngka(w.kuantitas, 2)}
+                </td>
+                <td className="px-4 py-1.5 text-muted-foreground">{w.tanggalTarget ?? '—'}</td>
+                <td className="px-4 py-1.5 text-right tabular-nums">
+                  {formatAngka(w.biayaTenagaKerja)}
+                </td>
+                <td className="px-4 py-1.5 text-right tabular-nums">
+                  {formatAngka(w.biayaOverhead)}
+                </td>
+                <td className="px-4 py-1.5">
+                  <LencanaStatus
+                    status={w.status}
+                    label={LABEL_STATUS_PERINTAH_PRODUKSI[w.status]}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Bahan baku proyek ini ada di resep masing-masing perintah produksi. Pengiriman
+        pesanan ditahan selama masih ada perintah yang belum tuntas, karena barangnya
+        belum berwujud dan harga pokoknya belum lengkap.
       </p>
     </div>
   )
@@ -213,10 +304,10 @@ export default async function HalamanDetailProyek({
         <thead className="border-b bg-muted/40">
           <tr>
             <th className="px-4 py-2 text-left font-medium">Tanggal</th>
-            <th className="px-4 py-2 text-left font-medium">Pelaksana</th>
-            <th className="px-4 py-2 text-left font-medium">Tugas</th>
+            <th className="px-4 py-2 text-left font-medium">Pegawai</th>
+            <th className="px-4 py-2 text-left font-medium">Produksi</th>
             <th className="px-4 py-2 text-left font-medium">Uraian</th>
-            <th className="px-4 py-2 text-right font-medium">Jam</th>
+            <th className="px-4 py-2 text-right font-medium">Jumlah</th>
             <th className="px-4 py-2 text-right font-medium">Tarif</th>
             <th className="px-4 py-2 text-right font-medium">Biaya</th>
           </tr>
@@ -225,11 +316,18 @@ export default async function HalamanDetailProyek({
           {timesheet.map((t) => (
             <tr key={t.id} className="border-b">
               <td className="px-4 py-1.5">{t.tanggal}</td>
-              <td className="px-4 py-1.5">{t.namaPengguna}</td>
-              <td className="px-4 py-1.5 text-muted-foreground">{t.namaTugas ?? '—'}</td>
+              <td className="px-4 py-1.5">{t.namaPegawai}</td>
+              <td className="px-4 py-1.5 text-muted-foreground">
+                {t.nomorPerintahProduksi ?? '—'}
+              </td>
               <td className="px-4 py-1.5 text-muted-foreground">{t.deskripsi}</td>
-              <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(t.jam, 2)}</td>
-              <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(t.tarifPerJam)}</td>
+              <td className="px-4 py-1.5 text-right tabular-nums">
+                {formatAngka(t.kuantitas, 2)}
+                <span className="ml-1 text-xs text-muted-foreground">
+                  {LABEL_SATUAN_TARIF[t.satuanTarif].toLowerCase()}
+                </span>
+              </td>
+              <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(t.tarif)}</td>
               <td className="px-4 py-1.5 text-right tabular-nums">{formatAngka(t.biaya)}</td>
             </tr>
           ))}
@@ -237,9 +335,17 @@ export default async function HalamanDetailProyek({
         <tfoot className="border-t-2 bg-muted/40 font-semibold">
           <tr>
             <td colSpan={4} className="px-4 py-2 text-right">Total</td>
-            <td className="px-4 py-2 text-right tabular-nums">{formatAngka(laba.totalJam, 2)}</td>
+            <td className="px-4 py-2 text-right tabular-nums">
+              {Number(laba.totalHari) > 0 && <>{formatAngka(laba.totalHari, 2)} hari</>}
+              {Number(laba.totalHari) > 0 && Number(laba.totalJam) > 0 && ' · '}
+              {Number(laba.totalJam) > 0 && <>{formatAngka(laba.totalJam, 2)} jam</>}
+            </td>
             <td />
-            <td className="px-4 py-2 text-right tabular-nums">{formatAngka(laba.biayaTenagaKerja)}</td>
+            <td className="px-4 py-2 text-right tabular-nums">
+              {formatAngka(
+                String(Number(laba.biayaTenagaKerja) + Number(laba.biayaTenagaKerjaTerserap)),
+              )}
+            </td>
           </tr>
         </tfoot>
       </table>
@@ -273,6 +379,7 @@ export default async function HalamanDetailProyek({
       }
       tabTambahan={[
         { id: 'profitabilitas', label: 'Profitabilitas', children: tabProfitabilitas },
+        { id: 'produksi', label: 'Produksi', children: tabProduksi },
         { id: 'tugas', label: 'Tugas', children: tabTugas },
         { id: 'timesheet', label: 'Timesheet', children: tabTimesheet },
       ]}

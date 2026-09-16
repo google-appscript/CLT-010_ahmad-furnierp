@@ -380,9 +380,11 @@ export async function barisDenganSisa(soId: string): Promise<SisaBaris[]> {
     namaProduk: b.namaProduk,
     namaUom: b.namaUom,
     sisaDikirim: sisaKuantitas(b.baris.kuantitas, b.baris.kuantitasDikirim),
-    // Yang boleh difakturkan adalah yang sudah dikirim; menagih barang yang
-    // belum keluar gudang akan mencatat pendapatan sebelum ada penyerahan.
-    sisaDifakturkan: sisaKuantitas(b.baris.kuantitasDikirim, b.baris.kuantitasDifakturkan),
+    // Yang boleh difakturkan adalah seluruh isi pesanan, bukan hanya yang
+    // sudah keluar gudang. Pekerjaan pesanan berjalan berbulan-bulan dan uang
+    // mukanya ditagih di awal; menunggu pengiriman berarti tidak pernah bisa
+    // menerbitkan tagihan yang menjadi dasar pembayaran pertama.
+    sisaDifakturkan: sisaKuantitas(b.baris.kuantitas, b.baris.kuantitasDifakturkan),
   }))
 }
 

@@ -1,9 +1,47 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/db/klien'
-import { salesOrderLines, stockOperations, locations } from '@/db/schema'
+import { salesOrderLines, stockOperations, locations, projects, workOrders } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { buatOperasi, selesaikanOperasi } from '@/modules/gudang/layanan/operasi'
 import { ambilPesanan, barisDenganSisa, perbaruiStatusPenyelesaian } from './pesanan'
+
+/** Perintah produksi yang belum tuntas dan karenanya menahan pengiriman. */
+const STATUS_WO_BELUM_TUNTAS = ['draft', 'dikonfirmasi'] as const
+
+/**
+ * Proyek yang dipegang sebuah pesanan, bila ada. Satu pesanan paling banyak
+ * dipegang satu proyek, ditegakkan indeks unik pada `projects.so_id`.
+ */
+async function proyekPesanan(soId: string) {
+  const [proyek] = await db.select({ id: projects.id, kode: projects.kode })
+    .from(projects).where(eq(projects.soId, soId)).limit(1)
+  return proyek ?? null
+}
+
+/**
+ * Menahan pengiriman selama masih ada perintah produksi yang belum tuntas.
+ *
+ * Barang pesanan dibuat lebih dulu di bengkel; mengirimkannya sebelum
+ * produksinya selesai berarti mengeluarkan barang yang belum ada wujudnya, dan
+ * harga pokoknya pun belum lengkap karena biaya konversi baru terserap saat
+ * perintah produksi diselesaikan.
+ */
+async function wajibProduksiTuntas(proyekId: string, kodeProyek: string): Promise<void> {
+  const belum = await db.select({ nomor: workOrders.nomor, status: workOrders.status })
+    .from(workOrders)
+    .where(and(
+      eq(workOrders.proyekId, proyekId),
+      inArray(workOrders.status, [...STATUS_WO_BELUM_TUNTAS]),
+    ))
+
+  if (belum.length === 0) return
+
+  const daftar = belum.map((w) => w.nomor ?? '(draft)').join(', ')
+  throw new ValidasiError(
+    `Produksi proyek ${kodeProyek} belum selesai sehingga barangnya belum dapat dikirim. ` +
+    `Perintah produksi yang masih terbuka: ${daftar}.`,
+  )
+}
 
 export type MasukanPengiriman = {
   soId: string
@@ -28,6 +66,9 @@ export async function kirimDariPesanan(
   if (pesanan.status !== 'dikonfirmasi') {
     throw new ValidasiError('Hanya pesanan yang sudah dikonfirmasi yang dapat dikirim.')
   }
+
+  const proyek = await proyekPesanan(masukan.soId)
+  if (proyek) await wajibProduksiTuntas(proyek.id, proyek.kode)
 
   const sisa = await barisDenganSisa(masukan.soId)
   const sisaLewatId = new Map(sisa.map((s) => [s.id, s]))
@@ -58,6 +99,8 @@ export async function kirimDariPesanan(
     lokasiAsalId: pesanan.lokasiAsalId,
     lokasiTujuanId: lokasiPelanggan.id,
     partnerId: pesanan.partnerId,
+    // Harga pokok pengiriman ini menjadi harga pokok proyeknya.
+    proyekId: proyek?.id ?? null,
     referensi: pesanan.nomor,
     catatan: `Pengiriman atas pesanan ${pesanan.nomor}`,
     baris: barisDipakai.map((b) => {

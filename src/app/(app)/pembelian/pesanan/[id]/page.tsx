@@ -81,6 +81,7 @@ export default async function HalamanDetailPesanan({
         tanggal: pesanan.tanggal,
         tanggalDiharapkan: pesanan.tanggalDiharapkan ?? '',
         lokasiTujuanId: pesanan.lokasiTujuanId,
+        soId: pesanan.soId ?? '',
         syaratPembayaranId: pesanan.syaratPembayaranId ?? '',
         referensi: pesanan.referensi ?? '',
         catatan: pesanan.catatan ?? '',

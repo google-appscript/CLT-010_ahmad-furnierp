@@ -1,7 +1,10 @@
 import {
-  pgTable, uuid, text, boolean, integer, numeric, timestamp, uniqueIndex, index,
+  pgTable, uuid, text, boolean, integer, numeric, timestamp, uniqueIndex, index, check,
 } from 'drizzle-orm/pg-core'
-import { tipeAkunEnum, tipePartnerEnum, tipeJurnalEnum, ruangLingkupPajakEnum } from './enum'
+import { sql } from 'drizzle-orm'
+import {
+  tipeAkunEnum, tipePartnerEnum, tipeJurnalEnum, ruangLingkupPajakEnum, satuanTarifEnum,
+} from './enum'
 import { currencies } from './mata-uang'
 import { sequences } from './konfigurasi'
 
@@ -37,6 +40,21 @@ export const partners = pgTable('partners', {
   tipe: tipePartnerEnum('tipe').notNull().default('badan'),
   isPelanggan: boolean('is_pelanggan').notNull().default(false),
   isPemasok: boolean('is_pemasok').notNull().default(false),
+  /**
+   * Pegawai — tukang, tenaga pemasangan, dan siapa pun yang jamnya dicatat di
+   * timesheet. Peran ketiga di tabel yang sama seperti pelanggan dan pemasok:
+   * satu orang boleh sekaligus pegawai dan pemasok tanpa dicatat dua kali.
+   */
+  isPegawai: boolean('is_pegawai').notNull().default(false),
+  /**
+   * Upah pegawai beserta satuannya. Timesheet membekukan keduanya saat baris
+   * dicatat, sehingga menaikkan upah tidak mengubah biaya pekerjaan yang sudah
+   * lewat. Satuan disimpan apa adanya, tidak dikonversi ke jam: tukang harian
+   * menerima upah satu hari penuh meski pulang lebih awal, dan membagi tarif
+   * harian dengan jam standar akan selalu meleset dari uang yang keluar.
+   */
+  tarif: numeric('tarif', { precision: 18, scale: 2 }).notNull().default('0'),
+  satuanTarif: satuanTarifEnum('satuan_tarif').notNull().default('harian'),
   // NPWP disimpan sebagai angka saja; pemformatan adalah urusan tampilan.
   npwp: text('npwp'),
   nik: text('nik'),
@@ -57,6 +75,8 @@ export const partners = pgTable('partners', {
   uniqueIndex('partners_kode_unik').on(t.kode),
   index('partners_pelanggan_idx').on(t.isPelanggan),
   index('partners_pemasok_idx').on(t.isPemasok),
+  index('partners_pegawai_idx').on(t.isPegawai),
+  check('partners_tarif_tidak_negatif_ck', sql`${t.tarif} >= 0`),
 ])
 
 export const taxes = pgTable('taxes', {

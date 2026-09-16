@@ -39,7 +39,7 @@ export default async function HalamanProyekBaru({
       awal={{
         kode: '', nama: '', soId: soTerpilih,
         tanggalMulai: new Date().toISOString().slice(0, 10),
-        tanggalTarget: '', manajerId: '', tarifPerJam: '0', catatan: '',
+        tanggalTarget: '', manajerId: '', catatan: '',
       }}
       pesanan={pesanan}
       pengguna={pengguna}

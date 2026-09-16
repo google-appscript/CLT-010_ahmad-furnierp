@@ -1,9 +1,9 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/db/klien'
-import { accounts, taxes, partners } from '@/db/schema'
+import { accounts, taxes, partners, projects } from '@/db/schema'
 
 export async function ambilDataPilihanTagihan() {
-  const [akun, pajak, pemasok] = await Promise.all([
+  const [akun, pajak, pemasok, proyek] = await Promise.all([
     db.select({ id: accounts.id, kode: accounts.kode, nama: accounts.nama })
       .from(accounts).where(eq(accounts.isActive, true)).orderBy(asc(accounts.kode)),
     db.select({
@@ -16,6 +16,12 @@ export async function ambilDataPilihanTagihan() {
       .from(partners)
       .where(and(eq(partners.isActive, true), eq(partners.isPemasok, true)))
       .orderBy(asc(partners.nama)),
+    // Proyek terkunci sengaja tidak ditawarkan: posting yang menandainya akan
+    // ditolak `postingJurnalDalamTx()`, jadi lebih baik tidak bisa dipilih.
+    db.select({ id: projects.id, kode: projects.kode, nama: projects.nama })
+      .from(projects)
+      .where(inArray(projects.status, ['draft', 'berjalan', 'selesai']))
+      .orderBy(asc(projects.kode)),
   ])
-  return { akun, pajak, pemasok }
+  return { akun, pajak, pemasok, proyek }
 }

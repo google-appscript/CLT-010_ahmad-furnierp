@@ -12,43 +12,60 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TombolUbah } from '@/components/data/tombol-aksi'
 import { aksiUbahTimesheet } from '../aksi'
-import type { PilihanTugas, PilihanPengguna } from './formulir-timesheet'
+import type {
+  PilihanTugas, PilihanPegawai, PilihanPerintahProduksi,
+} from './formulir-timesheet'
 
 const TANPA_TUGAS = 'tanpa-tugas'
+const TANPA_PRODUKSI = 'tanpa-produksi'
 
 export type TimesheetUntukDiubah = {
   id: string
   proyekId: string
   tugasId: string | null
-  penggunaId: string
+  woId: string | null
+  pegawaiId: string
   tanggal: string
-  jam: string
+  kuantitas: string
+  satuanTarif: 'harian' | 'jam'
   deskripsi: string
 }
 
 export function DialogUbahTimesheet({
-  baris, tugas, pengguna,
+  baris, tugas, perintahProduksi, pegawai,
 }: {
   baris: TimesheetUntukDiubah
   tugas: PilihanTugas[]
-  pengguna: PilihanPengguna[]
+  perintahProduksi: PilihanPerintahProduksi[]
+  pegawai: PilihanPegawai[]
 }) {
   const router = useRouter()
   const [terbuka, setTerbuka] = useState(false)
   const [bekerja, mulai] = useTransition()
   const [tugasId, setTugasId] = useState(baris.tugasId ?? TANPA_TUGAS)
-  const [penggunaId, setPenggunaId] = useState(baris.penggunaId)
+  const [woId, setWoId] = useState(baris.woId ?? TANPA_PRODUKSI)
+  const [pegawaiId, setPegawaiId] = useState(baris.pegawaiId)
 
   const tugasProyek = tugas.filter((t) => t.proyekId === baris.proyekId)
+  const produksiProyek = perintahProduksi.filter((w) => w.proyekId === baris.proyekId)
+
+  // Satuan mengikuti pegawai yang sedang dipilih; mengganti pelaksana berarti
+  // upahnya memang upah orang lain, beserta satuannya.
+  const pegawaiTerpilih = pegawai.find((p) => p.id === pegawaiId)
+  const satuan = pegawaiId === baris.pegawaiId
+    ? baris.satuanTarif
+    : pegawaiTerpilih?.satuanTarif ?? baris.satuanTarif
+  const harian = satuan !== 'jam'
 
   function simpan(data: FormData) {
     mulai(async () => {
       const hasil = await aksiUbahTimesheet(baris.id, {
         proyekId: baris.proyekId,
         tugasId: tugasId === TANPA_TUGAS ? null : tugasId,
-        penggunaId,
+        woId: woId === TANPA_PRODUKSI ? null : woId,
+        pegawaiId,
         tanggal: String(data.get('tanggal') ?? ''),
-        jam: String(data.get('jam') ?? '0'),
+        kuantitas: String(data.get('kuantitas') ?? '0'),
         deskripsi: String(data.get('deskripsi') ?? ''),
       })
       if (hasil.berhasil) {
@@ -88,13 +105,28 @@ export function DialogUbahTimesheet({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="penggunaId">Pelaksana</Label>
-            <Select value={penggunaId} onValueChange={setPenggunaId} required>
-              <SelectTrigger id="penggunaId" className="w-full">
-                <SelectValue placeholder="Pilih pelaksana" />
+            <Label htmlFor="woId">Perintah Produksi</Label>
+            <Select value={woId} onValueChange={setWoId}>
+              <SelectTrigger id="woId" className="w-full">
+                <SelectValue placeholder="Opsional" />
               </SelectTrigger>
               <SelectContent>
-                {pengguna.map((p) => (
+                <SelectItem value={TANPA_PRODUKSI}>Di luar produksi</SelectItem>
+                {produksiProyek.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>{w.nomor ?? 'Draft'}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pegawaiId">Pegawai</Label>
+            <Select value={pegawaiId} onValueChange={setPegawaiId} required>
+              <SelectTrigger id="pegawaiId" className="w-full">
+                <SelectValue placeholder="Pilih pegawai" />
+              </SelectTrigger>
+              <SelectContent>
+                {pegawai.map((p) => (
                   <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
                 ))}
               </SelectContent>
@@ -107,10 +139,14 @@ export function DialogUbahTimesheet({
               <Input id="tanggal" name="tanggal" type="date" required defaultValue={baris.tanggal} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jam">Jam</Label>
+              <Label htmlFor="kuantitas">{harian ? 'Hari' : 'Jam'}</Label>
               <Input
-                id="jam" name="jam" type="number" step="0.25" min="0.25" max="24" required
-                defaultValue={baris.jam} className="text-right tabular-nums"
+                id="kuantitas" name="kuantitas" type="number"
+                step={harian ? '0.5' : '0.25'}
+                min={harian ? '0.5' : '0.25'}
+                max={harian ? '1' : '24'}
+                required
+                defaultValue={baris.kuantitas} className="text-right tabular-nums"
               />
             </div>
           </div>
@@ -121,7 +157,8 @@ export function DialogUbahTimesheet({
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Tarif yang sudah dibekukan pada baris ini tidak ikut berubah.
+            Tarif yang sudah dibekukan pada baris ini tidak ikut berubah, kecuali
+            pegawainya diganti.
           </p>
 
           <DialogFooter>

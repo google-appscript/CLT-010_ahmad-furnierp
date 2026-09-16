@@ -73,6 +73,13 @@ export const customerInvoices = pgTable('customer_invoices', {
   partnerId: uuid('partner_id').notNull().references(() => partners.id),
   soId: uuid('so_id').references(() => salesOrders.id),
   tanggal: date('tanggal').notNull(),
+  /**
+   * Syarat pembayaran yang berlaku untuk faktur ini, disalin dari pesanan atau
+   * dari mitranya saat faktur dibuat. Tanggal jatuh tempo diturunkan darinya
+   * dan ikut disimpan, karena syarat boleh berubah sedangkan tempo yang sudah
+   * dijanjikan kepada pelanggan tidak.
+   */
+  syaratPembayaranId: uuid('syarat_pembayaran_id').references(() => paymentTerms.id),
   tanggalJatuhTempo: date('tanggal_jatuh_tempo'),
   referensi: text('referensi'),
   mataUangId: text('mata_uang_id').notNull().default('IDR').references(() => currencies.kode),

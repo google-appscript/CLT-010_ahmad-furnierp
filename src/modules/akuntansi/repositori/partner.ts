@@ -4,12 +4,13 @@ import { partners } from '@/db/schema'
 
 export type Partner = typeof partners.$inferSelect
 export type PartnerBaru = typeof partners.$inferInsert
-export type SaringPartner = { peran?: 'pelanggan' | 'pemasok' }
+export type SaringPartner = { peran?: 'pelanggan' | 'pemasok' | 'pegawai' }
 
 export async function ambilSemuaPartner(saring: SaringPartner = {}): Promise<Partner[]> {
   const syarat =
     saring.peran === 'pelanggan' ? eq(partners.isPelanggan, true)
     : saring.peran === 'pemasok' ? eq(partners.isPemasok, true)
+    : saring.peran === 'pegawai' ? eq(partners.isPegawai, true)
     : undefined
 
   const kueri = db.select().from(partners).orderBy(asc(partners.nama))

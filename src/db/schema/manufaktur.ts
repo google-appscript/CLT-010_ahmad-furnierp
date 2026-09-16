@@ -7,6 +7,7 @@ import { statusPerintahProduksiEnum } from './enum'
 import { products, uoms, locations, stockOperations } from './gudang'
 import { journalEntries } from './jurnal'
 import { users } from './identitas'
+import { projects } from './proyek'
 
 /**
  * Resep sebuah produk: berapa bahan yang dibutuhkan untuk menghasilkan
@@ -60,6 +61,14 @@ export const workOrders = pgTable('work_orders', {
   status: statusPerintahProduksiEnum('status').notNull().default('draft'),
   produkId: uuid('produk_id').notNull().references(() => products.id),
   bomId: uuid('bom_id').references(() => billOfMaterials.id),
+  /**
+   * Proyek yang dikerjakan perintah ini. Inilah tautan yang membuat daftar
+   * bahan baku sebuah pesanan terbaca dari proyeknya: pesanan memegang
+   * proyek, proyek memegang perintah produksi, dan perintah produksi memegang
+   * resep beserta bahannya. Kosong untuk produksi stok yang tidak dipesan
+   * pelanggan tertentu.
+   */
+  proyekId: uuid('proyek_id').references(() => projects.id),
   kuantitas: numeric('kuantitas', { precision: 18, scale: 6 }).notNull(),
   uomId: uuid('uom_id').notNull().references(() => uoms.id),
   tanggal: date('tanggal').notNull(),
@@ -96,6 +105,7 @@ export const workOrders = pgTable('work_orders', {
   uniqueIndex('work_orders_nomor_unik').on(t.nomor).where(sql`${t.nomor} IS NOT NULL`),
   index('work_orders_tanggal_status_idx').on(t.tanggal, t.status),
   index('work_orders_produk_idx').on(t.produkId),
+  index('work_orders_proyek_idx').on(t.proyekId),
   check('work_orders_kuantitas_positif_ck', sql`${t.kuantitas} > 0`),
   check(
     'work_orders_biaya_tidak_negatif_ck',

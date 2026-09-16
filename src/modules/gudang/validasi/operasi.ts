@@ -62,6 +62,12 @@ export const skemaOperasi = z.object({
   lokasiAsalId: z.uuid('Lokasi asal wajib dipilih'),
   lokasiTujuanId: z.uuid('Lokasi tujuan wajib dipilih'),
   partnerId: z.uuid().nullable().default(null),
+  /**
+   * Proyek yang menanggung beban dari pergerakan ini. Diisi oleh modul yang
+   * memanggil — pengiriman atas pesanan berproyek, konsumsi bahan sebuah
+   * perintah produksi — bukan diketik operator gudang.
+   */
+  proyekId: z.uuid().nullable().default(null),
   referensi: z.string().trim().max(100).nullable().default(null)
     .transform((v) => (v === '' ? null : v)),
   catatan: z.string().trim().max(500).nullable().default(null)

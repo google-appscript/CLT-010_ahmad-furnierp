@@ -33,6 +33,7 @@ export const NAVIGASI: ItemMenu[] = [
       { label: 'Semua Kontak', rute: '/kontak', izin: 'kontak.partner.lihat', fase: 1 },
       { label: 'Pelanggan', rute: '/kontak/pelanggan', izin: 'kontak.partner.lihat', fase: 1 },
       { label: 'Pemasok', rute: '/kontak/pemasok', izin: 'kontak.partner.lihat', fase: 1 },
+      { label: 'Pegawai', rute: '/kontak/pegawai', izin: 'kontak.partner.lihat', fase: 1 },
     ],
   },
   {

@@ -2,7 +2,7 @@ import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db, type Transaksi } from '@/db/klien'
 import {
   workOrders, workOrderLines, billOfMaterials, products, uoms, locations,
-  stockOperations,
+  stockOperations, projects,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import { bagi, bulatkan, kurang, tambah, type Uang } from '@/lib/uang'
@@ -16,6 +16,7 @@ import {
   buatOperasiDalamTx, selesaikanOperasiDalamTx, nilaiOperasiDalamTx,
 } from '@/modules/gudang/layanan/operasi'
 import { konversiSatuan, DESIMAL_HARGA, DESIMAL_NILAI } from '@/modules/gudang/layanan/valuasi'
+import { upahPerintahProduksiDalamTx } from '@/modules/proyek/layanan/timesheet'
 import { skemaPerintahProduksi, type MasukanPerintahProduksi } from '../validasi/produksi'
 
 export type PerintahProduksi = typeof workOrders.$inferSelect
@@ -90,6 +91,46 @@ export async function ambilPerintahProduksi(id: string): Promise<PerintahProduks
   return { ...perintah, baris }
 }
 
+export type PerintahProduksiProyek = {
+  id: string
+  nomor: string | null
+  status: PerintahProduksi['status']
+  tanggal: string
+  tanggalTarget: string | null
+  namaProduk: string
+  kuantitas: string
+  biayaTenagaKerja: string
+  biayaOverhead: string
+  hargaPokokSatuan: string | null
+}
+
+/**
+ * Perintah produksi sebuah proyek. Inilah daftar yang menjawab "bahan baku apa
+ * yang dipakai proyek ini": pesanan memegang proyek, proyek memegang perintah
+ * produksi, dan perintah produksi memegang resep beserta bahannya.
+ */
+export async function perintahProduksiProyek(
+  proyekId: string,
+): Promise<PerintahProduksiProyek[]> {
+  return db
+    .select({
+      id: workOrders.id,
+      nomor: workOrders.nomor,
+      status: workOrders.status,
+      tanggal: workOrders.tanggal,
+      tanggalTarget: workOrders.tanggalTarget,
+      namaProduk: products.nama,
+      kuantitas: workOrders.kuantitas,
+      biayaTenagaKerja: workOrders.biayaTenagaKerja,
+      biayaOverhead: workOrders.biayaOverhead,
+      hargaPokokSatuan: workOrders.hargaPokokSatuan,
+    })
+    .from(workOrders)
+    .innerJoin(products, eq(products.id, workOrders.produkId))
+    .where(eq(workOrders.proyekId, proyekId))
+    .orderBy(asc(workOrders.tanggal), asc(workOrders.nomor))
+}
+
 export type BiayaProduksi = {
   bahan: Uang
   tenagaKerja: Uang
@@ -136,6 +177,21 @@ async function wajibLokasiInternal(
   }
 }
 
+/**
+ * Perintah produksi hanya boleh menunjuk proyek yang masih berjalan. Proyek
+ * yang sudah ditutup atau dikunci angkanya tidak boleh kedatangan biaya baru.
+ */
+async function wajibProyekTerbukaDalamTx(tx: Transaksi, proyekId: string): Promise<void> {
+  const [proyek] = await tx.select().from(projects)
+    .where(eq(projects.id, proyekId)).limit(1)
+  if (!proyek) throw new ValidasiError('Proyek tidak ditemukan')
+  if (proyek.status !== 'draft' && proyek.status !== 'berjalan') {
+    throw new ValidasiError(
+      `Proyek ${proyek.kode} sudah ditutup sehingga tidak dapat menerima perintah produksi baru`,
+    )
+  }
+}
+
 async function wajibProdukDisimpan(tx: Transaksi, produkId: string): Promise<void> {
   const [produk] = await tx.select().from(products)
     .where(eq(products.id, produkId)).limit(1)
@@ -171,10 +227,13 @@ export async function buatPerintahProduksi(
       }
     }
 
+    if (data.proyekId) await wajibProyekTerbukaDalamTx(tx, data.proyekId)
+
     const [perintah] = await tx.insert(workOrders).values({
       status: 'draft',
       produkId: data.produkId,
       bomId: data.bomId,
+      proyekId: data.proyekId,
       kuantitas: data.kuantitas,
       uomId: data.uomId,
       tanggal: data.tanggal,
@@ -227,9 +286,12 @@ export async function ubahPerintahProduksi(
     }
     for (const b of data.baris) await wajibProdukDisimpan(tx, b.produkId)
 
+    if (data.proyekId) await wajibProyekTerbukaDalamTx(tx, data.proyekId)
+
     await tx.update(workOrders).set({
       produkId: data.produkId,
       bomId: data.bomId,
+      proyekId: data.proyekId,
       kuantitas: data.kuantitas,
       uomId: data.uomId,
       tanggal: data.tanggal,
@@ -351,6 +413,7 @@ export async function selesaikanPerintahProduksi(
       lokasiAsalId: perintah.lokasiSumberId,
       lokasiTujuanId: lokasiProduksi.id,
       partnerId: null,
+      proyekId: perintah.proyekId,
       referensi: perintah.nomor,
       catatan: `Konsumsi bahan perintah produksi ${perintah.nomor}`,
       baris: baris.map((b) => ({
@@ -372,8 +435,17 @@ export async function selesaikanPerintahProduksi(
     // 2. Penyerapan biaya konversi.
     const akunBdp = await akunOtomatisDalamTx(tx, 'akunBarangDalamProsesId')
 
+    // Upah tukang diambil dari timesheet bila ada barisnya. Timesheet adalah
+    // catatan siapa bekerja berapa lama dengan tarif berapa, jadi ia lebih
+    // dapat dipertanggungjawabkan daripada satu angka yang diketik tangan;
+    // angka manual tetap dipakai bila belum ada timesheet sama sekali.
+    const rekapUpah = await upahPerintahProduksiDalamTx(tx, id)
+    const biayaTenagaKerja = rekapUpah.jumlahBaris > 0
+      ? rekapUpah.total
+      : bulatkan(perintah.biayaTenagaKerja, DESIMAL_NILAI)
+
     const biayaKonversi = bulatkan(
-      tambah(perintah.biayaTenagaKerja, perintah.biayaOverhead), DESIMAL_NILAI,
+      tambah(biayaTenagaKerja, perintah.biayaOverhead), DESIMAL_NILAI,
     )
     let jurnalBiayaId: string | null = null
 
@@ -388,11 +460,11 @@ export async function selesaikanPerintahProduksi(
           nilaiMataUang: null, taxId: null, projectId: null,
         },
       ]
-      if (Number(perintah.biayaTenagaKerja) > 0) {
+      if (Number(biayaTenagaKerja) > 0) {
         item.push({
           accountId: await akunOtomatisDalamTx(tx, 'akunTenagaKerjaLangsungId'), partnerId: null,
           label: `Tenaga kerja langsung ${perintah.nomor}`,
-          debit: '0', kredit: bulatkan(perintah.biayaTenagaKerja, DESIMAL_NILAI),
+          debit: '0', kredit: biayaTenagaKerja,
           nilaiMataUang: null, taxId: null, projectId: null,
         })
       }
@@ -441,6 +513,7 @@ export async function selesaikanPerintahProduksi(
       lokasiAsalId: lokasiProduksi.id,
       lokasiTujuanId: perintah.lokasiTujuanId,
       partnerId: null,
+      proyekId: perintah.proyekId,
       referensi: perintah.nomor,
       catatan: `Hasil produksi perintah produksi ${perintah.nomor}`,
       baris: [{
@@ -506,6 +579,9 @@ export async function selesaikanPerintahProduksi(
       operasiKonsumsiId: konsumsiId,
       operasiHasilId: hasilId,
       jurnalBiayaId,
+      // Upah hasil rekap timesheet disimpan balik supaya catatan perintah dan
+      // jurnalnya menyebut angka yang sama.
+      biayaTenagaKerja,
       hargaPokokSatuan,
       diselesaikanPada: new Date(),
       diselesaikanOleh: olehPengguna,

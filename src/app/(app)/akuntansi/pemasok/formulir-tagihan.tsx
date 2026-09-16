@@ -28,14 +28,16 @@ export type BarisFormulir = {
   hargaSatuan: string
   taxId: string
   akunId: string
+  proyekId: string
 }
 
 const BARIS_KOSONG: BarisFormulir = {
   produkId: '', poLineId: '', deskripsi: '',
-  kuantitas: '', hargaSatuan: '', taxId: '', akunId: '',
+  kuantitas: '', hargaSatuan: '', taxId: '', akunId: '', proyekId: '',
 }
 
 const TANPA = 'tanpa'
+const TANPA_PROYEK = 'tanpa-proyek'
 
 export type NilaiAwalTagihan = {
   id?: string
@@ -58,13 +60,14 @@ type KolomBaris = {
 }
 
 export function FormulirTagihan({
-  awal, pemasok, akun, pajak,
+  awal, pemasok, akun, pajak, proyek,
   readOnly = false, nomor, statusBadge, aksiTambahan, menu, dokumenTerkait,
 }: {
   awal: NilaiAwalTagihan
   pemasok: PilihanUmum[]
   akun: PilihanAkun[]
   pajak: PilihanPajak[]
+  proyek: { id: string; kode: string; nama: string }[]
   readOnly?: boolean
   nomor?: string
   statusBadge?: React.ReactNode
@@ -120,6 +123,7 @@ export function FormulirTagihan({
           hargaSatuan: b.hargaSatuan || '0',
           taxId: b.taxId && b.taxId !== TANPA ? b.taxId : null,
           akunId: b.akunId,
+          proyekId: b.proyekId || null,
         })),
       })
 
@@ -147,6 +151,25 @@ export function FormulirTagihan({
           <SelectContent>
             {akun.map((a) => (
               <SelectItem key={a.id} value={a.id}>{a.kode} — {a.nama}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      // Menandai baris ke proyek membuat bebannya langsung terbaca di laporan
+      // proyek tanpa perlu ada yang menjurnalnya dengan tangan.
+      kunci: 'proyek', judul: 'Proyek', lebar: 'w-48',
+      render: (b, i) => (
+        <Select
+          value={b.proyekId || TANPA_PROYEK}
+          onValueChange={(v) => ubahBaris(i, { proyekId: v === TANPA_PROYEK ? '' : v })}
+        >
+          <SelectTrigger className="w-full min-w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={TANPA_PROYEK}>Tanpa proyek</SelectItem>
+            {proyek.map((p) => (
+              <SelectItem key={p.id} value={p.id}>{p.kode} — {p.nama}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -193,6 +216,10 @@ export function FormulirTagihan({
   const KOLOM_READONLY: KolomBaris[] = [
     { kunci: 'deskripsi', judul: 'Deskripsi', render: (b) => b.deskripsi },
     { kunci: 'akun', judul: 'Akun', render: (b) => akunLewatId.get(b.akunId)?.nama ?? '—' },
+    {
+      kunci: 'proyek', judul: 'Proyek',
+      render: (b) => (b.proyekId ? proyek.find((p) => p.id === b.proyekId)?.kode ?? '—' : '—'),
+    },
     { kunci: 'kuantitas', judul: 'Kuantitas', rataKanan: true, render: (b) => formatAngka(b.kuantitas || '0') },
     { kunci: 'hargaSatuan', judul: 'Harga Satuan', rataKanan: true, render: (b) => formatAngka(b.hargaSatuan || '0') },
     { kunci: 'pajak', judul: 'Pajak', render: (b) => (b.taxId ? pajakLewatId.get(b.taxId)?.nama ?? '—' : '—') },

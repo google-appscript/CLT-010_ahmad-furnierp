@@ -1,10 +1,12 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm'
 import { db } from '@/db/klien'
-import { products, uoms, taxes, partners, locations, paymentTerms } from '@/db/schema'
+import {
+  products, uoms, taxes, partners, locations, paymentTerms, salesOrders,
+} from '@/db/schema'
 
 /** Data pilihan yang dibutuhkan formulir pembelian. */
 export async function ambilDataPilihanPembelian() {
-  const [produk, satuan, pajak, pemasok, lokasi, syaratPembayaran] = await Promise.all([
+  const [produk, satuan, pajak, pemasok, lokasi, syaratPembayaran, pesananPenjualan] = await Promise.all([
     db.select({ id: products.id, kode: products.kode, nama: products.nama, uomId: products.uomId })
       .from(products).where(eq(products.isActive, true)).orderBy(asc(products.kode)),
     db.select({ id: uoms.id, nama: uoms.nama, kategori: uoms.kategori })
@@ -27,6 +29,16 @@ export async function ambilDataPilihanPembelian() {
     db.select({ id: paymentTerms.id, nama: paymentTerms.nama })
       .from(paymentTerms).where(eq(paymentTerms.isActive, true))
       .orderBy(asc(paymentTerms.jumlahHari)),
+    // Pesanan penjualan yang masih dikerjakan — pembelian bahan merujuk
+    // pesanan mana yang menjadi alasannya. Satu pesanan boleh dirujuk beberapa
+    // pembelian sekaligus, jadi tidak ada yang disaring karena sudah terpakai.
+    db.select({ id: salesOrders.id, nomor: salesOrders.nomor })
+      .from(salesOrders)
+      .where(and(
+        inArray(salesOrders.status, ['dikonfirmasi', 'selesai']),
+        isNotNull(salesOrders.nomor),
+      ))
+      .orderBy(asc(salesOrders.nomor)),
   ])
-  return { produk, satuan, pajak, pemasok, lokasi, syaratPembayaran }
+  return { produk, satuan, pajak, pemasok, lokasi, syaratPembayaran, pesananPenjualan }
 }

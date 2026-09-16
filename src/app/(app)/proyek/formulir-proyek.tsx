@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { formatAngka } from '@/lib/uang'
 import { FormulirBingkai } from '@/components/formulir/formulir-bingkai'
 import { FormulirGrid } from '@/components/formulir/formulir-grid'
 import { FormulirField } from '@/components/formulir/formulir-field'
@@ -27,7 +26,6 @@ export type NilaiAwalProyek = {
   tanggalMulai: string
   tanggalTarget: string
   manajerId: string
-  tarifPerJam: string
   catatan: string
 }
 
@@ -67,7 +65,6 @@ export function FormulirProyek({
         tanggalMulai: String(data.get('tanggalMulai') ?? ''),
         tanggalTarget: String(data.get('tanggalTarget') ?? '') || null,
         manajerId: manajerId === TANPA_MANAJER ? null : manajerId,
-        tarifPerJam: String(data.get('tarifPerJam') ?? '') || '0',
         catatan: String(data.get('catatan') ?? '') || null,
       })
 
@@ -134,12 +131,6 @@ export function FormulirProyek({
                 </SelectContent>
               </Select>
             </FormulirField>
-            <FormulirField label="Tarif per Jam" htmlFor="tarifPerJam" readOnly={readOnly} valueTampilan={formatAngka(awal.tarifPerJam)}>
-              <Input
-                id="tarifPerJam" name="tarifPerJam" type="number" step="0.01" min="0"
-                defaultValue={awal.tarifPerJam} className="text-right tabular-nums"
-              />
-            </FormulirField>
           </>
         }
       />
@@ -165,8 +156,9 @@ export function FormulirProyek({
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Tarif per jam dibekukan ke setiap baris timesheet saat dicatat, sehingga menaikkannya
-            tidak mengubah biaya pekerjaan yang sudah lewat.
+            Upah tukang berasal dari master Pegawai, bukan dari proyek — tarif beserta
+            satuannya dibekukan ke setiap baris timesheet saat dicatat, sehingga
+            menaikkan upah tidak mengubah biaya pekerjaan yang sudah lewat.
           </p>
         </>
       )}

@@ -1,6 +1,6 @@
 import {
   pgTable, uuid, text, integer, numeric, date, timestamp,
-  uniqueIndex, index, check,
+  uniqueIndex, index, check, type AnyPgColumn,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import {
@@ -11,6 +11,8 @@ import { currencies } from './mata-uang'
 import { journalEntries } from './jurnal'
 import { products, uoms, locations } from './gudang'
 import { users } from './identitas'
+import { salesOrders } from './penjualan'
+import { projects } from './proyek'
 
 export const purchaseOrders = pgTable('purchase_orders', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -22,6 +24,13 @@ export const purchaseOrders = pgTable('purchase_orders', {
   tanggalDiharapkan: date('tanggal_diharapkan'),
   /** Lokasi internal tujuan penerimaan barang. */
   lokasiTujuanId: uuid('lokasi_tujuan_id').notNull().references(() => locations.id),
+  /**
+   * Pesanan penjualan yang menjadi alasan pembelian ini — bahan baku yang
+   * dibeli untuk mengerjakan pesanan tertentu. Sengaja tanpa indeks unik:
+   * satu pesanan penjualan lazim memerlukan beberapa pembelian dari pemasok
+   * berbeda, dan pembelian stok umum tidak merujuk pesanan mana pun.
+   */
+  soId: uuid('so_id').references(() => salesOrders.id),
   syaratPembayaranId: uuid('syarat_pembayaran_id').references(() => paymentTerms.id),
   mataUangId: text('mata_uang_id').notNull().default('IDR').references(() => currencies.kode),
   referensi: text('referensi'),
@@ -36,6 +45,7 @@ export const purchaseOrders = pgTable('purchase_orders', {
   index('purchase_orders_status_idx').on(t.status),
   index('purchase_orders_partner_idx').on(t.partnerId),
   index('purchase_orders_tanggal_idx').on(t.tanggal),
+  index('purchase_orders_so_idx').on(t.soId),
 ])
 
 /**
@@ -71,6 +81,8 @@ export const vendorBills = pgTable('vendor_bills', {
   partnerId: uuid('partner_id').notNull().references(() => partners.id),
   poId: uuid('po_id').references(() => purchaseOrders.id),
   tanggal: date('tanggal').notNull(),
+  /** Lihat catatan yang sama pada `customer_invoices`. */
+  syaratPembayaranId: uuid('syarat_pembayaran_id').references(() => paymentTerms.id),
   tanggalJatuhTempo: date('tanggal_jatuh_tempo'),
   /** Nomor faktur yang diterbitkan pemasok. */
   referensiPemasok: text('referensi_pemasok'),
@@ -109,8 +121,15 @@ export const vendorBillLines = pgTable('vendor_bill_lines', {
    * biaya lain, ini akun beban yang bersangkutan.
    */
   akunId: uuid('akun_id').notNull().references(() => accounts.id),
+  /**
+   * Proyek yang menanggung baris ini — ongkos kirim, jasa tukang luar, sewa
+   * alat untuk satu pekerjaan tertentu. Penandanya diteruskan ke item jurnal
+   * saat tagihan diposting sehingga langsung terbaca di laporan proyek.
+   */
+  proyekId: uuid('proyek_id').references((): AnyPgColumn => projects.id),
 }, (t) => [
   index('vendor_bill_lines_bill_idx').on(t.billId),
+  index('vendor_bill_lines_proyek_idx').on(t.proyekId),
   check('vendor_bill_lines_kuantitas_positif_ck', sql`${t.kuantitas} > 0`),
 ])
 

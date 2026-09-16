@@ -174,6 +174,7 @@ export async function buatOperasiDalamTx(
     lokasiAsalId: data.lokasiAsalId,
     lokasiTujuanId: data.lokasiTujuanId,
     partnerId: data.partnerId,
+    proyekId: data.proyekId,
     referensi: data.referensi,
     catatan: data.catatan,
     dibuatOleh,
@@ -468,9 +469,14 @@ export async function selesaikanOperasiDalamTx(
 
     const item = berdampakNilai.flatMap((p) => {
       const persediaanDebit = p.arah === 'masuk'
-      const alokasiBiaya = p.costCenterId && akunLawanBeban.get(p.akunLawanId)
+      const bebanLawan = Boolean(akunLawanBeban.get(p.akunLawanId))
+      const alokasiBiaya = p.costCenterId && bebanLawan
         ? [{ costCenterId: p.costCenterId, persentase: '100' }]
         : []
+      // Penanda proyek hanya menempel pada sisi beban, sama seperti pos biaya.
+      // Menandai persediaan atau akun penampung tidak punya arti: keduanya
+      // bukan biaya proyek, dan laporan proyek hanya membaca akun beban.
+      const projectId = bebanLawan ? operasi.proyekId : null
       return [
         {
           accountId: p.akunPersediaanId,
@@ -486,7 +492,7 @@ export async function selesaikanOperasiDalamTx(
           label: `${labelTipeOperasi(operasi.tipe)} — ${p.namaProduk}`,
           debit: persediaanDebit ? '0' : p.nilaiTotal,
           kredit: persediaanDebit ? p.nilaiTotal : '0',
-          nilaiMataUang: null, taxId: null, projectId: null, alokasiBiaya,
+          nilaiMataUang: null, taxId: null, projectId, alokasiBiaya,
         },
       ]
     }).filter((b) => Number(b.debit) > 0 || Number(b.kredit) > 0)

@@ -6,12 +6,12 @@ export const metadata = { title: 'Perintah Produksi Baru' }
 
 export default async function HalamanPerintahBaru() {
   await wajibIzin('manufaktur.mo.lihat')
-  const { produk, satuan, lokasi, resep } = await ambilDataPilihanManufaktur()
+  const { produk, satuan, lokasi, resep, proyek } = await ambilDataPilihanManufaktur()
 
   return (
     <FormulirPerintah
       awal={{
-        produkId: '', bomId: '', kuantitas: '1', uomId: '',
+        produkId: '', bomId: '', proyekId: '', kuantitas: '1', uomId: '',
         tanggal: new Date().toISOString().slice(0, 10),
         tanggalTarget: '',
         lokasiSumberId: lokasi[0]?.id ?? '',
@@ -23,6 +23,7 @@ export default async function HalamanPerintahBaru() {
       satuan={satuan}
       lokasi={lokasi}
       resep={resep}
+      proyek={proyek}
     />
   )
 }

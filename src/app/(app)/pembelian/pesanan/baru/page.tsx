@@ -7,7 +7,7 @@ export const metadata = { title: 'Permintaan Penawaran Baru' }
 
 export default async function HalamanPesananBaru() {
   await wajibIzin('pembelian.pesanan.lihat')
-  const { produk, satuan, pajak, pemasok, lokasi, syaratPembayaran } =
+  const { produk, satuan, pajak, pemasok, lokasi, syaratPembayaran, pesananPenjualan } =
     await ambilDataPilihanPembelian()
 
   return (
@@ -22,11 +22,13 @@ export default async function HalamanPesananBaru() {
           tanggal: new Date().toISOString().slice(0, 10),
           tanggalDiharapkan: '',
           lokasiTujuanId: lokasi[0]?.id ?? '',
+          soId: '',
           syaratPembayaranId: '',
           referensi: '', catatan: '', baris: [],
         }}
         produk={produk} satuan={satuan} pajak={pajak}
         pemasok={pemasok} lokasi={lokasi} syaratPembayaran={syaratPembayaran}
+        pesananPenjualan={pesananPenjualan}
       />
     </>
   )

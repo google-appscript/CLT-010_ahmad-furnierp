@@ -14,6 +14,8 @@ import {
 } from '@/modules/akuntansi/layanan/pemetaan'
 import { hitungTotal } from '@/modules/akuntansi/layanan/hitung-dokumen'
 import type { HasilTotal } from '@/modules/akuntansi/layanan/hitung-dokumen'
+import { tempoDokumenDalamTx } from '@/modules/akuntansi/layanan/syarat-pembayaran'
+import { salesOrders } from '@/db/schema'
 import { skemaFaktur, type MasukanFaktur } from '../validasi/pesanan'
 import { hitungTotalDariBaris, perbaruiStatusPenyelesaian } from './pesanan'
 
@@ -153,19 +155,38 @@ export async function fakturBelumLunas(partnerId?: string): Promise<RingkasanFak
 
 // ── Penulisan ────────────────────────────────────────────────────────────────
 
+/** Syarat pembayaran yang tertulis pada pesanan asal, bila fakturnya berasal dari sana. */
+async function syaratPesananDalamTx(
+  tx: Transaksi, soId: string | null | undefined,
+): Promise<string | null> {
+  if (!soId) return null
+  const [pesanan] = await tx.select({ syaratPembayaranId: salesOrders.syaratPembayaranId })
+    .from(salesOrders).where(eq(salesOrders.id, soId)).limit(1)
+  return pesanan?.syaratPembayaranId ?? null
+}
+
 export async function buatFaktur(
   masukan: MasukanFaktur, dibuatOleh: string,
 ): Promise<FakturLengkap> {
   const data = urai(masukan)
 
   const id = await db.transaction(async (tx) => {
+    const tempo = await tempoDokumenDalamTx(tx, {
+      tanggal: data.tanggal,
+      partnerId: data.partnerId,
+      syaratPembayaranId: data.syaratPembayaranId,
+      syaratPesananId: await syaratPesananDalamTx(tx, data.soId),
+      tanggalJatuhTempo: data.tanggalJatuhTempo,
+    })
+
     const [faktur] = await tx.insert(customerInvoices).values({
       tipe: data.tipe,
       status: 'draft',
       partnerId: data.partnerId,
       soId: data.soId,
       tanggal: data.tanggal,
-      tanggalJatuhTempo: data.tanggalJatuhTempo,
+      syaratPembayaranId: tempo.syaratPembayaranId,
+      tanggalJatuhTempo: tempo.tanggalJatuhTempo,
       referensi: data.referensi,
       mataUangId: data.mataUangId,
       catatan: data.catatan,
@@ -204,12 +225,21 @@ export async function ubahFaktur(id: string, masukan: MasukanFaktur): Promise<Fa
   }
 
   await db.transaction(async (tx) => {
+    const tempo = await tempoDokumenDalamTx(tx, {
+      tanggal: data.tanggal,
+      partnerId: data.partnerId,
+      syaratPembayaranId: data.syaratPembayaranId,
+      syaratPesananId: await syaratPesananDalamTx(tx, data.soId),
+      tanggalJatuhTempo: data.tanggalJatuhTempo,
+    })
+
     await tx.update(customerInvoices).set({
       tipe: data.tipe,
       partnerId: data.partnerId,
       soId: data.soId,
       tanggal: data.tanggal,
-      tanggalJatuhTempo: data.tanggalJatuhTempo,
+      syaratPembayaranId: tempo.syaratPembayaranId,
+      tanggalJatuhTempo: tempo.tanggalJatuhTempo,
       referensi: data.referensi,
       mataUangId: data.mataUangId,
       catatan: data.catatan,

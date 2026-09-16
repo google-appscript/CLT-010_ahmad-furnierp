@@ -38,6 +38,7 @@ export default async function HalamanDetailPerintah({
     id: perintah.id,
     produkId: perintah.produkId,
     bomId: perintah.bomId ?? '',
+    proyekId: perintah.proyekId ?? '',
     kuantitas: String(Number(perintah.kuantitas)),
     uomId: perintah.uomId,
     tanggal: perintah.tanggal,
@@ -178,6 +179,7 @@ export default async function HalamanDetailPerintah({
       satuan={semuaSatuan}
       lokasi={semuaLokasi}
       resep={semuaResep}
+      proyek={pilihan.proyek}
       readOnly
       nomor={perintah.nomor ?? 'Perintah Produksi'}
       statusBadge={<LencanaStatus status={perintah.status} label={LABEL_STATUS_PERINTAH_PRODUKSI[perintah.status]} />}

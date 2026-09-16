@@ -44,6 +44,7 @@ export type NilaiAwalPesanan = {
   tanggal: string
   tanggalDiharapkan: string
   lokasiTujuanId: string
+  soId: string
   syaratPembayaranId: string
   referensi: string
   catatan: string
@@ -51,6 +52,7 @@ export type NilaiAwalPesanan = {
 }
 
 const TANPA_PAJAK = 'tanpa-pajak'
+const TANPA_PESANAN = 'tanpa-pesanan'
 
 type KolomBaris = {
   kunci: string
@@ -61,7 +63,7 @@ type KolomBaris = {
 }
 
 export function FormulirPesanan({
-  awal, produk, satuan, pajak, pemasok, lokasi, syaratPembayaran,
+  awal, produk, satuan, pajak, pemasok, lokasi, syaratPembayaran, pesananPenjualan,
   readOnly = false, nomor, statusBadge, aksiTambahan, menu, dokumenTerkait,
 }: {
   awal: NilaiAwalPesanan
@@ -71,6 +73,7 @@ export function FormulirPesanan({
   pemasok: PilihanUmum[]
   lokasi: PilihanUmum[]
   syaratPembayaran: PilihanUmum[]
+  pesananPenjualan: { id: string; nomor: string | null }[]
   readOnly?: boolean
   nomor?: string
   statusBadge?: React.ReactNode
@@ -90,6 +93,7 @@ export function FormulirPesanan({
   const [partnerId, setPartnerId] = useState(awal.partnerId)
   const [lokasiTujuanId, setLokasiTujuanId] = useState(awal.lokasiTujuanId)
   const [syaratId, setSyaratId] = useState(awal.syaratPembayaranId)
+  const [soId, setSoId] = useState(awal.soId || TANPA_PESANAN)
 
   const produkLewatId = new Map(produk.map((p) => [p.id, p]))
   const satuanLewatId = new Map(satuan.map((s) => [s.id, s]))
@@ -133,6 +137,7 @@ export function FormulirPesanan({
         tanggal: String(data.get('tanggal') ?? ''),
         tanggalDiharapkan: String(data.get('tanggalDiharapkan') ?? '') || null,
         lokasiTujuanId,
+        soId: soId === TANPA_PESANAN ? null : soId,
         syaratPembayaranId: syaratId || null,
         mataUangId: 'IDR',
         referensi: String(data.get('referensi') ?? '') || null,
@@ -330,6 +335,25 @@ export function FormulirPesanan({
                   <SelectContent>
                     {lokasi.map((l) => (
                       <SelectItem key={l.id} value={l.id}>{l.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormulirField>
+
+              <FormulirField
+                label="Untuk Pesanan Penjualan" htmlFor="soId" readOnly={readOnly}
+                valueTampilan={
+                  pesananPenjualan.find((p) => p.id === soId)?.nomor ?? 'Stok umum'
+                }
+              >
+                <Select value={soId} onValueChange={setSoId}>
+                  <SelectTrigger id="soId" className="w-full">
+                    <SelectValue placeholder="Stok umum" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TANPA_PESANAN}>Stok umum</SelectItem>
+                    {pesananPenjualan.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.nomor}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
