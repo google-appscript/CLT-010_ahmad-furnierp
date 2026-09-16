@@ -14,15 +14,26 @@
  */
 export default function MemuatHalaman() {
   return (
-    <div className="animate-pulse space-y-6" aria-busy="true" aria-label="Memuat halaman">
-      <div className="space-y-2">
-        <div className="h-7 w-64 rounded bg-muted" />
-        <div className="h-4 w-96 max-w-full rounded bg-muted/60" />
-      </div>
-      <div className="space-y-2 rounded-md border p-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-8 rounded bg-muted/50" />
-        ))}
+    <div aria-busy="true">
+      {/*
+        Baris teks ini bukan hiasan. Kandidat Largest Contentful Paint hanyalah
+        teks, gambar, dan video — bukan kotak berlatar warna. Kerangka yang
+        seluruhnya berupa kotak abu membuat LCP tetap menunggu teks sungguhan
+        dari server, sehingga angkanya tidak bergerak meski halaman sudah
+        terlihat. Dengan satu baris teks di sini, ada yang benar-benar tergambar
+        sejak awal.
+      */}
+      <p className="mb-6 text-sm text-muted-foreground">Memuat halaman…</p>
+      <div className="animate-pulse space-y-6">
+        <div className="space-y-2">
+          <div className="h-7 w-64 rounded bg-muted" />
+          <div className="h-4 w-96 max-w-full rounded bg-muted/60" />
+        </div>
+        <div className="space-y-2 rounded-md border p-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-8 rounded bg-muted/50" />
+          ))}
+        </div>
       </div>
     </div>
   )

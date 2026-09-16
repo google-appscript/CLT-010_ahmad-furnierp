@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 
 import { wajibIzin } from '@/lib/sesi'
 import { formatRupiah } from '@/lib/uang'
@@ -85,6 +86,40 @@ function susunKolom(peran?: PeranKontak): Kolom<Partner>[] {
   ]
 }
 
+/**
+ * Isi tabel dipisah ke komponennya sendiri supaya judul dan deskripsi halaman
+ * — yang tidak memerlukan data apa pun — dapat digambar lebih dulu sementara
+ * kuerinya masih berjalan. Tanpa pemisahan ini seluruh halaman menunggu kueri
+ * selesai, dan teks pertama yang tergambar (deskripsi halaman) menjadi penanda
+ * Largest Contentful Paint yang ikut tertunda.
+ */
+async function IsiDaftarKontak({ peran }: { peran?: PeranKontak }) {
+  const mitra = await daftarPartner(peran ? { peran } : {})
+
+  return (
+    <TabelData
+      kolom={susunKolom(peran)}
+      baris={mitra}
+      kunciBaris={(m) => m.id}
+      pesanKosong={
+        peran === 'pegawai'
+          ? 'Belum ada pegawai yang terdaftar.'
+          : 'Belum ada mitra usaha yang terdaftar.'
+      }
+    />
+  )
+}
+
+function KerangkaTabel() {
+  return (
+    <div className="animate-pulse space-y-2 rounded-md border p-4" aria-busy="true">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="h-8 rounded bg-muted/50" />
+      ))}
+    </div>
+  )
+}
+
 export async function DaftarKontak({
   judul, deskripsi, peran,
 }: {
@@ -92,8 +127,9 @@ export async function DaftarKontak({
   deskripsi: string
   peran?: PeranKontak
 }) {
+  // Izin diperiksa sebelum apa pun digambar. Pemeriksaannya membaca sesi dari
+  // JWT dan tidak menyentuh basis data, jadi tidak menahan tampilan.
   await wajibIzin('kontak.partner.lihat')
-  const mitra = await daftarPartner(peran ? { peran } : {})
 
   return (
     <>
@@ -107,16 +143,9 @@ export async function DaftarKontak({
           />
         }
       />
-      <TabelData
-        kolom={susunKolom(peran)}
-        baris={mitra}
-        kunciBaris={(m) => m.id}
-        pesanKosong={
-          peran === 'pegawai'
-            ? 'Belum ada pegawai yang terdaftar.'
-            : 'Belum ada mitra usaha yang terdaftar.'
-        }
-      />
+      <Suspense fallback={<KerangkaTabel />}>
+        <IsiDaftarKontak peran={peran} />
+      </Suspense>
     </>
   )
 }
