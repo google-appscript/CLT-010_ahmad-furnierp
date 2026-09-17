@@ -16,7 +16,13 @@ const KELAS_UBAH =
   'text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 ' +
   'dark:text-amber-400 dark:hover:bg-amber-400/10 dark:hover:text-amber-300'
 
-type PropsTombol = React.ComponentProps<typeof Button> & { href?: string }
+/**
+ * `asChild` sengaja ditutup. Ketiga tombol ini selalu menyisipkan ikon di
+ * samping labelnya, sehingga Slot milik Radix akan menerima dua anak padahal
+ * hanya boleh satu dan render di server gagal. Untuk menjadikannya tautan,
+ * pakai `href` — pembungkusnya yang menaruh ikon di dalam <Link>.
+ */
+type PropsTombol = Omit<React.ComponentProps<typeof Button>, 'asChild'> & { href?: string }
 
 function bungkus(
   ikon: React.ReactNode,

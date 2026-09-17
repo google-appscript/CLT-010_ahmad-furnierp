@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { asc } from 'drizzle-orm'
@@ -92,9 +91,9 @@ export default async function HalamanDaftarOperasi({
         judul={labelTipeOperasi(tipe)}
         deskripsi={DESKRIPSI_TIPE[tipe]}
         aksi={dapatDibuatManual(tipe) ? (
-          <TombolBuat asChild><Link href={`/gudang/operasi/${slug}/baru`}>
-              Buat {labelTipeOperasi(tipe)}
-            </Link></TombolBuat>
+          <TombolBuat href={`/gudang/operasi/${slug}/baru`}>
+            Buat {labelTipeOperasi(tipe)}
+          </TombolBuat>
         ) : undefined}
       />
 
