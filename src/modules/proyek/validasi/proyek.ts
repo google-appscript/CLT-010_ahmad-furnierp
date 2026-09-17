@@ -18,7 +18,6 @@ const kuantitasPositif = z.string().trim()
   })
 
 export const skemaProyek = z.object({
-  kode: z.string().trim().min(1, 'Kode proyek wajib diisi').max(30),
   nama: z.string().trim().min(1, 'Nama proyek wajib diisi').max(150),
   soId: z.uuid('Pesanan penjualan wajib dipilih'),
   tanggalMulai: tanggalIso,

@@ -1,8 +1,10 @@
 import Link from 'next/link'
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, inArray } from 'drizzle-orm'
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
-import { partners, accounts, customerPaymentAllocations, customerInvoices } from '@/db/schema'
+import {
+  partners, accounts, customerPaymentAllocations, customerInvoices, salesOrders,
+} from '@/db/schema'
 import { daftarPembayaran, akunKasDanBank } from '@/modules/penjualan/layanan/pembayaran'
 import { fakturBelumLunas } from '@/modules/penjualan/layanan/faktur'
 import { formatAngka } from '@/lib/uang'
@@ -33,6 +35,16 @@ export default async function HalamanPenerimaan({
       db.select({ id: customerInvoices.id, nomor: customerInvoices.nomor }).from(customerInvoices),
     ])
 
+  // Faktur dikelompokkan per pesanan penjualan supaya penerimaan dicatat dari
+  // sudut pandang pesanannya — itu yang diingat pelanggan saat mentransfer,
+  // bukan nomor fakturnya. Faktur tanpa pesanan tetap terjangkau lewat pilihan
+  // "Tanpa pesanan penjualan" di dialognya.
+  const idSo = [...new Set(terbuka.map((f) => f.soId).filter((v): v is string => v !== null))]
+  const pesanan = idSo.length > 0
+    ? await db.select({ id: salesOrders.id, nomor: salesOrders.nomor, partnerId: salesOrders.partnerId })
+        .from(salesOrders).where(inArray(salesOrders.id, idSo)).orderBy(asc(salesOrders.nomor))
+    : []
+
   const mitraLewatId = new Map(semuaMitra.map((m) => [m.id, m.nama]))
   const akunLewatId = new Map(semuaAkun.map((a) => [a.id, `${a.kode} — ${a.nama}`]))
   const fakturLewatId = new Map(semuaFaktur.map((f) => [f.id, f.nomor]))
@@ -54,7 +66,13 @@ export default async function HalamanPenerimaan({
             faktur={terbuka.map((f) => ({
               id: f.id, nomor: f.nomor ?? '—', partnerId: f.partnerId,
               namaPelanggan: mitraLewatId.get(f.partnerId) ?? '—',
+              soId: f.soId,
               tanggal: f.tanggal, sisa: f.sisa,
+            }))}
+            pesanan={pesanan.map((p) => ({
+              id: p.id,
+              nomor: p.nomor ?? '—',
+              namaPelanggan: mitraLewatId.get(p.partnerId) ?? '—',
             }))}
             akunKas={akunKas.map((a) => ({ id: a.id, kode: a.kode, nama: a.nama }))}
             pelanggan={semuaMitra}

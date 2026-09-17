@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatAngka } from '@/lib/uang'
 import { aksiKirimBarang } from '../../aksi'
 
@@ -19,10 +20,20 @@ export type BarisKirim = {
   sisaDikirim: string
 }
 
-export function DialogKirimBarang({ soId, baris }: { soId: string; baris: BarisKirim[] }) {
+export type PilihanGudang = { id: string; nama: string }
+
+export function DialogKirimBarang({
+  soId, baris, gudang,
+}: {
+  soId: string
+  baris: BarisKirim[]
+  /** Gudang internal yang dapat mengeluarkan barang. */
+  gudang: PilihanGudang[]
+}) {
   const router = useRouter()
   const [terbuka, setTerbuka] = useState(false)
   const [bekerja, mulai] = useTransition()
+  const [lokasiAsalId, setLokasiAsalId] = useState(gudang[0]?.id ?? '')
   const [jumlah, setJumlah] = useState<Record<string, string>>(
     Object.fromEntries(baris.map((b) => [b.soLineId, String(Number(b.sisaDikirim))])),
   )
@@ -32,6 +43,7 @@ export function DialogKirimBarang({ soId, baris }: { soId: string; baris: BarisK
       const hasil = await aksiKirimBarang(
         soId,
         String(data.get('tanggal') ?? ''),
+        lokasiAsalId,
         baris
           .map((b) => ({ soLineId: b.soLineId, kuantitas: jumlah[b.soLineId] || '0' }))
           .filter((b) => Number(b.kuantitas) > 0),
@@ -47,6 +59,7 @@ export function DialogKirimBarang({ soId, baris }: { soId: string; baris: BarisK
   }
 
   const adaSisa = baris.some((b) => Number(b.sisaDikirim) > 0)
+  const siap = adaSisa && lokasiAsalId !== ''
 
   return (
     <Dialog open={terbuka} onOpenChange={setTerbuka}>
@@ -62,6 +75,20 @@ export function DialogKirimBarang({ soId, baris }: { soId: string; baris: BarisK
             Pengiriman membebankan harga pokok rata-rata dan memposting jurnal Harga Pokok
             Penjualan lawan Persediaan. Pendapatan baru dicatat saat faktur diposting.
           </p>
+
+          <div className="space-y-2">
+            <Label htmlFor="lokasiAsalId">Gudang Asal</Label>
+            <Select value={lokasiAsalId} onValueChange={setLokasiAsalId} required>
+              <SelectTrigger id="lokasiAsalId" className="w-full">
+                <SelectValue placeholder="Pilih gudang" />
+              </SelectTrigger>
+              <SelectContent>
+                {gudang.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>{g.nama}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="tanggal">Tanggal Pengiriman</Label>
@@ -103,7 +130,7 @@ export function DialogKirimBarang({ soId, baris }: { soId: string; baris: BarisK
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setTerbuka(false)}>Batal</Button>
-            <Button type="submit" disabled={bekerja}>
+            <Button type="submit" disabled={bekerja || !siap}>
               {bekerja ? 'Memproses…' : 'Kirim'}
             </Button>
           </DialogFooter>

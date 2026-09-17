@@ -21,16 +21,25 @@ export type FakturTerbuka = {
   nomor: string
   partnerId: string
   namaPelanggan: string
+  /** Pesanan asalnya; kosong untuk faktur manual dan nota kredit. */
+  soId: string | null
   tanggal: string
   sisa: string
 }
 
+export type PesananTerbuka = { id: string; nomor: string; namaPelanggan: string }
+
+/** Pilihan untuk faktur yang tidak berasal dari pesanan penjualan mana pun. */
+const TANPA_SO = 'tanpa-so'
+
 export type PilihanAkunKas = { id: string; kode: string; nama: string }
 
 export function DialogPenerimaan({
-  faktur, akunKas, pelanggan, fakturAwal,
+  faktur, pesanan, akunKas, pelanggan, fakturAwal,
 }: {
   faktur: FakturTerbuka[]
+  /** Pesanan penjualan yang masih punya faktur belum lunas. */
+  pesanan: PesananTerbuka[]
   akunKas: PilihanAkunKas[]
   pelanggan: { id: string; nama: string }[]
   fakturAwal?: string
@@ -38,9 +47,9 @@ export function DialogPenerimaan({
   const router = useRouter()
   const [terbuka, setTerbuka] = useState(Boolean(fakturAwal))
   const [bekerja, mulai] = useTransition()
-  const [partnerId, setPartnerId] = useState(
-    fakturAwal ? faktur.find((f) => f.id === fakturAwal)?.partnerId ?? '' : '',
-  )
+  const fakturPembuka = fakturAwal ? faktur.find((f) => f.id === fakturAwal) : undefined
+  const [soId, setSoId] = useState(fakturPembuka?.soId ?? '')
+  const [partnerId, setPartnerId] = useState(fakturPembuka?.partnerId ?? '')
   const [akunKasId, setAkunKasId] = useState(akunKas[0]?.id ?? '')
   const [alokasi, setAlokasi] = useState<Record<string, string>>(
     fakturAwal
@@ -51,7 +60,13 @@ export function DialogPenerimaan({
     fakturAwal ? String(Number(faktur.find((f) => f.id === fakturAwal)?.sisa ?? 0)) : '',
   )
 
-  const fakturPelanggan = faktur.filter((f) => !partnerId || f.partnerId === partnerId)
+  // Memilih pesanan sekaligus menentukan pelanggannya; pilihan "tanpa pesanan"
+  // kembali menyaring lewat pelanggan supaya faktur manual tetap terjangkau.
+  const fakturPelanggan = soId === TANPA_SO
+    ? faktur.filter((f) => f.soId === null && (!partnerId || f.partnerId === partnerId))
+    : soId
+      ? faktur.filter((f) => f.soId === soId)
+      : []
   const totalAlokasi = Object.entries(alokasi)
     .filter(([id]) => fakturPelanggan.some((f) => f.id === id))
     .reduce((s, [, v]) => s + Number(v || 0), 0)
@@ -75,6 +90,15 @@ export function DialogPenerimaan({
       }
     }
     setAlokasi(baru)
+  }
+
+  function pilihPesanan(nilai: string) {
+    setSoId(nilai)
+    setAlokasi({})
+    setJumlah('')
+    setPartnerId(nilai === TANPA_SO
+      ? ''
+      : faktur.find((f) => f.soId === nilai)?.partnerId ?? '')
   }
 
   function simpan(data: FormData) {
@@ -126,18 +150,46 @@ export function DialogPenerimaan({
         <form action={simpan} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="partnerId">Pelanggan</Label>
-              <Select value={partnerId} onValueChange={setPartnerId} required>
-                <SelectTrigger id="partnerId" className="w-full">
-                  <SelectValue placeholder="Pilih pelanggan" />
+              <Label htmlFor="soId">Pesanan Penjualan</Label>
+              <Select value={soId} onValueChange={pilihPesanan} required>
+                <SelectTrigger id="soId" className="w-full">
+                  <SelectValue placeholder="Pilih pesanan yang belum lunas" />
                 </SelectTrigger>
                 <SelectContent>
-                  {pelanggan.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                  {pesanan.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nomor} — {p.namaPelanggan}
+                    </SelectItem>
                   ))}
+                  <SelectItem value={TANPA_SO}>Tanpa pesanan penjualan</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {soId === TANPA_SO ? (
+              <div className="space-y-2">
+                <Label htmlFor="partnerId">Pelanggan</Label>
+                <Select value={partnerId} onValueChange={setPartnerId} required>
+                  <SelectTrigger id="partnerId" className="w-full">
+                    <SelectValue placeholder="Pilih pelanggan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pelanggan.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Pelanggan</Label>
+                <p className="flex h-8 items-center text-sm">
+                  {soId
+                    ? pesanan.find((p) => p.id === soId)?.namaPelanggan ?? '—'
+                    : <span className="text-muted-foreground">Pilih pesanan lebih dulu</span>}
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="tanggal">Tanggal</Label>
               <Input
@@ -189,7 +241,9 @@ export function DialogPenerimaan({
                   {fakturPelanggan.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
-                        Tidak ada faktur terbuka untuk pelanggan ini.
+                        {soId
+                          ? 'Tidak ada faktur terbuka pada pilihan ini.'
+                          : 'Pilih pesanan penjualan lebih dulu.'}
                       </td>
                     </tr>
                   )}

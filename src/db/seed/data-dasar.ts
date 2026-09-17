@@ -66,3 +66,7 @@ export const URUTAN_PENJUALAN = [
   { kode: 'penjualan:nota-kredit', prefix: 'NK', reset: 'bulanan' },
   { kode: 'penjualan:pembayaran', prefix: 'BKM', reset: 'bulanan' },
 ] as const
+
+export const URUTAN_PROYEK = [
+  { kode: 'proyek:kode', prefix: 'PRJ', reset: 'bulanan' },
+] as const

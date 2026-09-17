@@ -22,7 +22,6 @@ export const skemaPesanan = z.object({
   partnerId: z.uuid('Pelanggan wajib dipilih'),
   tanggal: tanggalIso,
   tanggalPengiriman: tanggalIso.nullable().default(null),
-  lokasiAsalId: z.uuid('Gudang asal wajib dipilih'),
   syaratPembayaranId: z.uuid().nullable().default(null),
   mataUangId: z.string().trim().length(3).default('IDR'),
   referensi: z.string().trim().max(100).nullable().default(null)

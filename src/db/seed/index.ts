@@ -20,7 +20,7 @@ import {
 } from './gudang'
 import {
   MATA_UANG, KURS_CONTOH, SYARAT_PEMBAYARAN, JURNAL_STANDAR, PAJAK_STANDAR,
-  URUTAN_PEMBELIAN, URUTAN_PENJUALAN, URUTAN_MANUFAKTUR,
+  URUTAN_PEMBELIAN, URUTAN_PENJUALAN, URUTAN_MANUFAKTUR, URUTAN_PROYEK,
 } from './data-dasar'
 import { KATEGORI_ASET } from './aset'
 import { PEMETAAN_JURNAL_BAWAAN } from './pemetaan'
@@ -220,6 +220,7 @@ export async function jalankanSeed(): Promise<void> {
   await db.insert(sequences).values(
     [
       ...URUTAN_GUDANG, ...URUTAN_PEMBELIAN, ...URUTAN_PENJUALAN, ...URUTAN_MANUFAKTUR,
+      ...URUTAN_PROYEK,
     ].map((u) => ({
       kode: u.kode, prefix: u.prefix, panjangDigit: 4,
       nomorBerikut: 1, reset: u.reset as never,

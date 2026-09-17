@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { FolderKanban, FileText } from 'lucide-react'
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
@@ -34,7 +34,7 @@ export default async function HalamanDetailPesanan({
   // adalah dokumen tersendiri dengan layarnya sendiri.
   if (pesanan.nomor === null) redirect(`/penjualan/penawaran/${id}`)
 
-  const [pilihan, sisa, pengiriman, fakturTerkait, proyekTerkait] = await Promise.all([
+  const [pilihan, sisa, pengiriman, fakturTerkait, proyekTerkait, gudangInternal] = await Promise.all([
     ambilDataPilihanPenjualan(),
     barisDenganSisa(id),
     pengirimanPesanan(id),
@@ -42,6 +42,10 @@ export default async function HalamanDetailPesanan({
       .from(customerInvoices).where(eq(customerInvoices.soId, id)),
     db.select({ id: projects.id, kode: projects.kode, nama: projects.nama })
       .from(projects).where(eq(projects.soId, id)).limit(1),
+    // Gudang asal dipilih saat mengirim, bukan saat pesanan dibuat.
+    db.select({ id: locations.id, nama: locations.nama }).from(locations)
+      .where(and(eq(locations.tipe, 'internal'), eq(locations.isActive, true)))
+      .orderBy(asc(locations.kode)),
   ])
 
   const adaSisaDifakturkan = sisa.some((b) => Number(b.sisaDifakturkan) > 0)
@@ -54,8 +58,6 @@ export default async function HalamanDetailPesanan({
    */
   const semuaPelanggan = await db.select({ id: partners.id, nama: partners.nama })
     .from(partners).orderBy(asc(partners.nama))
-  const semuaLokasi = await db.select({ id: locations.id, nama: locations.nama })
-    .from(locations).orderBy(asc(locations.kode))
   const semuaPajak = await db.select({
     id: taxes.id, nama: taxes.nama, tarif: taxes.tarif, isPemotongan: taxes.isPemotongan,
   }).from(taxes).orderBy(asc(taxes.kode))
@@ -116,6 +118,7 @@ export default async function HalamanDetailPesanan({
           soLineId: b.id, namaProduk: b.namaProduk,
           namaUom: b.namaUom, sisaDikirim: b.sisaDikirim,
         }))}
+        gudang={gudangInternal}
       />
       {aksiFaktur}
       {aksiProyek}
@@ -131,7 +134,6 @@ export default async function HalamanDetailPesanan({
         partnerId: pesanan.partnerId,
         tanggal: pesanan.tanggal,
         tanggalPengiriman: pesanan.tanggalPengiriman ?? '',
-        lokasiAsalId: pesanan.lokasiAsalId,
         syaratPembayaranId: pesanan.syaratPembayaranId ?? '',
         referensi: pesanan.referensi ?? '',
         catatan: pesanan.catatan ?? '',
@@ -148,7 +150,6 @@ export default async function HalamanDetailPesanan({
       }}
       {...pilihan}
       pelanggan={semuaPelanggan}
-      lokasi={semuaLokasi}
       pajak={semuaPajak}
       syaratPembayaran={semuaSyaratPembayaran}
       mode="pesanan"

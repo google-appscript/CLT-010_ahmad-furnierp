@@ -45,7 +45,7 @@ export async function aksiSimpanProyek(
       : await buatProyek(masukan, sesi.penggunaId)
     await catatAudit({
       penggunaId: sesi.penggunaId, entitas: 'projects', entitasId: proyek.id,
-      aksi: id ? 'ubah' : 'buat', dataBaru: { kode: masukan.kode },
+      aksi: id ? 'ubah' : 'buat', dataBaru: { kode: proyek.kode, nama: masukan.nama },
     })
     segarkan()
     return { berhasil: true, id: proyek.id }

@@ -103,6 +103,7 @@ beforeEach(async () => {
     { kode: 'gudang:hasil-produksi', prefix: 'HP', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'manufaktur:perintah-produksi', prefix: 'PK', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:pesanan', prefix: 'SO', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
+    { kode: 'proyek:kode', prefix: 'PRJ', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:faktur', prefix: 'FJ', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:nota-kredit', prefix: 'NK', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
     { kode: 'penjualan:pembayaran', prefix: 'BKM', panjangDigit: 4, nomorBerikut: 1, reset: 'bulanan' },
@@ -178,8 +179,7 @@ afterAll(async () => { await tutupKoneksi() })
 
 async function sediakanStok(kuantitas = '20', harga = '1200000') {
   const op = await buatOperasi({
-    tipe: 'penerimaan', tanggal: '2026-01-05',
-    lokasiAsalId: lokasiPemasokId, lokasiTujuanId: lokasiGudangId,
+    tipe: 'penerimaan', tanggal: '2026-01-05', lokasiAsalId: lokasiPemasokId, lokasiTujuanId: lokasiGudangId,
     partnerId: null, referensi: null, catatan: null,
     baris: [{ produkId, kuantitas, uomId: satuanUnitId, hargaSatuan: harga, catatan: null }],
   }, penggunaId)
@@ -188,8 +188,7 @@ async function sediakanStok(kuantitas = '20', harga = '1200000') {
 
 async function pesananDikonfirmasi(kuantitas = '10') {
   const pesanan = await buatPesanan({
-    partnerId: pelangganId, tanggal: '2026-02-01', tanggalPengiriman: null,
-    lokasiAsalId: lokasiGudangId, syaratPembayaranId: null, mataUangId: 'IDR',
+    partnerId: pelangganId, tanggal: '2026-02-01', tanggalPengiriman: null, syaratPembayaranId: null, mataUangId: 'IDR',
     referensi: null, catatan: null,
     baris: [{
       produkId, deskripsi: 'Kursi Makan Jati', kuantitas,
@@ -201,7 +200,6 @@ async function pesananDikonfirmasi(kuantitas = '10') {
 
 function isiProyek(soId: string, ubah: Record<string, unknown> = {}) {
   return {
-    kode: 'PRJ-001',
     nama: 'Pengadaan Kursi Kantor Cabang',
     soId,
     tanggalMulai: '2026-02-01',
@@ -238,14 +236,13 @@ describe('proyek', () => {
     const so = await pesananDikonfirmasi()
     await buatProyek(isiProyek(so.id), penggunaId)
 
-    await expect(buatProyek(isiProyek(so.id, { kode: 'PRJ-002' }), penggunaId))
+    await expect(buatProyek(isiProyek(so.id), penggunaId))
       .rejects.toThrow(/hanya boleh dipegang satu proyek/)
   })
 
   it('menolak pesanan yang masih berupa penawaran', async () => {
     const penawaran = await buatPesanan({
-      partnerId: pelangganId, tanggal: '2026-02-01', tanggalPengiriman: null,
-      lokasiAsalId: lokasiGudangId, syaratPembayaranId: null, mataUangId: 'IDR',
+      partnerId: pelangganId, tanggal: '2026-02-01', tanggalPengiriman: null, syaratPembayaranId: null, mataUangId: 'IDR',
       referensi: null, catatan: null,
       baris: [{
         produkId, deskripsi: 'Kursi', kuantitas: '1',
@@ -499,7 +496,7 @@ describe('timesheet', () => {
 
     const soB = await pesananDikonfirmasi()
     const proyekB = await mulaiProyek(
-      (await buatProyek(isiProyek(soB.id, { kode: 'PRJ-002' }), penggunaId)).id,
+      (await buatProyek(isiProyek(soB.id), penggunaId)).id,
     )
 
     await expect(catat({
@@ -531,8 +528,7 @@ describe('produksi proyek', () => {
 
   async function sediakanBahan(kuantitas = '40', harga = '50000') {
     const op = await buatOperasi({
-      tipe: 'penerimaan', tanggal: '2026-01-05',
-      lokasiAsalId: lokasiPemasokId, lokasiTujuanId: lokasiBahanId,
+      tipe: 'penerimaan', tanggal: '2026-01-05', lokasiAsalId: lokasiPemasokId, lokasiTujuanId: lokasiBahanId,
       partnerId: null, proyekId: null, referensi: null, catatan: null,
       baris: [{
         produkId: produkBahanId, kuantitas, uomId: satuanUnitId,
@@ -565,7 +561,7 @@ describe('produksi proyek', () => {
     const baris = await barisDenganSisa(so!.soId)
 
     await expect(kirimDariPesanan({
-      soId: so!.soId, tanggal: '2026-02-20',
+      soId: so!.soId, lokasiAsalId: lokasiGudangId, tanggal: '2026-02-20',
       baris: [{ soLineId: baris[0].id, kuantitas: '10' }],
     }, penggunaId)).rejects.toThrow(/Produksi proyek .* belum selesai/)
   })
@@ -677,7 +673,7 @@ describe('profitabilitas proyek', () => {
     const sisa = await import('@/modules/penjualan/layanan/pesanan')
       .then((m) => m.barisDenganSisa(so.id))
     await kirimDariPesanan({
-      soId: so.id, tanggal: '2026-02-05',
+      soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-02-05',
       baris: [{ soLineId: sisa[0].id, kuantitas: '10' }],
     }, penggunaId)
 
@@ -824,7 +820,7 @@ describe('penguncian job costing', () => {
     const { barisDenganSisa } = await import('@/modules/penjualan/layanan/pesanan')
     const sisa = await barisDenganSisa(so.id)
     await kirimDariPesanan({
-      soId: so.id, tanggal: '2026-02-05',
+      soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-02-05',
       baris: [{ soLineId: sisa[0].id, kuantitas: '10' }],
     }, penggunaId)
 
@@ -943,7 +939,7 @@ describe('penguncian job costing', () => {
 
     const soLain = await pesananDikonfirmasi()
     const lain = await mulaiProyek(
-      (await buatProyek(isiProyek(soLain.id, { kode: 'PRJ-002' }), penggunaId)).id,
+      (await buatProyek(isiProyek(soLain.id), penggunaId)).id,
     )
 
     const [jurnal] = await db.select().from(journals).where(eq(journals.kode, 'JU'))

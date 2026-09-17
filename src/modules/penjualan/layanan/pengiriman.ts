@@ -46,7 +46,26 @@ async function wajibProduksiTuntas(proyekId: string, kodeProyek: string): Promis
 export type MasukanPengiriman = {
   soId: string
   tanggal: string
+  /** Gudang yang mengeluarkan barangnya, dipilih saat pengiriman disiapkan. */
+  lokasiAsalId: string
   baris: { soLineId: string; kuantitas: string }[]
+}
+
+/**
+ * Barang hanya boleh keluar dari lokasi internal. Lokasi virtual seperti
+ * Pemasok atau Penyesuaian bukan gudang sungguhan; memakainya sebagai asal
+ * pengiriman akan menciptakan stok dari ketiadaan.
+ */
+async function wajibLokasiInternal(lokasiId: string): Promise<void> {
+  const [lokasi] = await db.select().from(locations)
+    .where(eq(locations.id, lokasiId)).limit(1)
+  if (!lokasi) throw new ValidasiError('Gudang asal tidak ditemukan')
+  if (lokasi.tipe !== 'internal') {
+    throw new ValidasiError('Gudang asal pengiriman harus lokasi internal')
+  }
+  if (!lokasi.isActive) {
+    throw new ValidasiError(`Gudang ${lokasi.nama} sudah tidak aktif`)
+  }
 }
 
 /**
@@ -66,6 +85,8 @@ export async function kirimDariPesanan(
   if (pesanan.status !== 'dikonfirmasi') {
     throw new ValidasiError('Hanya pesanan yang sudah dikonfirmasi yang dapat dikirim.')
   }
+
+  await wajibLokasiInternal(masukan.lokasiAsalId)
 
   const proyek = await proyekPesanan(masukan.soId)
   if (proyek) await wajibProduksiTuntas(proyek.id, proyek.kode)
@@ -96,7 +117,7 @@ export async function kirimDariPesanan(
   const operasi = await buatOperasi({
     tipe: 'pengiriman',
     tanggal: masukan.tanggal,
-    lokasiAsalId: pesanan.lokasiAsalId,
+    lokasiAsalId: masukan.lokasiAsalId,
     lokasiTujuanId: lokasiPelanggan.id,
     partnerId: pesanan.partnerId,
     // Harga pokok pengiriman ini menjadi harga pokok proyeknya.

@@ -27,8 +27,12 @@ export const salesOrders = pgTable('sales_orders', {
   partnerId: uuid('partner_id').notNull().references(() => partners.id),
   tanggal: date('tanggal').notNull(),
   tanggalPengiriman: date('tanggal_pengiriman'),
-  /** Lokasi internal asal pengiriman barang. */
-  lokasiAsalId: uuid('lokasi_asal_id').notNull().references(() => locations.id),
+  /**
+   * Gudang asal pengiriman. Kosong saat pesanan dibuat: saat menjual, gudang
+   * mana yang akan mengeluarkan barangnya belum tentu diketahui — apalagi bila
+   * barangnya masih harus diproduksi. Diisi orang gudang saat mengirim.
+   */
+  lokasiAsalId: uuid('lokasi_asal_id').references(() => locations.id),
   syaratPembayaranId: uuid('syarat_pembayaran_id').references(() => paymentTerms.id),
   mataUangId: text('mata_uang_id').notNull().default('IDR').references(() => currencies.kode),
   referensi: text('referensi'),

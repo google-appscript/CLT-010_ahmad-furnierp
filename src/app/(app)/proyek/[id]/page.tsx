@@ -73,14 +73,22 @@ export default async function HalamanDetailProyek({
     perintahProduksiProyek(id),
     db.select({ id: users.id, nama: users.nama }).from(users).orderBy(asc(users.nama)),
     db.select({ id: partners.id, nama: partners.nama }).from(partners).orderBy(asc(partners.nama)),
-    db.select({ id: salesOrders.id, nomor: salesOrders.nomor, tanggal: salesOrders.tanggal, partnerId: salesOrders.partnerId })
+    db.select({
+      id: salesOrders.id, nomor: salesOrders.nomor, tanggal: salesOrders.tanggal,
+      tanggalPengiriman: salesOrders.tanggalPengiriman, partnerId: salesOrders.partnerId,
+    })
       .from(salesOrders).orderBy(asc(salesOrders.nomor)),
     kesiapanKunci(id),
   ])
 
   const mitraLewatId = new Map(semuaMitra.map((m) => [m.id, m.nama]))
+  // Baris pesanan tidak ikut dibaca di sini: rincian pesanan hanya tampil saat
+  // formulirnya dapat diubah, sedangkan layar ini selalu readonly.
   const pesananReadonly = semuaPesanan.map((p) => ({
-    id: p.id, nomor: p.nomor ?? '—', tanggal: p.tanggal, namaPelanggan: mitraLewatId.get(p.partnerId) ?? '—',
+    id: p.id, nomor: p.nomor ?? '—', tanggal: p.tanggal,
+    namaPelanggan: mitraLewatId.get(p.partnerId) ?? '—',
+    tanggalPengiriman: p.tanggalPengiriman,
+    baris: [],
   }))
 
   const terbuka = proyek.status === 'berjalan'

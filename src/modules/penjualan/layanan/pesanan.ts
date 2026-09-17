@@ -3,7 +3,7 @@ import {
 } from 'drizzle-orm'
 import { db } from '@/db/klien'
 import {
-  salesOrders, salesOrderLines, taxes, products, uoms, locations, partners,
+  salesOrders, salesOrderLines, taxes, products, uoms, partners,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
 import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
@@ -148,14 +148,6 @@ export async function totalPesanan(id: string): Promise<HasilTotal> {
 
 // ── Penulisan ────────────────────────────────────────────────────────────────
 
-async function wajibLokasiInternal(lokasiId: string): Promise<void> {
-  const [lokasi] = await db.select().from(locations).where(eq(locations.id, lokasiId)).limit(1)
-  if (!lokasi) throw new ValidasiError('Gudang asal tidak ditemukan')
-  if (lokasi.tipe !== 'internal') {
-    throw new ValidasiError('Gudang asal pengiriman harus lokasi internal')
-  }
-}
-
 /**
  * Membuat penawaran. Penawaran dan pesanan penjualan adalah dokumen yang sama
  * pada tahap berbeda; mengonfirmasinya yang memberi nomor dan menjadikannya
@@ -165,7 +157,6 @@ export async function buatPesanan(
   masukan: MasukanPesanan, dibuatOleh: string,
 ): Promise<PesananLengkap> {
   const data = urai(masukan)
-  await wajibLokasiInternal(data.lokasiAsalId)
 
   const id = await db.transaction(async (tx) => {
     const [pesanan] = await tx.insert(salesOrders).values({
@@ -173,7 +164,6 @@ export async function buatPesanan(
       partnerId: data.partnerId,
       tanggal: data.tanggal,
       tanggalPengiriman: data.tanggalPengiriman,
-      lokasiAsalId: data.lokasiAsalId,
       syaratPembayaranId: data.syaratPembayaranId,
       mataUangId: data.mataUangId,
       referensi: data.referensi,
@@ -210,7 +200,6 @@ export async function buatPesananLangsung(
   masukan: MasukanPesanan, dibuatOleh: string,
 ): Promise<PesananLengkap> {
   const data = urai(masukan)
-  await wajibLokasiInternal(data.lokasiAsalId)
 
   const id = await db.transaction(async (tx) => {
     const nomor = await ambilNomorBerikut(
@@ -224,7 +213,6 @@ export async function buatPesananLangsung(
       partnerId: data.partnerId,
       tanggal: data.tanggal,
       tanggalPengiriman: data.tanggalPengiriman,
-      lokasiAsalId: data.lokasiAsalId,
       syaratPembayaranId: data.syaratPembayaranId,
       mataUangId: data.mataUangId,
       referensi: data.referensi,
@@ -262,14 +250,12 @@ export async function ubahPesanan(id: string, masukan: MasukanPesanan): Promise<
       'Pesanan yang sudah dikonfirmasi tidak dapat diubah. Batalkan terlebih dahulu bila perlu.',
     )
   }
-  await wajibLokasiInternal(data.lokasiAsalId)
 
   await db.transaction(async (tx) => {
     await tx.update(salesOrders).set({
       partnerId: data.partnerId,
       tanggal: data.tanggal,
       tanggalPengiriman: data.tanggalPengiriman,
-      lokasiAsalId: data.lokasiAsalId,
       syaratPembayaranId: data.syaratPembayaranId,
       mataUangId: data.mataUangId,
       referensi: data.referensi,
@@ -420,7 +406,6 @@ export async function duplikatPesanan(
     partnerId: lama.partnerId,
     tanggal,
     tanggalPengiriman: null,
-    lokasiAsalId: lama.lokasiAsalId,
     syaratPembayaranId: lama.syaratPembayaranId,
     mataUangId: lama.mataUangId,
     referensi: lama.referensi,

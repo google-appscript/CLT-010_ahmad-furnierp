@@ -1,0 +1,1 @@
+ALTER TABLE "sales_orders" ALTER COLUMN "lokasi_asal_id" DROP NOT NULL;

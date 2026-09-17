@@ -15,7 +15,6 @@ export default async function HalamanPenawaranBaru() {
         partnerId: '',
         tanggal: new Date().toISOString().slice(0, 10),
         tanggalPengiriman: '',
-        lokasiAsalId: pilihan.lokasi[0]?.id ?? '',
         syaratPembayaranId: '',
         referensi: '', catatan: '', baris: [],
       }}

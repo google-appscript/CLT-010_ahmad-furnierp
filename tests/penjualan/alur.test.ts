@@ -142,8 +142,7 @@ beforeEach(async () => {
 
   // Stok awal 50 kursi @ 1.000.000 agar pengiriman punya barang.
   const masuk = await buatOperasi({
-    tipe: 'penerimaan', tanggal: '2026-05-01',
-    lokasiAsalId: lokasiPemasokId, lokasiTujuanId: lokasiGudangId,
+    tipe: 'penerimaan', tanggal: '2026-05-01', lokasiAsalId: lokasiPemasokId, lokasiTujuanId: lokasiGudangId,
     partnerId: null, referensi: null, catatan: 'Stok awal',
     baris: [{
       produkId: produkKursiId, kuantitas: '50', uomId: satuanUnitId,
@@ -162,7 +161,6 @@ function pesananDasar(ubah: Record<string, unknown> = {}) {
     partnerId: pelangganId,
     tanggal: '2026-06-01',
     tanggalPengiriman: '2026-06-10',
-    lokasiAsalId: lokasiGudangId,
     syaratPembayaranId: null,
     mataUangId: 'IDR',
     referensi: null, catatan: null,
@@ -184,7 +182,7 @@ async function siapkanPesananTerkirim() {
   const so = await buatPesanan(pesananDasar(), penggunaId)
   await konfirmasiPesanan(so.id, penggunaId)
   await kirimDariPesanan({
-    soId: so.id, tanggal: '2026-06-10',
+    soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-06-10',
     baris: [{ soLineId: so.baris[0].id, kuantitas: '20' }],
   }, penggunaId)
   return so
@@ -281,7 +279,7 @@ describe('pengiriman atas pesanan', () => {
   it('menolak pengiriman atas pesanan yang belum dikonfirmasi', async () => {
     const so = await buatPesanan(pesananDasar(), penggunaId)
     await expect(kirimDariPesanan({
-      soId: so.id, tanggal: '2026-06-10',
+      soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-06-10',
       baris: [{ soLineId: so.baris[0].id, kuantitas: '20' }],
     }, penggunaId)).rejects.toThrow('sudah dikonfirmasi')
   })
@@ -307,7 +305,7 @@ describe('pengiriman atas pesanan', () => {
     const so = await buatPesanan(pesananDasar(), penggunaId)
     await konfirmasiPesanan(so.id, penggunaId)
     await expect(kirimDariPesanan({
-      soId: so.id, tanggal: '2026-06-10',
+      soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-06-10',
       baris: [{ soLineId: so.baris[0].id, kuantitas: '30' }],
     }, penggunaId)).rejects.toThrow('melebihi sisa pesanan')
   })
@@ -321,7 +319,7 @@ describe('pengiriman atas pesanan', () => {
     }), penggunaId)
     await konfirmasiPesanan(so.id, penggunaId)
     await expect(kirimDariPesanan({
-      soId: so.id, tanggal: '2026-06-10',
+      soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-06-10',
       baris: [{ soLineId: so.baris[0].id, kuantitas: '80' }],
     }, penggunaId)).rejects.toThrow('tidak mencukupi')
   })
@@ -331,7 +329,7 @@ describe('pengiriman atas pesanan', () => {
     await konfirmasiPesanan(so.id, penggunaId)
 
     await kirimDariPesanan({
-      soId: so.id, tanggal: '2026-06-10',
+      soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-06-10',
       baris: [{ soLineId: so.baris[0].id, kuantitas: '12' }],
     }, penggunaId)
 
@@ -734,11 +732,11 @@ describe('penjualan — buku besar seimbang di sepanjang alur', () => {
     await konfirmasiPesanan(so.id, penggunaId)
 
     await kirimDariPesanan({
-      soId: so.id, tanggal: '2026-06-08',
+      soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-06-08',
       baris: [{ soLineId: so.baris[0].id, kuantitas: '12' }],
     }, penggunaId)
     await kirimDariPesanan({
-      soId: so.id, tanggal: '2026-06-15',
+      soId: so.id, lokasiAsalId: lokasiGudangId, tanggal: '2026-06-15',
       baris: [{ soLineId: so.baris[0].id, kuantitas: '8' }],
     }, penggunaId)
 

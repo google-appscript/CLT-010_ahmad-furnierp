@@ -1,7 +1,8 @@
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/db/klien'
 import {
-  users, partners, salesOrders, projects, projectTasks, workOrders,
+  users, partners, salesOrders, salesOrderLines, uoms,
+  projects, projectTasks, workOrders,
 } from '@/db/schema'
 import { pesananTanpaProyek } from '@/modules/proyek/layanan/proyek'
 
@@ -13,11 +14,35 @@ export async function ambilDataPilihanProyek(kecualiSoId?: string) {
   ])
 
   const idMitra = [...new Set(pesanan.map((p) => p.partnerId))]
-  const mitra = idMitra.length > 0
-    ? await db.select({ id: partners.id, nama: partners.nama })
-        .from(partners).where(inArray(partners.id, idMitra))
-    : []
+  const idPesanan = pesanan.map((p) => p.id)
+
+  // Baris pesanan ikut dibaca supaya formulir dapat memperlihatkan apa yang
+  // dipesan begitu sebuah pesanan dipilih — tanpa itu pengguna harus membuka
+  // pesanannya di tab lain hanya untuk memastikan proyeknya benar.
+  const [mitra, baris] = await Promise.all([
+    idMitra.length > 0
+      ? db.select({ id: partners.id, nama: partners.nama })
+          .from(partners).where(inArray(partners.id, idMitra))
+      : [],
+    idPesanan.length > 0
+      ? db.select({
+          soId: salesOrderLines.soId,
+          deskripsi: salesOrderLines.deskripsi,
+          kuantitas: salesOrderLines.kuantitas,
+          namaSatuan: uoms.nama,
+        })
+          .from(salesOrderLines)
+          .innerJoin(uoms, eq(uoms.id, salesOrderLines.uomId))
+          .where(inArray(salesOrderLines.soId, idPesanan))
+          .orderBy(asc(salesOrderLines.urutan))
+      : [],
+  ])
+
   const namaMitra = new Map(mitra.map((m) => [m.id, m.nama]))
+  const barisPerPesanan = new Map<string, typeof baris>()
+  for (const b of baris) {
+    barisPerPesanan.set(b.soId, [...(barisPerPesanan.get(b.soId) ?? []), b])
+  }
 
   return {
     pengguna,
@@ -26,6 +51,13 @@ export async function ambilDataPilihanProyek(kecualiSoId?: string) {
       nomor: p.nomor ?? '—',
       tanggal: p.tanggal,
       namaPelanggan: namaMitra.get(p.partnerId) ?? '—',
+      /** Target selesai yang dijanjikan marketing pada pesanannya. */
+      tanggalPengiriman: p.tanggalPengiriman,
+      baris: (barisPerPesanan.get(p.id) ?? []).map((b) => ({
+        deskripsi: b.deskripsi,
+        kuantitas: b.kuantitas,
+        namaSatuan: b.namaSatuan,
+      })),
     })),
   }
 }

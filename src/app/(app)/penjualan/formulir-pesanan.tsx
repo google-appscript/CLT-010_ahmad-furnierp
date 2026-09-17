@@ -69,7 +69,6 @@ export type NilaiAwalPesanan = {
   partnerId: string
   tanggal: string
   tanggalPengiriman: string
-  lokasiAsalId: string
   syaratPembayaranId: string
   referensi: string
   catatan: string
@@ -85,7 +84,7 @@ type KolomBaris = {
 }
 
 export function FormulirPesanan({
-  awal, produk, satuan, pajak, pelanggan, lokasi, syaratPembayaran,
+  awal, produk, satuan, pajak, pelanggan, syaratPembayaran,
   mode = 'penawaran',
   readOnly = false, nomor, statusBadge, aksiTambahan, menu, dokumenTerkait,
 }: {
@@ -94,7 +93,6 @@ export function FormulirPesanan({
   satuan: PilihanSatuan[]
   pajak: PilihanPajak[]
   pelanggan: PilihanUmum[]
-  lokasi: PilihanUmum[]
   syaratPembayaran: PilihanUmum[]
   mode?: ModeDokumen
   readOnly?: boolean
@@ -115,7 +113,6 @@ export function FormulirPesanan({
     awal.baris.length > 0 ? awal.baris : [{ ...BARIS_KOSONG }],
   )
   const [partnerId, setPartnerId] = useState(awal.partnerId)
-  const [lokasiAsalId, setLokasiAsalId] = useState(awal.lokasiAsalId)
   const [syaratId, setSyaratId] = useState(awal.syaratPembayaranId)
 
   const produkLewatId = new Map(produk.map((p) => [p.id, p]))
@@ -164,7 +161,6 @@ export function FormulirPesanan({
         partnerId,
         tanggal: String(data.get('tanggal') ?? ''),
         tanggalPengiriman: String(data.get('tanggalPengiriman') ?? '') || null,
-        lokasiAsalId,
         syaratPembayaranId: syaratId || null,
         mataUangId: 'IDR',
         referensi: String(data.get('referensi') ?? '') || null,
@@ -371,21 +367,6 @@ export function FormulirPesanan({
           }
           kanan={
             <>
-              <FormulirField
-                label="Gudang Asal" htmlFor="lokasiAsalId" readOnly={readOnly}
-                valueTampilan={lokasi.find((l) => l.id === lokasiAsalId)?.nama ?? '—'}
-              >
-                <Select value={lokasiAsalId} onValueChange={setLokasiAsalId} required>
-                  <SelectTrigger id="lokasiAsalId" className="w-full">
-                    <SelectValue placeholder="Pilih gudang" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lokasi.map((l) => (
-                      <SelectItem key={l.id} value={l.id}>{l.nama}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormulirField>
 
               <FormulirField
                 label="Syarat Pembayaran" htmlFor="syaratPembayaranId" readOnly={readOnly}

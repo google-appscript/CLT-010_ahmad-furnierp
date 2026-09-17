@@ -10,11 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FormulirBingkai } from '@/components/formulir/formulir-bingkai'
 import { FormulirGrid } from '@/components/formulir/formulir-grid'
 import { FormulirField } from '@/components/formulir/formulir-field'
+import { formatAngka } from '@/lib/uang'
 import { FormulirNotebook } from '@/components/formulir/formulir-notebook'
 import { aksiSimpanProyek } from './aksi'
 
 export type PilihanPesanan = {
-  id: string; nomor: string; tanggal: string; namaPelanggan: string
+  id: string
+  nomor: string
+  tanggal: string
+  namaPelanggan: string
+  /** Target selesai yang dijanjikan marketing pada pesanannya. */
+  tanggalPengiriman: string | null
+  baris: { deskripsi: string; kuantitas: string; namaSatuan: string }[]
 }
 export type PilihanPengguna = { id: string; nama: string }
 
@@ -27,6 +34,51 @@ export type NilaiAwalProyek = {
   tanggalTarget: string
   manajerId: string
   catatan: string
+}
+
+/**
+ * Ringkasan pesanan yang dipilih, tampil di antara pemilihan pesanan dan nama
+ * proyek. Pembuat proyek perlu memastikan ia memegang pesanan yang benar —
+ * pembeli, barang yang dipesan, dan kapan marketing menjanjikannya — sebelum
+ * menamai proyeknya, tanpa harus membuka pesanan itu di layar lain.
+ */
+function RincianPesanan({ pesanan }: { pesanan?: PilihanPesanan }) {
+  if (!pesanan) {
+    return (
+      <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+        Pilih pesanan penjualan untuk melihat pembeli dan barang yang dipesan.
+      </p>
+    )
+  }
+
+  return (
+    <div className="rounded-md border bg-muted/40 p-3 text-sm">
+      <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-[auto_1fr]">
+        <dt className="text-muted-foreground">Pembeli</dt>
+        <dd className="font-medium">{pesanan.namaPelanggan}</dd>
+        <dt className="text-muted-foreground">Tanggal pesanan</dt>
+        <dd>{pesanan.tanggal}</dd>
+        <dt className="text-muted-foreground">Target dari marketing</dt>
+        <dd>{pesanan.tanggalPengiriman ?? 'Belum ditentukan'}</dd>
+      </dl>
+
+      <p className="mt-3 mb-1 text-muted-foreground">Barang yang dipesan</p>
+      {pesanan.baris.length === 0 ? (
+        <p className="text-muted-foreground">Pesanan ini belum punya baris produk.</p>
+      ) : (
+        <ul className="space-y-0.5">
+          {pesanan.baris.map((b, i) => (
+            <li key={i} className="flex justify-between gap-4">
+              <span>{b.deskripsi}</span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">
+                {formatAngka(b.kuantitas, 2)} {b.namaSatuan}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 const TANPA_MANAJER = 'tanpa-manajer'
@@ -59,7 +111,6 @@ export function FormulirProyek({
   function simpan(data: FormData) {
     mulai(async () => {
       const hasil = await aksiSimpanProyek(awal.id ?? null, {
-        kode: String(data.get('kode') ?? ''),
         nama: String(data.get('nama') ?? ''),
         soId,
         tanggalMulai: String(data.get('tanggalMulai') ?? ''),
@@ -82,12 +133,10 @@ export function FormulirProyek({
       <FormulirGrid
         kiri={
           <>
-            <FormulirField label="Kode Proyek" htmlFor="kode" readOnly={readOnly} valueTampilan={awal.kode}>
-              <Input id="kode" name="kode" required defaultValue={awal.kode} placeholder="PRJ-001" />
+            <FormulirField label="Kode Proyek" readOnly valueTampilan={awal.kode || 'Otomatis'}>
+              <span />
             </FormulirField>
-            <FormulirField label="Nama Proyek" htmlFor="nama" readOnly={readOnly} valueTampilan={awal.nama}>
-              <Input id="nama" name="nama" required defaultValue={awal.nama} />
-            </FormulirField>
+
             <FormulirField
               label="Pesanan Penjualan" htmlFor="soId" readOnly={readOnly}
               valueTampilan={pesananTerpilih ? `${pesananTerpilih.nomor} — ${pesananTerpilih.namaPelanggan}` : '—'}
@@ -104,6 +153,12 @@ export function FormulirProyek({
                   ))}
                 </SelectContent>
               </Select>
+            </FormulirField>
+
+            {!readOnly && <RincianPesanan pesanan={pesananTerpilih} />}
+
+            <FormulirField label="Nama Proyek" htmlFor="nama" readOnly={readOnly} valueTampilan={awal.nama}>
+              <Input id="nama" name="nama" required defaultValue={awal.nama} />
             </FormulirField>
           </>
         }

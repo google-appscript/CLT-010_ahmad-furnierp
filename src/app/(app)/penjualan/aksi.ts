@@ -110,11 +110,14 @@ export async function aksiHapusPenawaran(id: string): Promise<HasilAksi> {
 }
 
 export async function aksiKirimBarang(
-  soId: string, tanggal: string, baris: { soLineId: string; kuantitas: string }[],
+  soId: string, tanggal: string, lokasiAsalId: string,
+  baris: { soLineId: string; kuantitas: string }[],
 ): Promise<HasilAksi> {
   const sesi = await wajibIzin('gudang.pengiriman.kelola')
   try {
-    const hasil = await kirimDariPesanan({ soId, tanggal, baris }, sesi.penggunaId)
+    const hasil = await kirimDariPesanan(
+      { soId, tanggal, lokasiAsalId, baris }, sesi.penggunaId,
+    )
     await catatAudit({
       penggunaId: sesi.penggunaId, entitas: 'stock_operations', entitasId: hasil.operasiId,
       aksi: 'posting', dataBaru: { nomor: hasil.nomor, soId },

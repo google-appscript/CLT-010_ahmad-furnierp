@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { asc } from 'drizzle-orm'
 import { wajibIzin } from '@/lib/sesi'
 import { db } from '@/db/klien'
-import { locations, partners, paymentTerms, taxes } from '@/db/schema'
+import { partners, paymentTerms, taxes } from '@/db/schema'
 import { ambilPesanan } from '@/modules/penjualan/layanan/pesanan'
 import { Badge } from '@/components/ui/badge'
 import { FormulirPesanan } from '../../formulir-pesanan'
@@ -32,8 +32,6 @@ export default async function HalamanDetailPenawaran({
 
   const semuaPelanggan = draf ? pilihan.pelanggan : await db
     .select({ id: partners.id, nama: partners.nama }).from(partners).orderBy(asc(partners.nama))
-  const semuaLokasi = draf ? pilihan.lokasi : await db
-    .select({ id: locations.id, nama: locations.nama }).from(locations).orderBy(asc(locations.kode))
   const semuaPajak = draf ? pilihan.pajak : await db.select({
     id: taxes.id, nama: taxes.nama, tarif: taxes.tarif, isPemotongan: taxes.isPemotongan,
   }).from(taxes).orderBy(asc(taxes.kode))
@@ -49,7 +47,6 @@ export default async function HalamanDetailPenawaran({
         partnerId: penawaran.partnerId,
         tanggal: penawaran.tanggal,
         tanggalPengiriman: penawaran.tanggalPengiriman ?? '',
-        lokasiAsalId: penawaran.lokasiAsalId,
         syaratPembayaranId: penawaran.syaratPembayaranId ?? '',
         referensi: penawaran.referensi ?? '',
         catatan: penawaran.catatan ?? '',
@@ -64,7 +61,6 @@ export default async function HalamanDetailPenawaran({
       }}
       {...pilihan}
       pelanggan={semuaPelanggan}
-      lokasi={semuaLokasi}
       pajak={semuaPajak}
       syaratPembayaran={semuaSyarat}
       readOnly={!draf}

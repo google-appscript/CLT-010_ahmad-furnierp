@@ -37,6 +37,7 @@ export default async function HalamanProyekBaru({
   return (
     <FormulirProyek
       awal={{
+        // Kode dikosongkan; nomornya terbit saat proyek disimpan.
         kode: '', nama: '', soId: soTerpilih,
         tanggalMulai: new Date().toISOString().slice(0, 10),
         tanggalTarget: '', manajerId: '', catatan: '',

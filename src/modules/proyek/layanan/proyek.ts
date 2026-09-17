@@ -4,8 +4,11 @@ import {
   projects, projectTasks, timesheets, salesOrders, journalItems,
 } from '@/db/schema'
 import { ValidasiError } from '@/lib/galat'
+import { ambilNomorBerikut } from '@/modules/akuntansi/layanan/urutan'
 import type { ParameterDaftar, HasilDaftar } from '@/lib/daftar'
 import { skemaProyek, type MasukanProyek } from '../validasi/proyek'
+
+const KODE_URUTAN = 'proyek:kode'
 
 export type Proyek = typeof projects.$inferSelect
 export type Tugas = typeof projectTasks.$inferSelect
@@ -92,9 +95,12 @@ export async function pesananTanpaProyek(kecualiSoId?: string) {
   const terpakai = await db.select({ soId: projects.soId }).from(projects)
   const idTerpakai = new Set(terpakai.map((p) => p.soId).filter((s) => s !== kecualiSoId))
 
-  // Penawaran belum menjadi komitmen, dan pesanan batal tidak punya pekerjaan.
+  // Penawaran belum menjadi komitmen dan pesanan batal tidak punya pekerjaan.
+  // Pesanan yang sudah selesai pun tidak ditawarkan: seluruh barangnya sudah
+  // dikirim dan difakturkan, sehingga tidak ada lagi pekerjaan untuk dikelola
+  // sebagai proyek.
   const daftar = await db.select().from(salesOrders)
-    .where(inArray(salesOrders.status, ['dikonfirmasi', 'selesai']))
+    .where(eq(salesOrders.status, 'dikonfirmasi'))
     .orderBy(desc(salesOrders.tanggal))
 
   return daftar.filter((s) => !idTerpakai.has(s.id))
@@ -134,8 +140,14 @@ export async function buatProyek(masukan: MasukanProyek, dibuatOleh: string): Pr
 
   const id = await db.transaction(async (tx) => {
     const partnerId = await wajibPesananSah(tx, data.soId)
+    // Kode terbit di transaksi yang sama dengan proyeknya, lewat pencacah yang
+    // mengunci barisnya, sehingga dua orang yang menyimpan bersamaan tidak
+    // pernah mendapat kode kembar.
+    const kode = await ambilNomorBerikut(
+      tx, KODE_URUTAN, new Date(`${data.tanggalMulai}T00:00:00Z`),
+    )
     const [proyek] = await tx.insert(projects).values({
-      kode: data.kode,
+      kode,
       nama: data.nama,
       soId: data.soId,
       // Pelanggan proyek selalu pelanggan pesanannya; menyimpannya terpisah
@@ -165,7 +177,6 @@ export async function ubahProyek(id: string, masukan: MasukanProyek): Promise<Pr
   await db.transaction(async (tx) => {
     const partnerId = await wajibPesananSah(tx, data.soId, id)
     await tx.update(projects).set({
-      kode: data.kode,
       nama: data.nama,
       soId: data.soId,
       partnerId,
